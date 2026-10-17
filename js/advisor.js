@@ -289,12 +289,83 @@ window.ROAD_ADVISOR = {
       autoFixAction: samplingConflict ? "autoSwitchSamplingToClusterRandom" : null,
       autoFixAction2: samplingConflict ? "autoSwitchStatsToDescriptiveOnly" : null
     });
-    if (!samplingConflict) passedCount++;
+    // Rule 12: การตรวจสอบความแปรปรวนของประสิทธิภาพ (|E1 - E2| ≤ 5.0% Variance Tolerance)
+    const stData = p.statsData || {};
+    const e1Val = Number(stData.e1 || 0);
+    const e2Val = Number(stData.e2 || 0);
+    const eDiff = Math.abs(e1Val - e2Val);
+    const eDiffExceeded = (e1Val > 0 && e2Val > 0 && eDiff > 5.0);
+
+    results.push({
+      ruleId: 12,
+      ruleName: "เกณฑ์ผลต่างประสิทธิภาพกระบวนการและผลลัพธ์ (|E1 - E2| ≤ 5% Variance Tolerance)",
+      level: eDiffExceeded ? "error" : "pass",
+      title: eDiffExceeded
+        ? `พบข้อบกพร่อง: ค่าผลต่าง |E1 - E2| = ${eDiff.toFixed(2)}% เกินกว่าเกณฑ์ 5.0%`
+        : `ผ่านเกณฑ์: ผลต่างประสิทธิภาพกระบวนการและผลลัพธ์อยู่ในเกณฑ์มาตรฐาน (${eDiff.toFixed(2)}% ≤ 5.0%)`,
+      desc: eDiffExceeded
+        ? `ตามหลักวิชาการของ รศ.ดร.ชวลิต ชูกำแพง และ เผชิญ กิจระการ ประสิทธิภาพ E1 (กระบวนการ) และ E2 (ผลลัพธ์) ควรมีความสอดคล้องกันและมีผลต่างไม่เกินร้อยละ 5 (|E1 - E2| ≤ 5%) หากผลต่างสูงเกินไป แสดงว่าแบบทดสอบระหว่างเรียนหรือหลังเรียนมีความคลาดเคลื่อน หรือกระบวนการจัดกิจกรรมไม่สมดุลกับแบบทดสอบวัดผลรวม`
+        : `ค่า E1 (${e1Val.toFixed(2)}%) และ E2 (${e2Val.toFixed(2)}%) มีความสมดุลกลมกลืนตามเกณฑ์มาตรฐาน`,
+      recommendation: eDiffExceeded
+        ? "ปรับปรุงแบบฝึกหัดระหว่างเรียนหรือแบบทดสอบหลังเรียนให้มีความยากง่ายสอดคล้องกัน หรือกดปุ่ม 'ปรับสถิติ E1/E2 ให้สมดุลอัตโนมัติ' ใน StatLab"
+        : null
+    });
+    if (!eDiffExceeded) passedCount++;
+
+    // Rule 13: อัตราสำรองข้อสอบสำหรับการทดลองใช้ (Try-out Item Buffer Rate ≥ 30%)
+    const testBp = p.testBlueprint || {};
+    const bufferPct = Number(testBp.bufferPercent || 0);
+    const isBufferTooLow = bufferPct > 0 && bufferPct < 30;
+
+    results.push({
+      ruleId: 13,
+      ruleName: "อัตราสำรองข้อสอบเพื่อการคัดเลือกคุณภาพจากการทดลองใช้ (Try-out Buffer Rate ≥ 30%)",
+      level: isBufferTooLow ? "warning" : "pass",
+      title: isBufferTooLow
+        ? `ข้อควรระวัง: อัตราสำรองข้อสอบ Try-out (+${bufferPct}%) ต่ำกว่าเกณฑ์มาตรฐาน 30%`
+        : "ผ่านเกณฑ์: อัตราสำรองข้อสอบเพียงพอต่อการคัดกรองข้อสอบคุณภาพ",
+      desc: isBufferTooLow
+        ? "ตามหลักจิตวิทยาการวัดผล (Psychometrics) การสร้างแบบทดสอบต้องสร้างข้อสอบเกินจำนวนที่ต้องการใช้อย่างน้อย 30%–50% เพื่อนำไปทดลองใช้ (Try-out) แล้วคัดเลือกเฉพาะข้อที่มีค่าความยากง่าย (p = 0.20–0.80) และอำนาจจำแนก (r ≥ 0.20) หากสำรองน้อยเกินไปจะไม่เหลือข้อสอบที่มีคุณภาพตามเกณฑ์"
+        : `ผังสร้างข้อสอบมีอัตราสำรอง ${bufferPct || 30}% เหมาะสมสำหรับการคัดเลือกข้อสอบ`,
+      recommendation: isBufferTooLow
+        ? "เพิ่มอัตราสำรองข้อสอบในแถบ 'ผังแบบทดสอบและรูบริก' เป็นอย่างน้อย +30% ถึง +50%"
+        : null
+    });
+    if (!isBufferTooLow) passedCount++;
+
+    // Rule 14: ผลรวมน้ำหนักเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Rubrics Total Weight = 100%)
+    const rubricsList = p.analyticRubrics || [];
+    let rubricWeightError = false;
+    let rubricWeightDetails = [];
+    rubricsList.forEach(rub => {
+      const sumWeight = (rub.criteria || []).reduce((sum, c) => sum + Number(c.weight || 0), 0);
+      if (Math.abs(sumWeight - 100) > 0.01) {
+        rubricWeightError = true;
+        rubricWeightDetails.push(`"${rub.title}" รวมได้ ${sumWeight}%`);
+      }
+    });
+
+    results.push({
+      ruleId: 14,
+      ruleName: "ผลรวมค่าน้ำหนักของเกณฑ์การประเมินรูบริกแบบวิเคราะห์ (Analytic Rubrics Total Weight = 100%)",
+      level: rubricWeightError ? "error" : "pass",
+      title: rubricWeightError
+        ? `พบข้อบกพร่อง: ค่าน้ำหนักเกณฑ์รูบริกรวมไม่ครบ 100% (${rubricWeightDetails.join(", ")})`
+        : "ผ่านเกณฑ์: ค่าน้ำหนักเกณฑ์การประเมินรูบริกครบถ้วน 100%",
+      desc: rubricWeightError
+        ? "การสร้างเกณฑ์การประเมินแบบแยกส่วน (Analytic Rubrics) ค่าน้ำหนักความสำคัญของแต่ละประเด็นการประเมิน (Criteria Weights) เมื่อรวมกันแล้วต้องเท่ากับร้อยละ 100 พอดีตามหลักการวัดผลการศึกษา"
+        : "เกณฑ์การประเมินรูบริกมีการกระจายน้ำหนักครบ 100% ถูกต้องตามหลักการวัดผล",
+      recommendation: rubricWeightError
+        ? "ปรับสัดส่วนน้ำหนักในแต่ละข้อของรูบริกให้รวมกันได้ 100% พอดี"
+        : null
+    });
+    if (!rubricWeightError) passedCount++;
 
     const totalRules = results.length;
     const healthScore = Math.round((passedCount / totalRules) * 100);
 
     return {
+      score: healthScore,
       healthScore,
       passedCount,
       totalRules,

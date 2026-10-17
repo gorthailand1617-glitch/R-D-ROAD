@@ -272,6 +272,12 @@
     if (!p.analyticRubrics) {
       p.analyticRubrics = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS || []));
     }
+    if (!p.syntaxSynthesisMatrix) {
+      p.syntaxSynthesisMatrix = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SYNTAX_SYNTHESIS_MATRIX || {}));
+    }
+    if (!p.pniItems) {
+      p.pniItems = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_PNI_ITEMS || []));
+    }
     return p;
   }
 
@@ -432,6 +438,52 @@
     setMatrixSubTab(t) {
       state.matrixSubTab = t;
       renderApp();
+    },
+
+    toggleSyntaxScholarCheck(stepIdx, scholarIdx) {
+      const proj = getActiveProject();
+      if (!proj.syntaxSynthesisMatrix) {
+        proj.syntaxSynthesisMatrix = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SYNTAX_SYNTHESIS_MATRIX || {}));
+      }
+      const st = proj.syntaxSynthesisMatrix.steps[stepIdx];
+      if (st) {
+        if (!st.scholarChecks) st.scholarChecks = [false, false, false, false, false, false, false];
+        st.scholarChecks[scholarIdx] = !st.scholarChecks[scholarIdx];
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    updateSyntaxStepName(stepIdx, val) {
+      const proj = getActiveProject();
+      if (!proj.syntaxSynthesisMatrix) {
+        proj.syntaxSynthesisMatrix = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SYNTAX_SYNTHESIS_MATRIX || {}));
+      }
+      if (proj.syntaxSynthesisMatrix.steps && proj.syntaxSynthesisMatrix.steps[stepIdx]) {
+        proj.syntaxSynthesisMatrix.steps[stepIdx].stepName = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    updateSyntaxSynthesizedStep(stepIdx, val) {
+      const proj = getActiveProject();
+      if (!proj.syntaxSynthesisMatrix) {
+        proj.syntaxSynthesisMatrix = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SYNTAX_SYNTHESIS_MATRIX || {}));
+      }
+      if (proj.syntaxSynthesisMatrix.steps && proj.syntaxSynthesisMatrix.steps[stepIdx]) {
+        proj.syntaxSynthesisMatrix.steps[stepIdx].synthesizedStep = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    resetSyntaxMatrix() {
+      const proj = getActiveProject();
+      proj.syntaxSynthesisMatrix = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SYNTAX_SYNTHESIS_MATRIX || {}));
+      saveProjects();
+      renderApp();
+      showToast("คืนค่าเริ่มต้นตารางสังเคราะห์ขั้นตอนการจัดกิจกรรมเรียบร้อยแล้ว");
     },
 
     setInstrumentSubTab(t) {
@@ -3891,91 +3943,56 @@
       ? gen.chapters
       : gen.chapters.filter(c => c.number === state.activeChapterFilter);
 
-    // Consistency & 10 Pitfalls Audit according to Assoc. Prof. Dr. Chawalit Chookhampaeng
-    const pitfallChecks = [
-      {
-        num: 1,
-        title: "นวัตกรรม (B) มีลักษณะเป็นระบบ/กระบวนการชัดเจน",
-        pass: Boolean(proj.B && proj.B.length >= 8 && !proj.B.includes("ทำกิจกรรมทั่วไป")),
-        desc: "นวัตกรรมทางการศึกษาต้องระบุประเภทชัดเจน เช่น รูปแบบการจัดการเรียนรู้, ชุดกิจกรรม หรือบทเรียนออนไลน์ ไม่ใช่แค่ชื่องานกิจกรรม",
-        actionText: "แก้ไขนวัตกรรม",
-        actionFn: "ROAD_APP.openAbcdModal('manual')"
-      },
-      {
-        num: 2,
-        title: "เกณฑ์ประสิทธิภาพ E1/E2 สอดคล้องกับธรรมชาติเนื้อหา",
-        pass: Boolean(proj.efficiencyCriterion && (proj.statsData?.e1 || 82) >= 70),
-        desc: `ตั้งเกณฑ์ ${proj.efficiencyCriterion || '80/80'} และผลการทดลองสอดคล้องกับเกณฑ์ประสิทธิภาพตามสูตรชวลิต (E1=${proj.statsData?.e1 || 82.5} / E2=${proj.statsData?.e2 || 83.5})`,
-        actionText: "ปรับสถิติ E1/E2",
-        actionFn: "ROAD_APP.setStudioTab('statlab')"
-      },
-      {
-        num: 3,
-        title: "กลุ่มตัวอย่าง (D) ระบุวิธีการสุ่มและขนาดประชากร",
-        pass: Boolean(proj.sample && (proj.sample.includes("สุ่ม") || proj.sample.includes("Cluster") || proj.sample.includes("ห้องเรียน"))),
-        desc: "ต้องระบุวิธีการสุ่มตัวอย่าง (เช่น Cluster Random Sampling โดยใช้ห้องเรียนเป็นหน่วยสุ่ม) และจำนวนนักเรียนที่ชัดเจน",
-        actionText: "ตรวจกลุ่มตัวอย่าง",
-        actionFn: "ROAD_APP.openAbcdModal('manual')"
-      },
-      {
-        num: 4,
-        title: "ตัวแปรตาม (C) สอดคล้องกับเครื่องมือวัดผล",
-        pass: Boolean(proj.C_list && proj.C_list.length > 0 && proj.C_list.every(c => c.length >= 3)),
-        desc: `ศึกษาตัวแปรตาม: ${(proj.C_list || []).join(", ")} พร้อมเครื่องมือวัดผลและเกณฑ์คุณภาพครบถ้วน`,
-        actionText: "ตรวจสอบตัวแปร C",
-        actionFn: "ROAD_APP.openAbcdModal('manual')"
-      },
-      {
-        num: 5,
-        title: "สถิติทดสอบสมมติฐานตรงตามวัตถุประสงค์ (t-test Dependent)",
-        pass: Boolean(proj.statsData && proj.statsData.tValue && proj.statsData.pVal),
-        desc: `เปรียบเทียบก่อน-หลังเรียนด้วย t-test Dependent Samples (t = ${proj.statsData?.tValue || 18.90}, p ${proj.statsData?.pVal || '< .001'})`,
-        actionText: "ดูผลสถิติ",
-        actionFn: "ROAD_APP.setStudioTab('statlab')"
-      },
-      {
-        num: 6,
-        title: "นิยามศัพท์เฉพาะ สอดคล้องกับขั้นตอนนวัตกรรมในบทที่ 1",
-        pass: Boolean(proj.B_short && (proj.B_steps || []).length >= 3),
-        desc: "ให้นิยามครอบคลุมความหมายของนวัตกรรม ขั้นตอนการจัดการเรียนรู้ และตัวแปรตามอย่างเป็นรูปธรรม",
-        actionText: "ดูนิยามศัพท์",
-        actionFn: "ROAD_APP.setChapterFilter(1)"
-      },
-      {
-        num: 7,
-        title: "สังเคราะห์วรรณกรรมบทที่ 2 สอดคล้องกับกรอบแนวคิด R&D",
-        pass: Boolean((proj.B_steps || []).length >= 3),
-        desc: "เนื้อหาในบทที่ 2 มุ่งสังเคราะห์เป็นขั้นตอนนวัตกรรมและผังกรอบแนวคิด ไม่ใช่การตัดแปะเอกสาร",
-        actionText: "ดูผังกรอบแนวคิด",
-        actionFn: "ROAD_APP.setStudioTab('diagrams')"
-      },
-      {
-        num: 8,
-        title: "แบบแผนการวิจัยบทที่ 3 สอดคล้องกับการวิจัยและพัฒนา",
-        pass: Boolean(proj.modelId && (proj.modelId.startsWith("rd") || proj.modelId === "addd_edurtap")),
-        desc: `ใช้แบบแผนการวิจัย: ${(window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId) || {}).name || 'R&D 4 ขั้น'}`,
-        actionText: "ดูแบบแผนบทที่ 3",
-        actionFn: "ROAD_APP.setChapterFilter(3)"
-      },
-      {
-        num: 9,
-        title: "ตารางสถิติบทที่ 4 เป็นตารางมาตรฐาน APA (3 เส้นหลัก)",
-        pass: Boolean(proj.statsData && proj.statsData.preMean && proj.statsData.postMean),
-        desc: "ตารางสรุปผลคะแนนก่อน-หลังเรียน ตารางประสิทธิภาพ E1/E2 และตารางความพึงพอใจใช้รูปแบบ APA Table ไม่มีเส้นแนวตั้ง",
-        actionText: "ดูตารางบทที่ 4",
-        actionFn: "ROAD_APP.setChapterFilter(4)"
-      },
-      {
-        num: 10,
-        title: "อภิปรายผลบทที่ 5 เทียบเคียงกับทฤษฎีและงานวิจัยรองรับ",
-        pass: Boolean(proj.duration && proj.semester),
-        desc: "อภิปรายประเด็นประสิทธิภาพนวัตกรรม ผลสัมฤทธิ์ทางการเรียน และความพึงพอใจโดยอ้างอิงทฤษฎีและงานวิจัยในบทที่ 2",
-        actionText: "ดูอภิปรายผล",
-        actionFn: "ROAD_APP.setChapterFilter(5)"
+    // Consistency & 10+ Pitfalls Audit (14 Rules V2.0) from Advisor
+    const advisorResults = health.results || [];
+    const pitfallChecks = advisorResults.map(r => {
+      const isPass = r.level === "pass";
+      let actionText = "ดูรายละเอียด";
+      let actionFn = "ROAD_APP.setStudioTab('advisor')";
+      if (r.ruleId === 1 || r.ruleId === 2 || r.ruleId === 3 || r.ruleId === 4) {
+        actionText = "ตรวจแก้ ABCD";
+        actionFn = "ROAD_APP.openAbcdModal('manual')";
+      } else if (r.ruleId === 5 || r.ruleId === 11 || r.ruleId === 12) {
+        actionText = "ปรับสถิติ StatLab";
+        actionFn = "ROAD_APP.setStudioTab('statlab')";
+      } else if (r.ruleId === 6) {
+        actionText = "ดูนิยามศัพท์";
+        actionFn = "ROAD_APP.setChapterFilter(1)";
+      } else if (r.ruleId === 7) {
+        actionText = "ดูผังกรอบแนวคิด";
+        actionFn = "ROAD_APP.setStudioTab('diagrams')";
+      } else if (r.ruleId === 8) {
+        actionText = "ดูแบบแผนบทที่ 3";
+        actionFn = "ROAD_APP.setChapterFilter(3)";
+      } else if (r.ruleId === 9) {
+        actionText = "ดูตารางบทที่ 4";
+        actionFn = "ROAD_APP.setChapterFilter(4)";
+      } else if (r.ruleId === 10) {
+        actionText = "ดูอภิปรายผล";
+        actionFn = "ROAD_APP.setChapterFilter(5)";
+      } else if (r.ruleId === 13) {
+        actionText = "ตรวจ Test Blueprint";
+        actionFn = "ROAD_APP.setStudioTab('instruments')";
+      } else if (r.ruleId === 14) {
+        actionText = "ตรวจเกณฑ์รูบริก";
+        actionFn = "ROAD_APP.setStudioTab('instruments')";
       }
-    ];
 
-    const passCount = pitfallChecks.filter(c => c.pass).length;
+      return {
+        num: r.ruleId,
+        title: r.ruleName || r.title,
+        statusTitle: r.title,
+        pass: isPass,
+        desc: r.desc,
+        recommendation: r.recommendation,
+        actionText,
+        actionFn
+      };
+    });
+
+    const passCount = health.passedCount ?? pitfallChecks.filter(c => c.pass).length;
+    const totalCount = health.totalRules ?? pitfallChecks.length ?? 14;
+    const healthScore = health.score ?? health.healthScore ?? Math.round((passCount / totalCount) * 100);
 
     return `
       <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
@@ -4089,6 +4106,12 @@
                         `).join("")}
                       </div>
                     ` : ""}
+
+                    ${sec.type === "custom_html" ? `
+                      <div class="pl-2">
+                        ${sec.content}
+                      </div>
+                    ` : ""}
                   </div>
                 `).join("")}
               </div>
@@ -4106,23 +4129,23 @@
                 <span>🛡️</span>
                 <span>Review Center</span>
               </span>
-              <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono ${health.score >= 85 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
-                ${health.score}% ผ่านเกณฑ์
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono ${healthScore >= 85 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
+                ${healthScore}% ผ่านเกณฑ์
               </span>
             </div>
 
             <div class="flex items-baseline justify-between pt-1">
               <h3 class="text-lg font-black text-slate-900 dark:text-white">ศูนย์ตรวจความสอดคล้อง</h3>
-              <span class="text-xs font-bold text-slate-500">${passCount}/10 ผ่าน</span>
+              <span class="text-xs font-bold text-slate-500">${passCount}/${totalCount} ผ่าน</span>
             </div>
 
             <!-- Progress Meter -->
             <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-500 ${passCount >= 8 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${(passCount / 10) * 100}%"></div>
+              <div class="h-full rounded-full transition-all duration-500 ${passCount >= Math.round(totalCount * 0.8) ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${(passCount / totalCount) * 100}%"></div>
             </div>
 
             <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              ตรวจสอบข้อพึงระวัง 10 ประการของการทำวิจัยเชิงพัฒนา (R&D) ตามมาตรฐานการบรรยายของ รศ.ดร.ชวลิต ชูกำแพง
+              ตรวจสอบข้อพึงระวังและเกณฑ์มาตรฐานวิจัยเชิงพัฒนา 14 ประการ (V2.0) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
             </p>
 
             <div class="pt-2 flex flex-col gap-2">
@@ -4135,11 +4158,11 @@
             </div>
           </div>
 
-          <!-- 10 Pitfalls Checklist Accordion/Cards -->
+          <!-- 14 Pitfalls Checklist Accordion/Cards -->
           <div class="neu-card p-5 flex flex-col gap-3">
             <div class="text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-              <span>📋 10 ข้อพึงระวังตามสูตร อ.ชวลิต</span>
-              <span class="text-[11px] text-slate-500 font-normal">คลิกเพื่อดำเนินการ</span>
+              <span>📋 14 ข้อพึงระวังตามสูตร อ.ชวลิต (V2.0)</span>
+              <span class="text-[11px] text-slate-500 font-normal">${passCount}/${totalCount} สมบูรณ์</span>
             </div>
 
             <div class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
@@ -4155,6 +4178,11 @@
                         <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                           ${escapeHtml(item.desc)}
                         </p>
+                        ${!item.pass && item.recommendation ? `
+                          <div class="text-[11px] text-amber-800 dark:text-amber-300 mt-1.5 p-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900">
+                            <b>💡 ข้อเสนอแนะ:</b> ${escapeHtml(item.recommendation)}
+                          </div>
+                        ` : ''}
                       </div>
                     </div>
                   </div>
@@ -4804,9 +4832,10 @@
         <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-wrap gap-2">
             ${[
-              ["operational", "📋 1. ตารางการดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2 6 คอลัมน์)"],
+              ["syntax_matrix", "📚 1. ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรม (Syntax Matrix)"],
               ["r1d1_bridge", "🌉 2. ตารางเชื่อมโยงจาก R1 สู่ D1 (Synthesis Bridge)"],
-              ["alignment", "🎯 3. ตารางความสอดคล้อง 360° (Alignment Matrix)"]
+              ["operational", "📋 3. ตารางการดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2 6 คอลัมน์)"],
+              ["alignment", "🎯 4. ตารางความสอดคล้อง 360° (Alignment Matrix)"]
             ].map(([k, lbl]) => `
               <button onclick="ROAD_APP.setMatrixSubTab('${k}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${lbl}
@@ -4819,6 +4848,111 @@
             </button>
           </div>
         </div>
+
+        <!-- Sub-Tab 0: Syntax Synthesis Matrix (ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรม 7 นักวิชาการ) -->
+        ${subTab === "syntax_matrix" ? (() => {
+          const syntaxData = window.ROAD_GENERATOR.generateSyntaxSynthesisMatrix(proj);
+          const scholars = syntaxData.scholars;
+          const steps = syntaxData.steps;
+          const passingSteps = steps.filter(s => s.percent >= 60);
+
+          return `
+            <div class="neu-card p-6 flex flex-col gap-5">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                  <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">SYNTAX SYNTHESIS MATRIX · การสังเคราะห์ขั้นตอนนวัตกรรม</span>
+                  <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรมการเรียนรู้จากนักวิชาการ 7 ท่าน</h2>
+                  <p class="text-xs text-slate-500">เปรียบเทียบขั้นตอนจากนักวิชาการ คำนวณความถี่และร้อยละ (%) อัตโนมัติ เพื่อสังเคราะห์เป็นขั้นตอนนวัตกรรม (ระยะ D1) ตามเกณฑ์ยอมรับ ≥ 60%</p>
+                </div>
+                <div class="flex items-center gap-2 print:hidden">
+                  <button onclick="ROAD_APP.resetSyntaxMatrix()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    🔄 คืนค่าเริ่มต้น
+                  </button>
+                  <button onclick="ROAD_APP.copyTableText('syntax-table-content', 'คัดลอกตารางสังเคราะห์ขั้นตอนการสอนเรียบร้อยแล้ว')" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer">
+                    📋 คัดลอกตารางไปวางใน Word
+                  </button>
+                </div>
+              </div>
+
+              <!-- Metrics Summary Cards -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="p-3.5 rounded-xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  <div class="text-[11px] font-bold text-sky-800 dark:text-sky-300">จำนวนนักวิชาการที่ศึกษา</div>
+                  <div class="text-xl font-black text-sky-900 dark:text-sky-100 font-mono mt-0.5">${scholars.length} ท่าน</div>
+                  <div class="text-[10px] text-slate-500 mt-1 truncate">${scholars.join(", ")}</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <div class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">ขั้นตอนที่ผ่านเกณฑ์ยอมรับ (≥ 60%)</div>
+                  <div class="text-xl font-black text-emerald-900 dark:text-emerald-100 font-mono mt-0.5">${passingSteps.length} / ${steps.length} ขั้นตอน</div>
+                  <div class="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1">พร้อมสังเคราะห์สู่นวัตกรรม D1</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800">
+                  <div class="text-[11px] font-bold text-purple-800 dark:text-purple-300">ชื่อย่อนวัตกรรมเป้าหมาย (D1)</div>
+                  <div class="text-sm font-bold text-purple-900 dark:text-purple-100 mt-1 truncate">${escapeHtml(proj.B_short || proj.B || "นวัตกรรม R&D")}</div>
+                  <div class="text-[10px] text-slate-500 mt-1">โครงสร้าง ${passingSteps.length} ขั้นตอน</div>
+                </div>
+              </div>
+
+              <!-- APA 7th Style Interactive Table -->
+              <div id="syntax-table-content" class="overflow-x-auto">
+                <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
+                  <thead>
+                    <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white font-extrabold">
+                      <th class="p-2.5 text-left w-52">ขั้นตอนการจัดกิจกรรมการเรียนรู้</th>
+                      ${scholars.map(sc => `<th class="p-2 text-center whitespace-nowrap">${escapeHtml(sc)}</th>`).join("")}
+                      <th class="p-2 text-center w-16 bg-sky-50 dark:bg-sky-950/50">ความถี่ (คน)</th>
+                      <th class="p-2 text-center w-16 bg-sky-50 dark:bg-sky-950/50">ร้อยละ (%)</th>
+                      <th class="p-2.5 text-left w-64 bg-emerald-50 dark:bg-emerald-950/50">การสังเคราะห์สู่นวัตกรรม D1</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${steps.map((st, stepIdx) => `
+                      <tr class="border-b border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 align-middle">
+                        <td class="p-2.5 font-semibold text-slate-900 dark:text-slate-100">
+                          <input type="text" value="${escapeHtml(st.stepName)}" onchange="ROAD_APP.updateSyntaxStepName(${stepIdx}, this.value)" class="w-full px-2 py-1 rounded bg-transparent border border-transparent hover:border-slate-300 focus:border-sky-500 focus:bg-white dark:focus:bg-slate-800 font-medium text-xs text-slate-900 dark:text-white transition" />
+                        </td>
+                        ${scholars.map((sc, scIdx) => {
+                          const checked = Boolean(st.scholarChecks[scIdx]);
+                          return `
+                            <td class="p-2 text-center">
+                              <button type="button" onclick="ROAD_APP.toggleSyntaxScholarCheck(${stepIdx}, ${scIdx})" class="w-6 h-6 rounded flex items-center justify-center mx-auto transition cursor-pointer ${checked ? 'bg-emerald-500 text-white font-bold' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-slate-300'}" title="คลิกเพื่อสลับสถานะของ ${sc}">
+                                ${checked ? '✓' : '—'}
+                              </button>
+                            </td>
+                          `;
+                        }).join("")}
+                        <td class="p-2 text-center font-mono font-bold bg-sky-50/50 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200">${st.count}/${st.totalScholars}</td>
+                        <td class="p-2 text-center font-mono font-bold bg-sky-50/50 dark:bg-sky-950/30 ${st.percent >= 60 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-600'}">${st.percent}%</td>
+                        <td class="p-2.5 bg-emerald-50/40 dark:bg-emerald-950/20">
+                          <input type="text" value="${escapeHtml(st.synthesizedStep)}" onchange="ROAD_APP.updateSyntaxSynthesizedStep(${stepIdx}, this.value)" class="w-full px-2 py-1 rounded bg-transparent border border-transparent hover:border-emerald-300 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-emerald-900 dark:text-emerald-200 transition" />
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Synthesized Innovation Steps Result Box -->
+              <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>ผลการสังเคราะห์ขั้นตอนการจัดการเรียนรู้ของ ${escapeHtml(proj.B_short || proj.B || "นวัตกรรม")} (${syntaxData.finalSynthesizedSteps.length} ขั้นตอน):</span>
+                </div>
+                <div class="grid gap-1.5 pl-4 text-xs text-slate-700 dark:text-slate-300">
+                  ${syntaxData.finalSynthesizedSteps.map((fStep, fi) => `
+                    <div class="flex items-start gap-2">
+                      <span class="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-bold text-[10px]">ขั้นที่ ${fi + 1}</span>
+                      <span class="font-medium">${escapeHtml(fStep)}</span>
+                    </div>
+                  `).join("")}
+                </div>
+                <div class="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200 dark:border-slate-700">
+                  * ตารางนี้จะถูกเชื่อมโยงและนำไปจัดพิมพ์เป็น "ตารางที่ 2.1" ในบทที่ 2 และส่งออกเป็นตาราง APA 3 เส้นในเอกสาร Word อัตโนมัติ
+                </div>
+              </div>
+            </div>
+          `;
+        })() : ""}
 
         <!-- Sub-Tab 1: Operational Table (6 คอลัมน์) -->
         ${subTab === "operational" ? `

@@ -1381,6 +1381,66 @@ window.ROAD_DATA = {
     }
   ],
 
+  // ข้อมูลจำลองการประเมินความต้องการจำเป็น (Default PNI_modified Items)
+  DEFAULT_PNI_ITEMS: [
+    { id: "pni_1", name: "1. การจัดการเรียนรู้เพื่อพัฒนาทักษะการคิดขั้นสูงและการแก้ปัญหา", iMean: 4.82, iSD: 0.39, dMean: 2.14, dSD: 0.65 },
+    { id: "pni_2", name: "2. การใช้สื่อนวัตกรรมดิจิทัลและแพลตฟอร์มการเรียนรู้เชิงรุก", iMean: 4.75, iSD: 0.44, dMean: 2.30, dSD: 0.58 },
+    { id: "pni_3", name: "3. การจัดกิจกรรมการเรียนรู้แบบร่วมมือและการทำงานเป็นทีม", iMean: 4.60, iSD: 0.52, dMean: 2.65, dSD: 0.70 },
+    { id: "pni_4", name: "4. การวัดและประเมินผลตามสภาพจริงด้วยเกณฑ์รูบริก", iMean: 4.68, iSD: 0.48, dMean: 2.42, dSD: 0.62 },
+    { id: "pni_5", name: "5. การให้ข้อมูลย้อนกลับ (Feedback) เพื่อพัฒนาการเรียนรู้ของผู้เรียน", iMean: 4.55, iSD: 0.55, dMean: 2.80, dSD: 0.72 },
+    { id: "pni_6", name: "6. การสร้างแรงบันดาลใจและเจตคติที่ดีต่อรายวิชา", iMean: 4.70, iSD: 0.46, dMean: 3.10, dSD: 0.68 }
+  ],
+
+  // ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรมการเรียนรู้จากนักวิชาการ 7 ท่าน (Syntax Synthesis Matrix)
+  DEFAULT_SYNTAX_SYNTHESIS_MATRIX: {
+    scholars: [
+      { id: "s1", name: "Joyce & Weil (2009)", title: "Information Processing Models" },
+      { id: "s2", name: "Robert Gagné (1985)", title: "Nine Events of Instruction" },
+      { id: "s3", name: "Madeline Hunter (1982)", title: "Mastery Teaching Design" },
+      { id: "s4", name: "Lev Vygotsky (1978)", title: "Social Constructivism & ZPD" },
+      { id: "s5", name: "ชวลิต ชูกำแพง (2563)", title: "การพัฒนาหลักสูตรและการจัดการเรียนรู้เชิงรุก" },
+      { id: "s6", name: "ทิศนา แขมมณี (2561)", title: "ศาสตร์การสอนและโมเดล CIPPA" },
+      { id: "s7", name: "Robert Slavin (2015)", title: "Cooperative Learning Methods" }
+    ],
+    steps: [
+      {
+        id: "step-1",
+        stepName: "1. ขั้นกระตุ้นความสนใจและเตรียมความพร้อม (Engagement & Readiness)",
+        scholarChecks: [true, true, true, true, true, true, true],
+        synthesizedStep: "ขั้นที่ 1 สร้างแรงจูงใจและตั้งคำถามท้าทาย (Engagement & Provocative Questioning)",
+        note: "ทุกนักวิชาการเน้นการดึงความสนใจและเชื่อมโยงประสบการณ์เดิม"
+      },
+      {
+        id: "step-2",
+        stepName: "2. ขั้นสืบเสาะและแสวงหาความรู้ร่วมกัน (Collaborative Exploration & Inquiry)",
+        scholarChecks: [true, true, true, true, true, true, true],
+        synthesizedStep: "ขั้นที่ 2 สืบเสาะความรู้และร่วมมือแก้ปัญหา (Collaborative Inquiry & Problem Solving)",
+        note: "เน้นการแสวงหาข้อมูล การตั้งสมมติฐาน และการทำงานเป็นทีม"
+      },
+      {
+        id: "step-3",
+        stepName: "3. ขั้นลงมือปฏิบัติและสร้างสรรค์ผลงาน (Active Construction & Hands-on Practice)",
+        scholarChecks: [true, true, true, true, true, true, false],
+        synthesizedStep: "ขั้นที่ 3 ลงมือปฏิบัติสร้างสรรค์ชิ้นงาน (Active Hands-on Construction)",
+        note: "ฝึกทักษะการปฏิบัติจริง สร้างองค์ความรู้ด้วยตนเองผ่านชิ้นงาน"
+      },
+      {
+        id: "step-4",
+        stepName: "4. ขั้นสะท้อนคิดและประเมินผลการเรียนรู้ (Reflection, Formative Feedback & Evaluation)",
+        scholarChecks: [true, true, true, true, true, true, true],
+        synthesizedStep: "ขั้นที่ 4 สะท้อนคิดและแลกเปลี่ยนเรียนรู้ (Reflective Thinking & Constructive Feedback)",
+        note: "การสะท้อนวิธีคิด (Metacognition) และการให้ข้อมูลย้อนกลับเพื่อปรับปรุง"
+      },
+      {
+        id: "step-5",
+        stepName: "5. ขั้นประยุกต์ใช้ความรู้สู่ชีวิตจริง (Transfer & Real-World Application)",
+        scholarChecks: [true, true, false, true, true, true, false],
+        synthesizedStep: "ขั้นที่ 5 ประยุกต์ใช้สู่สถานการณ์จริงและขยายผล (Real-world Transfer & Public Showcase)",
+        note: "นำทักษะที่ได้ไปใช้แก้ปัญหาในสถานการณ์ใหม่และนำเสนอสู่ชุมชน"
+      }
+    ]
+  },
+
   // ประวัติการใช้งานและตรวจสอบระบบ (Default Audit Trail Logs)
   DEFAULT_AUDIT_LOGS: [
     { id: "log-1", type: "LOGIN", user: "อาจารย์ ดร.ภาณุพงศ์ กุลรัตน์", desc: "เข้าสู่ระบบผ่านรหัสสมาชิก RD69-002", timestamp: "2026-10-17T06:30:15Z" },
