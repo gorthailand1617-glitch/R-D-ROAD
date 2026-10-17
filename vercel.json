@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/app", "destination": "/index.html?view=studio" },
     { "source": "/studio", "destination": "/index.html?view=studio" },

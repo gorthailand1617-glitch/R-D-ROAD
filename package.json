@@ -4,7 +4,7 @@
   "description": "ROAD Next-Gen: Report Outline Assistant for Development & AI Research Studio",
   "main": "server.js",
   "scripts": {
-    "build": "echo 'Static build complete'",
+    "build": "node -e \"const fs=require('fs'); fs.mkdirSync('public', {recursive:true}); fs.copyFileSync('index.html', 'public/index.html'); fs.cpSync('js', 'public/js', {recursive:true}); console.log('Static build ready in public/ and root');\"",
     "start": "node server.js"
   }
 }
