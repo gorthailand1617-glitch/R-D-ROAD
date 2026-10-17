@@ -201,7 +201,7 @@
       painId: "thinking",
       goalId: "wpa_ks3",
       customTopic: "ระบบนิเวศและการแก้ปัญหาสิ่งแวดล้อมในท้องถิ่น",
-      schoolName: "โรงเรียนผดุงนารี"
+      schoolName: "โรงเรียนเปรมติณสูลานนท์"
     },
     adminSearch: "",
     adminFilterCohort: "ALL",
@@ -257,6 +257,28 @@
     if (p.position && !p.contextMeta.academicRank) p.contextMeta.academicRank = p.position;
     if (p.school && !p.contextMeta.schoolName) p.contextMeta.schoolName = p.school;
     if (p.affiliation && !p.contextMeta.affiliation) p.contextMeta.affiliation = p.affiliation;
+
+    // Automatic migration from previous default school
+    if (p.school === "โรงเรียนผดุงนารี") p.school = "โรงเรียนเปรมติณสูลานนท์";
+    if (p.contextMeta && p.contextMeta.schoolName === "โรงเรียนผดุงนารี") {
+      p.contextMeta.schoolName = "โรงเรียนเปรมติณสูลานนท์";
+      if (p.contextMeta.affiliation === "สำนักงานเขตพื้นที่การศึกษามัธยมศึกษามหาสารคาม") {
+        p.contextMeta.affiliation = "องค์การบริหารส่วนจังหวัดขอนแก่น";
+      }
+      if (p.contextMeta.province === "มหาสารคาม") {
+        p.contextMeta.province = "ขอนแก่น";
+      }
+    }
+    if (p.population && p.population.includes("โรงเรียนผดุงนารี")) {
+      p.population = p.population.replace(/โรงเรียนผดุงนารี\s*อำเภอเมือง\s*จังหวัดมหาสารคาม/g, "โรงเรียนเปรมติณสูลานนท์ สังกัดองค์การบริหารส่วนจังหวัดขอนแก่น")
+                                 .replace(/โรงเรียนผดุงนารี/g, "โรงเรียนเปรมติณสูลานนท์");
+    }
+    if (p.sample && p.sample.includes("โรงเรียนผดุงนารี")) {
+      p.sample = p.sample.replace(/โรงเรียนผดุงนารี/g, "โรงเรียนเปรมติณสูลานนท์");
+    }
+    if (p.affiliation === "สำนักงานเขตพื้นที่การศึกษามัธยมศึกษามหาสารคาม") {
+      p.affiliation = "องค์การบริหารส่วนจังหวัดขอนแก่น";
+    }
 
     if (!p.lessonPlans || !Array.isArray(p.lessonPlans) || p.lessonPlans.length === 0) {
       p.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
@@ -1707,7 +1729,7 @@
       proj.contextMeta.degree = getVal("ctx_degree", proj.contextMeta.degree || "กศ.ม. (หลักสูตรและการจัดการเรียนรู้)");
       proj.contextMeta.schoolName = getVal("ctx_schoolName", proj.contextMeta.schoolName || proj.school || "");
       proj.contextMeta.affiliation = getVal("ctx_affiliation", proj.contextMeta.affiliation || proj.affiliation || "");
-      proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "มหาสารคาม");
+      proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "ขอนแก่น");
       proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ดร.วิชัย มุ่งมั่น");
       proj.contextMeta.academicYear = getVal("ctx_academicYear", proj.contextMeta.academicYear || "2569");
       proj.contextMeta.semester = getVal("ctx_semester", proj.contextMeta.semester || "1");
@@ -2737,7 +2759,7 @@
 
             <label class="flex flex-col gap-1 text-sm sm:col-span-3">
               <span class="font-semibold">ชื่อสถานที่ทำงาน / สถานศึกษา</span>
-              <input value="${escapeHtml(f.workplace)}" oninput="ROAD_APP.updateSignupField('workplace', this.value)" placeholder="เช่น โรงเรียนผดุงนารี / มหาวิทยาลัยมหาสารคาม" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input value="${escapeHtml(f.workplace)}" oninput="ROAD_APP.updateSignupField('workplace', this.value)" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์ / องค์การบริหารส่วนจังหวัดขอนแก่น" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
 
             <label class="flex flex-col gap-1 text-sm sm:col-span-2">
@@ -3659,7 +3681,7 @@
               <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
                 <span class="font-extrabold text-slate-700 dark:text-slate-300">6. ชื่อโรงเรียน / สถานศึกษาของคุณ</span>
                 <div class="flex gap-2.5">
-                  <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนผดุงนารี" />
+                  <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์" />
                   <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0">
                     ${state.advisorLoading ? '⏳ กำลังวิเคราะห์...' : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
                   </button>
@@ -6858,7 +6880,7 @@
               <!-- Field D -->
               <div class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 flex flex-col gap-2">
                 <span class="font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300">🟠 D (Target Group & Scope) · กลุ่มเป้าหมายและบริบท</span>
-                <input value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3 โรงเรียนผดุงนารี" />
+                <input value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3 โรงเรียนเปรมติณสูลานนท์" />
                 <div class="flex flex-wrap gap-1.5 items-center text-xs">
                   <span class="text-slate-400 text-[11px]">เลือกกลุ่มเป้าหมายด่วน:</span>
                   ${vocab.D.slice(0, 5).map(item => `<button type="button" onclick="ROAD_APP.applySuggestion('D', '${item}')" class="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 cursor-pointer text-[11px]">${item}</button>`).join("")}
@@ -7273,15 +7295,15 @@
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อโรงเรียน / สถานศึกษา:</label>
-                  <input type="text" id="ctx_schoolName" value="${escapeHtml(meta.schoolName || proj.school || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น โรงเรียนผดุงนารี" />
+                  <input type="text" id="ctx_schoolName" value="${escapeHtml(meta.schoolName || proj.school || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">หน่วยงานต้นสังกัด / สพม. / สพป.:</label>
-                  <input type="text" id="ctx_affiliation" value="${escapeHtml(meta.affiliation || proj.affiliation || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น สำนักงานเขตพื้นที่การศึกษามัธยมศึกษามหาสารคาม" />
+                  <input type="text" id="ctx_affiliation" value="${escapeHtml(meta.affiliation || proj.affiliation || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น องค์การบริหารส่วนจังหวัดขอนแก่น" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">จังหวัด:</label>
-                  <input type="text" id="ctx_province" value="${escapeHtml(meta.province || 'มหาสารคาม')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น มหาสารคาม" />
+                  <input type="text" id="ctx_province" value="${escapeHtml(meta.province || 'ขอนแก่น')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ขอนแก่น" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อผู้อำนวยการโรงเรียน (กิตติกรรมประกาศ):</label>
