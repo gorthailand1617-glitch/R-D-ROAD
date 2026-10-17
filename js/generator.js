@@ -914,7 +914,7 @@ window.ROAD_GENERATOR = {
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1">ภาษาไทย</h3>
                 <div class="space-y-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
                   ${thaiRefs.map(r => `
-                    <p class="reference-item pl-8 -indent-8 text-justify">${r}</p>
+                    <p class="apa-ref reference-item pl-8 -indent-8 text-justify" style="text-indent: -1.27cm; margin-left: 1.27cm; margin-bottom: 6pt; text-align: justify; line-height: 1.25;">${r}</p>
                   `).join("")}
                 </div>
               </div>
@@ -924,7 +924,7 @@ window.ROAD_GENERATOR = {
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1">ภาษาอังกฤษ</h3>
                 <div class="space-y-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-serif">
                   ${engRefs.map(r => `
-                    <p class="reference-item pl-8 -indent-8 text-justify">${r}</p>
+                    <p class="apa-ref reference-item pl-8 -indent-8 text-justify" style="text-indent: -1.27cm; margin-left: 1.27cm; margin-bottom: 6pt; text-align: justify; line-height: 1.25;">${r}</p>
                   `).join("")}
                 </div>
               </div>
@@ -2032,7 +2032,8 @@ window.ROAD_GENERATOR = {
                   <p>2.4 ค่าอำนาจจำแนกของข้อสอบ (Discrimination: r): <code>r = (R_H - R_L) / N</code> (เกณฑ์ r ≥ 0.20)</p>
                   <p>2.5 ค่าอำนาจจำแนกแบบอิงเกณฑ์ (B-Index): <code>B = (U / N₁) - (L / N₂)</code></p>
                   <p>2.6 ค่าความเชื่อมั่นของแบบทดสอบ (Kuder-Richardson Formula 20: KR-20): <code>KR-20 = [ k / (k - 1) ] × [ 1 - (∑pq / S²) ]</code> (เกณฑ์ ≥ 0.80)</p>
-                  <p>2.7 ค่าสัมประสิทธิ์แอลฟาของครอนบาค (Cronbach's Alpha Coefficient: α): <code>α = [ k / (k - 1) ] × [ 1 - (∑Sᵢ² / S_t²) ]</code></p>
+                  <p>2.7 ค่าสัมประสิทธิ์ความสอดคล้องระหว่างผู้ประเมินรูบริก (Inter-rater Reliability Coefficient: r_cc): <code>r_cc = [ N∑XY - (∑X)(∑Y) ] / √[ (N∑X² - (∑X)²)(N∑Y² - (∑Y)²) ]</code> (เกณฑ์ r_cc ≥ 0.70)</p>
+                  <p>2.8 ค่าสัมประสิทธิ์แอลฟาของครอนบาค (Cronbach's Alpha Coefficient: α): <code>α = [ k / (k - 1) ] × [ 1 - (∑Sᵢ² / S_t²) ]</code> (เกณฑ์ α ≥ 0.80)</p>
                 </div>
 
                 <!-- 3. Efficiency & Effectiveness Stats -->

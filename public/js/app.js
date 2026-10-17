@@ -3213,6 +3213,9 @@
               <button onclick="ROAD_APP.createBlankProject()" class="px-3 py-2 neu-squircle text-blue-600 dark:text-sky-300 text-xs font-bold cursor-pointer" title="เริ่มต้นสร้างงานวิจัยใหม่แบบว่างเปล่า">
                 <span>+ โครงร่างว่าง</span>
               </button>
+              <button onclick="ROAD_APP.openContextMetaModal('context')" class="px-3 py-2 neu-squircle text-sky-700 dark:text-sky-300 text-xs font-bold cursor-pointer flex items-center gap-1" title="กำหนดข้อมูลบริบทผู้วิจัย สถานศึกษา แผนการจัดการเรียนรู้ 6 แผน และรายชื่อคณะผู้เชี่ยวชาญ 5 ท่าน">
+                <span>⚙️ บริบท & ผู้เชี่ยวชาญ</span>
+              </button>
 
               <div class="dropdown relative inline-block">
                 <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" class="px-3 py-2 neu-input-pill text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
@@ -3223,8 +3226,8 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5">
-              <button onclick="ROAD_APP.exportWord()" class="px-4 py-2.5 neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer">
-                📄 ส่งออก Word (.doc 5 บท)
+              <button onclick="ROAD_APP.exportFullManuscript()" class="px-4 py-2.5 neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-md" title="ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (All-in-One .doc)">
+                🏆 เล่มวิจัยสมบูรณ์ (.doc)
               </button>
               <button onclick="ROAD_APP.exportAppendix()" class="px-3.5 py-2 neu-squircle bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs sm:text-sm font-bold cursor-pointer flex items-center gap-1" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ (.doc)">
                 📎 ภาคผนวก & เครื่องมือ (.doc)
@@ -4194,6 +4197,16 @@
               <button onclick="ROAD_APP.exportAppendix()" class="p-2.5 rounded-xl bg-blue-700/90 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
                 <span>📎 ภาคผนวก ก–ง</span>
               </button>
+            </div>
+
+            <!-- Single Chapter Quick Export Pills -->
+            <div class="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-sky-800/40 text-xs">
+              <span class="text-sky-300 font-bold mr-1 flex items-center gap-1">📘 ดาวน์โหลดแยกรายบท:</span>
+              ${[1, 2, 3, 4, 5].map(n => `
+                <button onclick="ROAD_APP.exportSingleChapter(${n})" class="px-2.5 py-1 rounded-lg bg-sky-900/60 hover:bg-sky-800 text-sky-100 hover:text-white border border-sky-700/50 text-[11px] font-bold cursor-pointer transition shadow-xs flex items-center gap-1" title="ดาวน์โหลดบทที่ ${n} เป็นไฟล์ Word (.doc)">
+                  <span>บทที่ ${n} (.doc)</span>
+                </button>
+              `).join("")}
             </div>
           </div>
 
@@ -6968,6 +6981,11 @@
                 <div class="space-y-2">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">บริบทสถานศึกษาและผู้เรียน (School & Target Context):</label>
                   <input type="text" value="${escapeHtml(w.step2_context || '')}" oninput="ROAD_APP.updateWizardField('step2_context', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+                <div class="pt-2">
+                  <button type="button" onclick="ROAD_APP.openContextMetaModal('context')" class="w-full py-2.5 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-700 text-xs font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 cursor-pointer flex items-center justify-center gap-1.5 transition shadow-sm">
+                    <span>⚙️ กรอกข้อมูลบริบทสถานศึกษา ครูผู้สอน แผนการสอน 6 แผน & คณะผู้เชี่ยวชาญ 5 ท่าน (Essential Data)</span>
+                  </button>
                 </div>
               ` : ""}
 
