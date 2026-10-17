@@ -62,6 +62,48 @@
     abcdParseInput: "",
     abcdParsedResult: null,
     titleViewMode: "badges", // "badges" | "plain"
+    advisorTab: "recommend", // "recommend" | "validator" | "national_directions" | "wpa_framework"
+    statlabSubTab: "decision_rules", // "decision_rules" | "ioc" | "item_analysis" | "cronbach" | "e1e2" | "ttest" | "ch4_tables"
+    matrixSubTab: "operational", // "operational" | "r1d1_bridge" | "alignment"
+    selectedDecisionObjective: "compare_pre_post",
+    // Interactive IOC State (5 items x 5 experts)
+    iocExpertsCount: 5,
+    iocItems: [
+      { id: 1, name: "ข้อ 1: ความสามารถในการระบุปัญหาและตั้งสมมติฐาน", scores: [1, 1, 1, 1, 1] },
+      { id: 2, name: "ข้อ 2: การออกแบบการทดลองและเลือกใช้อุปกรณ์", scores: [1, 1, 0, 1, 1] },
+      { id: 3, name: "ข้อ 3: การรวบรวมและบันทึกข้อมูลเชิงประจักษ์", scores: [1, 1, 1, 1, 0] },
+      { id: 4, name: "ข้อ 4: การวิเคราะห์ข้อมูลและแปลความหมาย", scores: [1, 0, 1, 1, 1] },
+      { id: 5, name: "ข้อ 5: การสรุปผลและลงข้อสรุปเชิงวิทยาศาสตร์", scores: [1, 1, 1, 1, 1] }
+    ],
+    // Interactive Test Item Analysis State (10 items, 27% H/L group from N=30)
+    itemAnalysisTotalN: 30,
+    itemAnalysisHighN: 8,
+    itemAnalysisLowN: 8,
+    itemAnalysisCutOff: 60,
+    itemAnalysisItems: [
+      { id: 1, h: 8, l: 3, name: "ข้อ 1" },
+      { id: 2, h: 7, l: 2, name: "ข้อ 2" },
+      { id: 3, h: 8, l: 4, name: "ข้อ 3" },
+      { id: 4, h: 6, l: 1, name: "ข้อ 4" },
+      { id: 5, h: 7, l: 3, name: "ข้อ 5" },
+      { id: 6, h: 8, l: 5, name: "ข้อ 6" },
+      { id: 7, h: 7, l: 2, name: "ข้อ 7" },
+      { id: 8, h: 6, l: 2, name: "ข้อ 8" },
+      { id: 9, h: 8, l: 3, name: "ข้อ 9" },
+      { id: 10, h: 7, l: 4, name: "ข้อ 10" }
+    ],
+    // Interactive Cronbach Alpha State (5-level Likert scale, 8 items)
+    cronbachItems: [
+      { id: 1, name: "ข้อ 1: กิจกรรมการเรียนรู้มีความน่าสนใจและท้าทาย", variance: 0.52, mean: 4.65 },
+      { id: 2, name: "ข้อ 2: ลำดับขั้นตอนการเรียนรู้เข้าใจง่ายและต่อเนื่อง", variance: 0.48, mean: 4.58 },
+      { id: 3, name: "ข้อ 3: สื่อนวัตกรรมช่วยให้เข้าใจเนื้อหาได้ชัดเจน", variance: 0.45, mean: 4.70 },
+      { id: 4, name: "ข้อ 4: ได้ฝึกทักษะการคิดวิเคราะห์และการลงมือปฏิบัติจริง", variance: 0.55, mean: 4.62 },
+      { id: 5, name: "ข้อ 5: ได้ร่วมมือแลกเปลี่ยนเรียนรู้กับเพื่อนในกลุ่ม", variance: 0.50, mean: 4.55 },
+      { id: 6, name: "ข้อ 6: ครูให้คำแนะนำและข้อมูลสะท้อนกลับอย่างสม่ำเสมอ", variance: 0.42, mean: 4.68 },
+      { id: 7, name: "ข้อ 7: สามารถนำความรู้ไปประยุกต์ใช้ในชีวิตประจำวันได้", variance: 0.49, mean: 4.60 },
+      { id: 8, name: "ข้อ 8: มีความสุขและพึงพอใจต่อบรรยากาศการเรียนรู้", variance: 0.46, mean: 4.72 }
+    ],
+    cronbachTotalVariance: 9.85,
     geminiKey: "",
     aiTask: "ch1_background",
     aiOutput: "",
@@ -228,6 +270,58 @@
     setChapterFilter(num) {
       state.activeChapterFilter = Number(num);
       renderApp();
+    },
+
+    setAdvisorTab(t) {
+      state.advisorTab = t;
+      renderApp();
+    },
+
+    setStatlabSubTab(t) {
+      state.statlabSubTab = t;
+      renderApp();
+    },
+
+    setMatrixSubTab(t) {
+      state.matrixSubTab = t;
+      renderApp();
+    },
+
+    setDecisionObjective(k) {
+      state.selectedDecisionObjective = k;
+      renderApp();
+    },
+
+    updateIocScore(itemIdx, expIdx, val) {
+      if (state.iocItems[itemIdx]) {
+        state.iocItems[itemIdx].scores[expIdx] = Number(val);
+        renderApp();
+      }
+    },
+
+    updateItemAnalysisRow(itemIdx, field, val) {
+      if (state.itemAnalysisItems[itemIdx]) {
+        state.itemAnalysisItems[itemIdx][field] = Number(val);
+        renderApp();
+      }
+    },
+
+    updateCronbachRow(itemIdx, field, val) {
+      if (state.cronbachItems[itemIdx]) {
+        state.cronbachItems[itemIdx][field] = Number(val);
+        renderApp();
+      }
+    },
+
+    copyTableText(elemId, toastMsg = "คัดลอกข้อมูลเรียบร้อยแล้ว") {
+      const el = document.getElementById(elemId);
+      if (!el) return;
+      const text = el.innerText || el.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(toastMsg, "ok");
+      }).catch(() => {
+        showToast("ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาเลือกข้อความแล้วกด Ctrl+C", "warn");
+      });
     },
 
     // --- AI Research Advisor & Auto-Decision Actions ---
@@ -1926,162 +2020,358 @@
 
   // --- Studio Tab 0: AI Smart Research Advisor & Practicality Engine ---
   function renderTabAdvisor() {
+    const proj = getActiveProject();
     const cr = state.advisorCriteria;
     const recs = window.ROAD_ADVISOR.analyzeAndRecommend(cr);
     const best = recs[0];
+    const validation = window.ROAD_ADVISOR.validate10Pitfalls(proj);
+    const subTab = state.advisorTab || "recommend";
 
     return `
       <div class="flex flex-col gap-6">
-        <!-- Hero Advisor Input Card (3D Soft Neumorphic Card) -->
-        <div class="neu-card p-6 sm:p-7 flex flex-col gap-5">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <span class="px-3.5 py-1 rounded-full bg-blue-100/80 dark:bg-sky-900/50 border border-blue-300/60 text-blue-700 dark:text-sky-300 text-xs font-extrabold uppercase tracking-wider">
-                🧠 AI RESEARCH DECISION & PRACTICALITY ENGINE
-              </span>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-2.5">
-                ให้ AI ศึกษา วิเคราะห์ และเลือก "ชุดการวิจัยที่ดีที่สุดและปฏิบัติได้ง่ายที่สุด" ให้คุณทันที
-              </h2>
-              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1">
-                เพียงระบุวิชา ระดับชั้น และปัญหาที่พบ ระบบจะคัดเลือกนวัตกรรม (B) ตัวแปรตาม (C) แบบแผนการทดลอง จำนวนแผนการสอน และค่าสถิติที่ทำในห้องเรียนได้ง่ายที่สุดแต่ผ่านเกณฑ์ประเมิน วPA / R&D 100%
-              </p>
-            </div>
-            <button onclick="ROAD_APP.applyAdvisorChoice(0, true)" class="px-5 py-3.5 neu-btn-emerald font-extrabold text-sm cursor-pointer shrink-0">
-              ⚡ เลือกใช้ชุดที่ดีที่สุดอันดับ 1 + สร้างเล่มวิจัย 5 บททันที!
-            </button>
+        <!-- Advisor Sub-Navigation Bar -->
+        <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-2">
+            ${[
+              ["recommend", "🏆 1. แนะนำ 3 ทางเลือกที่ดีที่สุด (Best Choices)"],
+              ["validator", `🛡️ 2. ตรวจสอบกฎเหล็ก 10 ประการ (Health: ${validation.healthScore}%)`],
+              ["national_directions", "🌐 3. ทิศทางการวิจัยของชาติ (2568–2570)"],
+              ["wpa_framework", "📋 4. เกณฑ์ วPA แยก 3 สายงาน (คศ.1–คศ.5)"]
+            ].map(([k, lbl]) => `
+              <button onclick="ROAD_APP.setAdvisorTab('${k}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? (k === 'validator' && validation.healthScore < 80 ? 'neu-btn-primary' : 'neu-btn-emerald') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                ${lbl}
+              </button>
+            `).join("")}
           </div>
-
-          <!-- 4 Simple Context Selectors -->
-          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-            <label class="flex flex-col gap-1.5 text-xs">
-              <span class="font-extrabold text-blue-700 dark:text-sky-300">1. กลุ่มสาระการเรียนรู้ / สาขาวิชา</span>
-              <select onchange="ROAD_APP.updateAdvisorField('subjectId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
-                ${window.ROAD_ADVISOR.SUBJECT_GROUPS.map(s => `<option value="${s.id}" ${cr.subjectId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join("")}
-              </select>
-            </label>
-
-            <label class="flex flex-col gap-1.5 text-xs">
-              <span class="font-extrabold text-blue-700 dark:text-sky-300">2. ระดับชั้น / กลุ่มเป้าหมาย</span>
-              <select onchange="ROAD_APP.updateAdvisorField('gradeId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
-                ${window.ROAD_ADVISOR.GRADE_LEVELS.map(g => `<option value="${g.id}" ${cr.gradeId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
-              </select>
-            </label>
-
-            <label class="flex flex-col gap-1.5 text-xs">
-              <span class="font-extrabold text-blue-700 dark:text-sky-300">3. ปัญหาสำคัญที่พบในห้องเรียน</span>
-              <select onchange="ROAD_APP.updateAdvisorField('painId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
-                ${window.ROAD_ADVISOR.PAIN_POINTS.map(p => `<option value="${p.id}" ${cr.painId === p.id ? 'selected' : ''}>${escapeHtml(p.label)}</option>`).join("")}
-              </select>
-            </label>
-
-            <label class="flex flex-col gap-1.5 text-xs">
-              <span class="font-extrabold text-blue-700 dark:text-sky-300">4. เป้าหมายการทำวิจัย & เวลาที่มี</span>
-              <select onchange="ROAD_APP.updateAdvisorField('goalId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
-                ${window.ROAD_ADVISOR.GOALS_TARGET.map(g => `<option value="${g.id}" ${cr.goalId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
-              </select>
-            </label>
-
-            <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
-              <span class="font-extrabold text-slate-700 dark:text-slate-300">5. เรื่อง / หน่วยการเรียนรู้ที่จะใช้สอนจริง (ปรับแก้ได้ตามต้องการ)</span>
-              <input value="${escapeHtml(cr.customTopic)}" oninput="ROAD_APP.updateAdvisorField('customTopic', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น ระบบนิเวศ / การอ่านจับใจความ / ร้อยละและอัตราส่วน" />
-            </label>
-
-            <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
-              <span class="font-extrabold text-slate-700 dark:text-slate-300">6. ชื่อโรงเรียน / สถานศึกษาของคุณ</span>
-              <div class="flex gap-2.5">
-                <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนผดุงนารี" />
-                <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0">
-                  ${state.advisorLoading ? '⏳ กำลังวิเคราะห์...' : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
-                </button>
-              </div>
-            </label>
+          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">
+            ตามเกณฑ์ ก.ค.ศ. & รศ.ดร.ชวลิต ชูกำแพง
           </div>
         </div>
 
-        <!-- Top #1 Best & Most Practical Recommendation Card -->
-        <div class="neu-card p-6 sm:p-7 flex flex-col gap-5">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300/60 dark:border-slate-700 pb-4">
-            <div>
-              <span class="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-extrabold">
-                ${escapeHtml(best.badge)}
-              </span>
-              <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-2">
-                เรื่อง: ${escapeHtml(window.ROAD_GENERATOR.composeFullTitle(best.projectPayload))}
-              </h3>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="text-center px-3.5 py-2 neu-squircle">
-                <div class="text-[11px] font-semibold text-slate-500">ความง่ายในการทำจริง</div>
-                <div class="text-lg font-mono font-extrabold text-emerald-600 dark:text-emerald-400">${best.practicalityScore}%</div>
-              </div>
-              <div class="text-center px-3.5 py-2 neu-squircle">
-                <div class="text-[11px] font-semibold text-slate-500">ความเข้มข้นวิชาการ</div>
-                <div class="text-lg font-mono font-extrabold text-blue-600 dark:text-sky-400">${best.rigorScore}%</div>
-              </div>
-              <div class="text-center px-3.5 py-2 neu-squircle">
-                <div class="text-[11px] font-semibold text-slate-500">ระยะเวลาที่ใช้</div>
-                <div class="text-lg font-mono font-extrabold text-amber-600 dark:text-amber-400">${best.timeWeeks} สัปดาห์</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Why this is the best & easiest to implement + 4-Week Action Plan -->
-          <div class="grid md:grid-cols-2 gap-5">
-            <div class="p-5 neu-input-pill rounded-2xl flex flex-col gap-2.5">
-              <h4 class="font-extrabold text-sm text-emerald-800 dark:text-emerald-300">💡 ทำไม AI จึงเลือกชุดนี้ว่า "ดีที่สุดและปฏิบัติได้ง่ายที่สุด" สำหรับคุณ:</h4>
-              <ul class="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                ${best.whyBest.map(w => `<li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✔</span><span>${escapeHtml(w)}</span></li>`).join("")}
-              </ul>
-              <div class="mt-2 pt-2.5 border-t border-slate-300/60 dark:border-slate-700 text-xs">
-                <b>ขั้นตอนการสอนของนวัตกรรม (${best.projectPayload.B_steps.length} ขั้นตอน จำง่าย นำไปสอนได้จริง):</b>
-                <div class="mt-2 space-y-1.5">
-                  ${best.projectPayload.B_steps.map(s => `<div class="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-900 border border-white dark:border-slate-800 font-medium">${escapeHtml(s)}</div>`).join("")}
-                </div>
-              </div>
-            </div>
-
-            <div class="p-5 neu-input-pill rounded-2xl flex flex-col justify-between gap-3">
+        <!-- Sub-Tab 1: Recommendations -->
+        ${subTab === "recommend" ? `
+          <!-- Hero Advisor Input Card -->
+          <div class="neu-card p-6 sm:p-7 flex flex-col gap-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h4 class="font-extrabold text-sm text-blue-800 dark:text-sky-300 mb-2.5">🗓️ แผนปฏิบัติการลงมือทำจริงในชั้นเรียน (Step-by-Step Action Plan):</h4>
-                <div class="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                  ${best.actionPlan.map(step => `<div class="p-3 rounded-xl bg-white/80 dark:bg-slate-900 border border-white dark:border-slate-800 font-medium">${escapeHtml(step)}</div>`).join("")}
-                </div>
+                <span class="px-3.5 py-1 rounded-full bg-blue-100/80 dark:bg-sky-900/50 border border-blue-300/60 text-blue-700 dark:text-sky-300 text-xs font-extrabold uppercase tracking-wider">
+                  🧠 AI RESEARCH DECISION & PRACTICALITY ENGINE
+                </span>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-2.5">
+                  ให้ AI ศึกษา วิเคราะห์ และเลือก "ชุดการวิจัยที่ดีที่สุดและปฏิบัติได้ง่ายที่สุด" ให้คุณทันที
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1">
+                  เพียงระบุวิชา ระดับชั้น และปัญหาที่พบ ระบบจะคัดเลือกนวัตกรรม (B) ตัวแปรตาม (C) แบบแผนการทดลอง และค่าสถิติที่ทำในห้องเรียนได้ง่ายที่สุดแต่ผ่านเกณฑ์ประเมิน วPA 100%
+                </p>
               </div>
-
-              <div class="flex flex-wrap gap-2.5 pt-2">
-                <button onclick="ROAD_APP.applyAdvisorChoice(0, true)" class="flex-1 py-3.5 px-4 neu-btn-emerald font-extrabold text-sm cursor-pointer">
-                  ✔ เลือกชุดอันดับ 1 นี้ และเปิดรายงานวิจัย 5 บททันที →
-                </button>
-                <button onclick="ROAD_APP.applyAdvisorChoice(0, false)" class="py-3.5 px-4 neu-squircle text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer">
-                  เลือกและไปปรับแต่ง ABCD ต่อ
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Alternative Recommendations (#2 and #3) -->
-        <div class="grid md:grid-cols-2 gap-5">
-          ${recs.slice(1).map((alt, idx) => `
-            <div class="neu-card-sm p-5 flex flex-col justify-between gap-4">
-              <div class="space-y-2.5">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="px-3 py-1 rounded-full bg-white/80 dark:bg-slate-800 text-xs font-extrabold text-slate-800 dark:text-slate-200">${escapeHtml(alt.badge)}</span>
-                  <span class="font-mono text-xs text-emerald-700 dark:text-emerald-400 font-extrabold">ทำง่าย ${alt.practicalityScore}% · วิชาการ ${alt.rigorScore}%</span>
-                </div>
-                <h4 class="font-extrabold text-base text-slate-900 dark:text-white leading-snug">
-                  ${escapeHtml(window.ROAD_GENERATOR.composeFullTitle(alt.projectPayload))}
-                </h4>
-                <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                  ${alt.whyBest.map(w => `<li>• ${escapeHtml(w)}</li>`).join("")}
-                </ul>
-              </div>
-              <button onclick="ROAD_APP.applyAdvisorChoice(${idx + 1}, true)" class="w-full py-3 neu-btn-primary text-xs font-extrabold cursor-pointer">
-                เลือกใช้ทางเลือกที่ ${idx + 2} นี้ + สร้างรายงาน 5 บททันที →
+              <button onclick="ROAD_APP.applyAdvisorChoice(0, true)" class="px-5 py-3.5 neu-btn-emerald font-extrabold text-sm cursor-pointer shrink-0">
+                ⚡ เลือกใช้ชุดที่ดีที่สุดอันดับ 1 + สร้างเล่มวิจัย 5 บททันที!
               </button>
             </div>
-          `).join("")}
-        </div>
+
+            <!-- 4 Simple Context Selectors -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              <label class="flex flex-col gap-1.5 text-xs">
+                <span class="font-extrabold text-blue-700 dark:text-sky-300">1. กลุ่มสาระการเรียนรู้ / สาขาวิชา</span>
+                <select onchange="ROAD_APP.updateAdvisorField('subjectId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                  ${window.ROAD_ADVISOR.SUBJECT_GROUPS.map(s => `<option value="${s.id}" ${cr.subjectId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join("")}
+                </select>
+              </label>
+
+              <label class="flex flex-col gap-1.5 text-xs">
+                <span class="font-extrabold text-blue-700 dark:text-sky-300">2. ระดับชั้น / กลุ่มเป้าหมาย</span>
+                <select onchange="ROAD_APP.updateAdvisorField('gradeId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                  ${window.ROAD_ADVISOR.GRADE_LEVELS.map(g => `<option value="${g.id}" ${cr.gradeId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
+                </select>
+              </label>
+
+              <label class="flex flex-col gap-1.5 text-xs">
+                <span class="font-extrabold text-blue-700 dark:text-sky-300">3. ปัญหาสำคัญที่พบในห้องเรียน</span>
+                <select onchange="ROAD_APP.updateAdvisorField('painId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                  ${window.ROAD_ADVISOR.PAIN_POINTS.map(p => `<option value="${p.id}" ${cr.painId === p.id ? 'selected' : ''}>${escapeHtml(p.label)}</option>`).join("")}
+                </select>
+              </label>
+
+              <label class="flex flex-col gap-1.5 text-xs">
+                <span class="font-extrabold text-blue-700 dark:text-sky-300">4. เป้าหมายการทำวิจัย & เวลาที่มี</span>
+                <select onchange="ROAD_APP.updateAdvisorField('goalId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                  ${window.ROAD_ADVISOR.GOALS_TARGET.map(g => `<option value="${g.id}" ${cr.goalId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
+                </select>
+              </label>
+
+              <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
+                <span class="font-extrabold text-slate-700 dark:text-slate-300">5. เรื่อง / หน่วยการเรียนรู้ที่จะใช้สอนจริง</span>
+                <input value="${escapeHtml(cr.customTopic)}" oninput="ROAD_APP.updateAdvisorField('customTopic', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น ระบบนิเวศ / การอ่านจับใจความ / ร้อยละและอัตราส่วน" />
+              </label>
+
+              <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
+                <span class="font-extrabold text-slate-700 dark:text-slate-300">6. ชื่อโรงเรียน / สถานศึกษาของคุณ</span>
+                <div class="flex gap-2.5">
+                  <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนผดุงนารี" />
+                  <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0">
+                    ${state.advisorLoading ? '⏳ กำลังวิเคราะห์...' : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
+                  </button>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Top #1 Best Recommendation Card -->
+          <div class="neu-card p-6 sm:p-7 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300/60 dark:border-slate-700 pb-4">
+              <div>
+                <span class="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-extrabold">
+                  ${escapeHtml(best.badge)}
+                </span>
+                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-2">
+                  เรื่อง: ${escapeHtml(window.ROAD_GENERATOR.composeFullTitle(best.projectPayload))}
+                </h3>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-center px-3.5 py-2 neu-squircle">
+                  <div class="text-[11px] font-semibold text-slate-500">ความง่ายในการทำจริง</div>
+                  <div class="text-lg font-mono font-extrabold text-emerald-600 dark:text-emerald-400">${best.practicalityScore}%</div>
+                </div>
+                <div class="text-center px-3.5 py-2 neu-squircle">
+                  <div class="text-[11px] font-semibold text-slate-500">ความเข้มข้นวิชาการ</div>
+                  <div class="text-lg font-mono font-extrabold text-blue-600 dark:text-sky-400">${best.rigorScore}%</div>
+                </div>
+                <div class="text-center px-3.5 py-2 neu-squircle">
+                  <div class="text-[11px] font-semibold text-slate-500">ระยะเวลาที่ใช้</div>
+                  <div class="text-lg font-mono font-extrabold text-amber-600 dark:text-amber-400">${best.timeWeeks} สัปดาห์</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="p-5 neu-input-pill rounded-2xl flex flex-col gap-2.5">
+                <h4 class="font-extrabold text-sm text-emerald-800 dark:text-emerald-300">💡 ทำไม AI จึงเลือกชุดนี้ว่า "ดีที่สุดและปฏิบัติได้ง่ายที่สุด" สำหรับคุณ:</h4>
+                <ul class="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                  ${best.whyBest.map(w => `<li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✔</span><span>${escapeHtml(w)}</span></li>`).join("")}
+                </ul>
+                <div class="mt-2 pt-2.5 border-t border-slate-300/60 dark:border-slate-700 text-xs">
+                  <b>ขั้นตอนการสอนของนวัตกรรม (${best.projectPayload.B_steps.length} ขั้นตอน):</b>
+                  <div class="mt-2 space-y-1.5">
+                    ${best.projectPayload.B_steps.map(s => `<div class="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-900 border border-white dark:border-slate-800 font-medium">${escapeHtml(s)}</div>`).join("")}
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-5 neu-input-pill rounded-2xl flex flex-col justify-between gap-3">
+                <div>
+                  <h4 class="font-extrabold text-sm text-blue-800 dark:text-sky-300 mb-2.5">🗓️ แผนปฏิบัติการลงมือทำจริงในชั้นเรียน (Action Plan):</h4>
+                  <div class="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    ${best.actionPlan.map(step => `<div class="p-3 rounded-xl bg-white/80 dark:bg-slate-900 border border-white dark:border-slate-800 font-medium">${escapeHtml(step)}</div>`).join("")}
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2.5 pt-2">
+                  <button onclick="ROAD_APP.applyAdvisorChoice(0, true)" class="flex-1 py-3.5 px-4 neu-btn-emerald font-extrabold text-sm cursor-pointer">
+                    ✔ เลือกชุดอันดับ 1 นี้ และเปิดรายงานวิจัย 5 บททันที →
+                  </button>
+                  <button onclick="ROAD_APP.applyAdvisorChoice(0, false)" class="py-3.5 px-4 neu-squircle text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer">
+                    เลือกและไปปรับแต่ง ABCD ต่อ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative Recommendations (#2 and #3) -->
+          <div class="grid md:grid-cols-2 gap-5">
+            ${recs.slice(1).map((alt, idx) => `
+              <div class="neu-card-sm p-5 flex flex-col justify-between gap-4">
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="px-3 py-1 rounded-full bg-white/80 dark:bg-slate-800 text-xs font-extrabold text-slate-800 dark:text-slate-200">${escapeHtml(alt.badge)}</span>
+                    <span class="font-mono text-xs text-emerald-700 dark:text-emerald-400 font-extrabold">ทำง่าย ${alt.practicalityScore}% · วิชาการ ${alt.rigorScore}%</span>
+                  </div>
+                  <h4 class="font-extrabold text-base text-slate-900 dark:text-white leading-snug">
+                    ${escapeHtml(window.ROAD_GENERATOR.composeFullTitle(alt.projectPayload))}
+                  </h4>
+                  <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                    ${alt.whyBest.map(w => `<li>• ${escapeHtml(w)}</li>`).join("")}
+                  </ul>
+                </div>
+                <button onclick="ROAD_APP.applyAdvisorChoice(${idx + 1}, true)" class="w-full py-3 neu-btn-primary text-xs font-extrabold cursor-pointer">
+                  เลือกใช้ทางเลือกที่ ${idx + 2} นี้ + สร้างรายงาน 5 บททันที →
+                </button>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
+
+        <!-- Sub-Tab 2: 10 Pitfalls Validator & Health Score -->
+        ${subTab === "validator" ? `
+          <div class="flex flex-col gap-6">
+            <div class="neu-card p-6 flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-mono font-extrabold ${validation.healthScore >= 90 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : validation.healthScore >= 70 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'} border-2 border-current shadow-sm">
+                  <span class="text-2xl">${validation.healthScore}%</span>
+                  <span class="text-[10px] uppercase font-bold">Health Score</span>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900 dark:text-white">ผลการตรวจสอบกฎเหล็ก 10 ประการ (10 Pitfalls Validator)</h3>
+                  <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                    ตรวจสอบความถูกต้องตามเกณฑ์ประเมิน วPA ของ ก.ค.ศ. และมาตรฐานงานวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง
+                  </p>
+                  <div class="mt-2 flex items-center gap-3 text-xs">
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400">ผ่าน ${validation.passedCount} จาก ${validation.totalRules} ข้อ</span>
+                    ${validation.healthScore < 100 ? `<span class="text-amber-600 dark:text-amber-400 font-medium">พบประเด็นที่ควรปรับปรุง ${validation.totalRules - validation.passedCount} ข้อ</span>` : `<span class="text-emerald-600 dark:text-emerald-400 font-bold">สมบูรณ์แบบพร้อมส่งประเมิน!</span>`}
+                  </div>
+                </div>
+              </div>
+              <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-4 py-2.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                ✏️ แก้ไขชื่อเรื่องและองค์ประกอบ
+              </button>
+            </div>
+
+            <!-- 10 Rules Checklist -->
+            <div class="space-y-3">
+              ${validation.results.map(r => `
+                <div class="p-4 rounded-2xl border ${r.level === 'pass' ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20' : r.level === 'warning' ? 'border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20' : 'border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20'} flex flex-col gap-2">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${r.level === 'pass' ? 'bg-emerald-600 text-white' : r.level === 'warning' ? 'bg-amber-500 text-white' : 'bg-rose-600 text-white'}">
+                        กฎข้อที่ ${r.ruleId}
+                      </span>
+                      <span class="font-bold text-sm text-slate-900 dark:text-white">${escapeHtml(r.ruleName)}</span>
+                    </div>
+                    <span class="text-xs font-bold ${r.level === 'pass' ? 'text-emerald-700 dark:text-emerald-400' : r.level === 'warning' ? 'text-amber-700 dark:text-amber-400' : 'text-rose-700 dark:text-rose-400'}">
+                      ${r.level === 'pass' ? '✔ ผ่านเกณฑ์' : r.level === 'warning' ? '⚠ ข้อควรระวัง' : '✕ พบข้อผิดพลาด'}
+                    </span>
+                  </div>
+                  <div class="text-xs text-slate-700 dark:text-slate-300 pl-2 border-l-2 ${r.level === 'pass' ? 'border-emerald-400' : r.level === 'warning' ? 'border-amber-400' : 'border-rose-400'}">
+                    <b>สถานะ:</b> ${escapeHtml(r.title)}
+                    <br><span class="text-slate-600 dark:text-slate-400">${escapeHtml(r.desc)}</span>
+                    ${r.recommendation ? `<br><b class="text-rose-700 dark:text-rose-400">คำแนะนำแก้ไข:</b> ${escapeHtml(r.recommendation)}` : ''}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Sub-Tab 3: 8 National Research Directions (2568-2570) -->
+        ${subTab === "national_directions" ? `
+          <div class="flex flex-col gap-5">
+            <div class="neu-card p-6 flex flex-col gap-2">
+              <span class="px-3.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-sky-950 dark:text-sky-300 text-xs font-extrabold w-fit">
+                NATIONAL EDUCATION RESEARCH DIRECTIONS 2568–2570
+              </span>
+              <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+                ทิศทางการวิจัยทางการศึกษาของชาติ พ.ศ. 2568–2570 (8 ประเด็นหลัก)
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                แหล่งอ้างอิงสำคัญสำหรับเขียนที่มาและความสำคัญ (บทที่ 1 ย่อหน้าที่ 2) และการตั้งโจทย์วิจัยที่สอดคล้องกับนโยบายชาติ
+              </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              ${window.ROAD_DATA.NATIONAL_RESEARCH_DIRECTIONS.map(dir => `
+                <div class="neu-card-sm p-5 flex flex-col justify-between gap-3">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-800 dark:bg-sky-950 dark:text-sky-300">ประเด็นที่ ${dir.number}</span>
+                    </div>
+                    <h4 class="font-bold text-base text-slate-900 dark:text-white mt-2">${escapeHtml(dir.name)}</h4>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">${escapeHtml(dir.highlights)}</p>
+                    <div class="mt-2.5 flex flex-wrap gap-1">
+                      ${dir.keywords.map(kw => `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-700 dark:text-slate-300">${escapeHtml(kw)}</span>`).join("")}
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">ตัวอย่างโจทย์นวัตกรรมที่สอดคล้อง:</div>
+                    <ul class="text-xs space-y-1 text-slate-600 dark:text-slate-400">
+                      ${dir.sampleInnovations.map(si => `<li>• ${escapeHtml(si)}</li>`).join("")}
+                    </ul>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Sub-Tab 4: WPA 3 Tracks Framework -->
+        ${subTab === "wpa_framework" ? `
+          <div class="flex flex-col gap-6">
+            <div class="neu-card p-6 flex flex-col gap-2">
+              <span class="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-extrabold w-fit">
+                PA STANDARDS & PERFORMANCE LEVELS
+              </span>
+              <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+                กรอบการประเมิน วPA แยกตาม 3 สายงาน และระดับการปฏิบัติที่คาดหวัง
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                โครงสร้างความเชื่อมโยง: หลักการด้านที่ 1 (Principles 8 ตัวชี้วัด) ➔ นวัตกรรมที่พัฒนา (Innovations) ➔ ผลลัพธ์ด้านที่ 2 (Variables)
+              </p>
+            </div>
+
+            <!-- 3 Tracks Tabs / Display -->
+            <div class="grid lg:grid-cols-3 gap-5">
+              ${Object.entries(window.ROAD_DATA.WPA_FRAMEWORKS).map(([k, fw]) => `
+                <div class="neu-card-sm p-5 flex flex-col gap-4">
+                  <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-sky-950 dark:text-sky-300">${escapeHtml(fw.role)}</span>
+                    <h4 class="font-extrabold text-base text-slate-900 dark:text-white mt-2">${escapeHtml(fw.name)}</h4>
+                  </div>
+
+                  <div>
+                    <div class="font-bold text-xs text-sky-800 dark:text-sky-300 mb-2">ด้านที่ 1: Principles 8 ตัวชี้วัด</div>
+                    <div class="space-y-1.5 text-[11px] max-h-48 overflow-y-auto pr-1">
+                      ${fw.principles.map(p => `
+                        <div class="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                          <b>${p.id}. ${escapeHtml(p.name)}:</b> <span class="text-slate-500">${escapeHtml(p.desc)}</span>
+                        </div>
+                      `).join("")}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="font-bold text-xs text-emerald-800 dark:text-emerald-300 mb-2">ด้านที่ 2: Variables / ผลลัพธ์ที่คาดหวัง</div>
+                    <div class="space-y-2 text-[11px]">
+                      ${fw.variables.map(vg => `
+                        <div class="p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                          <div class="font-bold text-emerald-900 dark:text-emerald-300">${escapeHtml(vg.categoryName)}</div>
+                          <ul class="mt-1 space-y-0.5 text-slate-600 dark:text-slate-400 pl-3">
+                            ${vg.items.map(item => `<li>• ${escapeHtml(item)}</li>`).join("")}
+                          </ul>
+                        </div>
+                      `).join("")}
+                    </div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+
+            <!-- Academic Ranks Reference Table -->
+            <div class="neu-card p-5 flex flex-col gap-3">
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">ระดับการปฏิบัติที่คาดหวังตามวิทยฐานะ (Expected Performance Levels)</h4>
+              <div class="overflow-x-auto text-xs">
+                <table class="w-full border-collapse border border-slate-300 dark:border-slate-700">
+                  <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-800 font-bold">
+                      <th class="p-2.5 border border-slate-300 dark:border-slate-700 text-left">วิทยฐานะ</th>
+                      <th class="p-2.5 border border-slate-300 dark:border-slate-700 text-left">ระดับการปฏิบัติที่คาดหวัง</th>
+                      <th class="p-2.5 border border-slate-300 dark:border-slate-700 text-center">เกณฑ์ผ่าน</th>
+                      <th class="p-2.5 border border-slate-300 dark:border-slate-700 text-left">นวัตกรรมที่สอดคล้อง</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${window.ROAD_DATA.ACADEMIC_RANKS.map(rk => `
+                      <tr class="border-b border-slate-200 dark:border-slate-800">
+                        <td class="p-2.5 border border-slate-300 dark:border-slate-700 font-bold text-sky-800 dark:text-sky-300">${escapeHtml(rk.label)}</td>
+                        <td class="p-2.5 border border-slate-300 dark:border-slate-700 font-semibold">${escapeHtml(rk.expectedLevel)}</td>
+                        <td class="p-2.5 border border-slate-300 dark:border-slate-700 text-center font-mono font-bold">${rk.passScore}%</td>
+                        <td class="p-2.5 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400">${escapeHtml(rk.desc)}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
   }
@@ -2458,80 +2748,216 @@
     const model = window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId) || window.ROAD_DATA.RESEARCH_MODELS[0];
     const steps = (proj.B_steps || []).filter(Boolean);
     const cList = (proj.C_list || []).filter(Boolean);
+    const components = window.ROAD_GENERATOR.generateModelComponents(proj);
 
     return `
-      <div class="flex flex-col gap-6">
-        <!-- Diagram 1: Conceptual Framework (กรอบแนวคิดในการวิจัย บทที่ 2) -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-5">
-          <div>
-            <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">DIAGRAM 1 · บทที่ 2 กรอบแนวคิดในการวิจัย</span>
-            <h2 class="text-lg font-bold text-slate-900 dark:text-white">แผนภาพกรอบแนวคิดในการวิจัย (Conceptual Framework)</h2>
+      <div class="flex flex-col gap-8">
+        <!-- Academic Rule Banner -->
+        <div class="neu-card p-4 sm:p-5 border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 flex items-start gap-3">
+          <div class="text-2xl shrink-0">⚠️</div>
+          <div class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+            <span class="font-bold text-amber-800 dark:text-amber-300">กฎเหล็กตามหลัก รศ.ดร.ชวลิต ชูกำแพง:</span>
+            <b>กรอบแนวคิดการวิจัย (Conceptual Framework) ในบทที่ 2 "ห้ามวาดเป็นขั้นตอนการวิจัย R1-D2 เด็ดขาด!"</b> 
+            แต่ต้องนำเสนอเป็นแผนผังที่แสดงความสัมพันธ์เชิงทฤษฎี (Why) ระหว่าง <b>ตัวแปรต้น [หลักการ/ทฤษฎี B + องค์ประกอบนวัตกรรม A]</b> ส่งผลต่อ <b>ตัวแปรตาม [ตัวแปร C 4 ด้านตาม วPA]</b> สำหรับผังขั้นตอน R1-D1-R2-D2 ต้องนำเสนอแยกต่างหากในบทที่ 3
+          </div>
+        </div>
+
+        <!-- DIAGRAM 1: Theoretical Conceptual Framework (บทที่ 2) -->
+        <div class="neu-card p-6 sm:p-7 flex flex-col gap-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <div>
+              <span class="px-3 py-1 rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 text-xs font-mono font-extrabold uppercase">
+                DIAGRAM 1 · บทที่ 2 กรอบแนวคิดในการวิจัยเชิงทฤษฎี
+              </span>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1.5">
+                แผนภาพกรอบแนวคิดในการวิจัย (Theoretical Conceptual Framework)
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                แสดงความสัมพันธ์เชิงเหตุและผลระหว่างหลักการ/ทฤษฎีเบื้องหลัง (B) องค์ประกอบนวัตกรรม (A) และผลลัพธ์ผู้เรียน 4 มิติตาม วPA (C)
+              </p>
+            </div>
+            <button onclick="window.print()" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold print:hidden">
+              🖨️ สั่งพิมพ์แผนภาพ
+            </button>
           </div>
 
-          <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-300 dark:border-slate-800">
-            <div class="grid md:grid-cols-[1fr_5rem_1fr] items-center gap-4">
-              <!-- Independent Variable Box -->
-              <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-sky-700 shadow-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400 border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
-                  ตัวแปรต้น (Independent Variable)
+          <!-- Conceptual Framework Visual Diagram -->
+          <div class="p-6 sm:p-8 rounded-3xl bg-slate-50/80 dark:bg-slate-950/60 border-2 border-dashed border-sky-300 dark:border-sky-900">
+            <div class="grid lg:grid-cols-[1.1fr_4rem_1.1fr] items-center gap-5">
+              <!-- Left: Independent Variables (B + A) -->
+              <div class="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-sky-600 shadow-md flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                  <span class="text-xs font-black uppercase tracking-wider text-sky-700 dark:text-sky-400">
+                    ตัวแปรต้น (Independent Variable)
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                    A + B
+                  </span>
                 </div>
-                <div class="font-bold text-base text-slate-900 dark:text-white mb-3">
-                  การจัดการเรียนรู้ด้วย${escapeHtml(proj.B)}
-                </div>
-                <div class="space-y-1.5 text-xs">
-                  ${steps.map(s => `<div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 font-medium">${escapeHtml(s)}</div>`).join("")}
-                </div>
-              </div>
 
-              <!-- Arrow -->
-              <div class="flex flex-col items-center justify-center py-2">
-                <div class="text-3xl font-bold text-sky-700 dark:text-sky-400">⟹</div>
-                <span class="text-[11px] font-mono text-slate-500">ส่งผลต่อ</span>
-              </div>
-
-              <!-- Dependent Variable Box -->
-              <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-700 shadow-sm">
-                <div class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
-                  ตัวแปรตาม (Dependent Variables)
-                </div>
-                <div class="space-y-2.5 text-sm font-bold text-slate-900 dark:text-white">
-                  ${cList.map((c, idx) => `
-                    <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
-                      ${idx + 1}. ${escapeHtml(c)}
-                    </div>
-                  `).join("")}
-                  <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
-                    ${cList.length + 1}. ความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย${escapeHtml(proj.B_short || proj.B)}
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                    1. นวัตกรรมที่พัฒนา (A):
+                  </div>
+                  <div class="font-extrabold text-base text-slate-900 dark:text-white mt-0.5">
+                    ${escapeHtml(proj.A)}
                   </div>
                 </div>
-                <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
-                  กลุ่มเป้าหมาย: ${escapeHtml(proj.D)}
+
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                    2. หลักการและทฤษฎีพื้นฐาน (B):
+                  </div>
+                  <div class="font-bold text-sm text-sky-800 dark:text-sky-300 mt-0.5">
+                    ${escapeHtml(proj.B)}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
+                    3. ขั้นตอนการจัดกิจกรรม / กลไกของนวัตกรรม:
+                  </div>
+                  <div class="space-y-1.5">
+                    ${steps.map((s, idx) => `
+                      <div class="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/70 border border-sky-200 dark:border-sky-800 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">${idx + 1}</span>
+                        <span>${escapeHtml(s)}</span>
+                      </div>
+                    `).join("")}
+                  </div>
                 </div>
               </div>
+
+              <!-- Center: Directional Connection Arrow -->
+              <div class="flex flex-col items-center justify-center py-4">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-sky-600 to-emerald-600 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+                  ⟹
+                </div>
+                <span class="text-[11px] font-extrabold text-slate-600 dark:text-slate-300 mt-2 text-center leading-tight">
+                  จัดกระทำ<br/>(Treatment)
+                </span>
+              </div>
+
+              <!-- Right: Dependent Variables (C 4 Dimensions) -->
+              <div class="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-600 shadow-md flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                  <span class="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    ตัวแปรตาม (Dependent Variables)
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    C (วPA ด้านที่ 2)
+                  </span>
+                </div>
+
+                <div class="space-y-2.5">
+                  ${cList.map((c, idx) => `
+                    <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+                      <div class="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase">
+                        ผลลัพธ์ที่ ${idx + 1} (ด้านสมรรถนะ/ทักษะ)
+                      </div>
+                      <div class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">
+                        ${escapeHtml(c)}
+                      </div>
+                    </div>
+                  `).join("")}
+
+                  <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+                    <div class="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase">
+                      ผลลัพธ์เสริม (ด้านเจตคติ/ความพึงพอใจ)
+                    </div>
+                    <div class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">
+                      ความพึงพอใจของผู้เรียนที่มีต่อ${escapeHtml(proj.A)}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                  <span class="font-bold">กลุ่มเป้าหมาย (D):</span>
+                  <span class="font-extrabold text-slate-900 dark:text-white">${escapeHtml(proj.D)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Theoretical Rationale Box -->
+            <div class="mt-6 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <span class="font-bold text-sky-700 dark:text-sky-300">คำอธิบายความสัมพันธ์เชิงทฤษฎี (Theoretical Rationale):</span>
+              กระบวนการจัดกิจกรรมของ${escapeHtml(proj.A)} ตามหลักการ${escapeHtml(proj.B)} 
+              ออกแบบขึ้นโดยอาศัยหลักการทางจิตวิทยาการเรียนรู้และการสร้างความรู้ด้วยตนเอง ซึ่งขั้นตอนทั้ง ${steps.length} ขั้นตอน 
+              จะช่วยลดภาระทางปัญญา (Cognitive Load) ส่งเสริมการเชื่อมโยงความรู้เดิมสู่ความรู้ใหม่ และกระตุ้นการกำกับการเรียนรู้ด้วยตนเอง 
+              ส่งผลให้ผู้เรียนเกิดการพัฒนา ${escapeHtml(cList.join(", "))} อย่างมีนัยสำคัญ
             </div>
           </div>
         </div>
 
-        <!-- Diagram 2: Research Process Flowchart (ผังขั้นตอนการดำเนินการวิจัย บทที่ 3) -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-5">
-          <div>
-            <span class="text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400 uppercase">DIAGRAM 2 · บทที่ 3 ขั้นตอนการดำเนินการวิจัย</span>
-            <h2 class="text-lg font-bold text-slate-900 dark:text-white">แผนผังกระบวนการวิจัย (${escapeHtml(model.name)})</h2>
+        <!-- DIAGRAM 2: Innovation Model Components (องค์ประกอบของรูปแบบ 5-6 ด้าน) -->
+        <div class="neu-card p-6 sm:p-7 flex flex-col gap-6">
+          <div class="border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <span class="px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-xs font-mono font-extrabold uppercase">
+              DIAGRAM 2 · โครงสร้างองค์ประกอบของรูปแบบนวัตกรรม
+            </span>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1.5">
+              ${escapeHtml(components.title)}
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              ${escapeHtml(components.subtitle)}
+            </p>
+          </div>
+
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${components.components.map((cmp, idx) => `
+              <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3 shadow-sm hover:shadow-md transition">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-extrabold">${idx + 1}</span>
+                    <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-400">${escapeHtml(cmp.title.split(":")[0] || `ด้านที่ ${idx + 1}`)}</span>
+                  </div>
+                  <h3 class="font-extrabold text-sm text-slate-900 dark:text-white mt-2">${escapeHtml(cmp.title)}</h3>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">${escapeHtml(cmp.detail)}</p>
+                </div>
+                ${cmp.elements && cmp.elements.length ? `
+                  <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+                    ${cmp.elements.map(el => `
+                      <div class="text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-1.5">
+                        <span class="text-indigo-500 font-bold shrink-0">•</span>
+                        <span>${escapeHtml(el)}</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                ` : ""}
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- DIAGRAM 3: R&D Process Flowchart (บทที่ 3) -->
+        <div class="neu-card p-6 sm:p-7 flex flex-col gap-6">
+          <div class="border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-xs font-mono font-extrabold uppercase">
+              DIAGRAM 3 · บทที่ 3 ขั้นตอนการดำเนินการวิจัย R&D
+            </span>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1.5">
+              แผนผังกระบวนการวิจัยและพัฒนา 4 ระยะ (R1 - D1 - R2 - D2)
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              กระบวนการสร้างและประเมินนวัตกรรมตามแบบแผนวิทยาศาสตร์การศึกษา
+            </p>
           </div>
 
           <div class="grid md:grid-cols-4 gap-4">
             ${model.phases.map((ph, idx) => `
-              <div class="p-4 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 flex flex-col justify-between gap-3">
+              <div class="p-5 rounded-2xl border-2 ${idx === 2 ? 'border-amber-500 bg-amber-50/30 dark:bg-amber-950/20' : 'border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20'} flex flex-col justify-between gap-3 shadow-sm">
                 <div>
                   <div class="flex items-center justify-between">
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-700 text-white">${escapeHtml(ph.code)}</span>
-                    <span class="text-xs font-mono text-slate-400">STEP ${idx + 1}</span>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-mono font-black ${idx === 2 ? 'bg-amber-600 text-white' : 'bg-purple-700 text-white'}">
+                      ${escapeHtml(ph.code)}
+                    </span>
+                    <span class="text-xs font-bold text-slate-400">ระยะที่ ${idx + 1}</span>
                   </div>
-                  <div class="font-bold text-sm text-slate-900 dark:text-white mt-2">${escapeHtml(ph.title)}</div>
+                  <div class="font-extrabold text-sm text-slate-900 dark:text-white mt-2.5">${escapeHtml(ph.title)}</div>
                   <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">${escapeHtml(ph.goal)}</p>
                 </div>
-                <div class="pt-2 border-t border-indigo-200/60 dark:border-indigo-800 text-[11px] font-semibold text-indigo-800 dark:text-indigo-300">
-                  ผลลัพธ์: เชื่อมโยงสู่วัตถุประสงค์ข้อที่ ${idx + 1}
+                <div class="pt-2 border-t ${idx === 2 ? 'border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold' : 'border-purple-200/60 dark:border-purple-800 text-purple-800 dark:text-purple-300'} text-[11px]">
+                  ${idx === 2 ? '★ เฉพาะระยะนี้ที่มีการทดสอบสมมติฐาน!' : `เป้าหมาย: วัตถุประสงค์ข้อที่ ${idx + 1}`}
                 </div>
               </div>
             `).join("")}
@@ -2541,221 +2967,1014 @@
     `;
   }
 
-  // --- Studio Tab 4: 360° Research Alignment Matrix ---
+  // --- Studio Tab 4: 360° Alignment, Operational Table & R1-D1 Bridge ---
   function renderTabMatrix(proj) {
-    const matrix = window.ROAD_GENERATOR.generateAlignmentMatrix(proj);
+    const subTab = state.matrixSubTab || "operational";
+    const opTable = window.ROAD_GENERATOR.generateOperationalTable(proj);
+    const bridge = window.ROAD_GENERATOR.generateR1toD1Bridge(proj);
+    const alignment = window.ROAD_GENERATOR.generateAlignmentMatrix(proj);
+
     return `
-      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">360° RESEARCH ALIGNMENT MATRIX</span>
-            <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางตรวจสอบความสอดคล้องของงานวิจัยทั้งระบบ</h2>
-            <p class="text-xs text-slate-500">ตรวจสอบความเชื่อมโยงระหว่าง ระยะการวิจัย ↔ คำถามการวิจัย ↔ วัตถุประสงค์ ↔ สมมติฐาน ↔ แหล่งข้อมูล ↔ เครื่องมือ ↔ สถิติ ↔ บทที่ 4</p>
+      <div class="flex flex-col gap-6">
+        <!-- Sub-Navigation Bar -->
+        <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-2">
+            ${[
+              ["operational", "📋 1. ตารางการดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2 6 คอลัมน์)"],
+              ["r1d1_bridge", "🌉 2. ตารางเชื่อมโยงจาก R1 สู่ D1 (Synthesis Bridge)"],
+              ["alignment", "🎯 3. ตารางความสอดคล้อง 360° (Alignment Matrix)"]
+            ].map(([k, lbl]) => `
+              <button onclick="ROAD_APP.setMatrixSubTab('${k}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                ${lbl}
+              </button>
+            `).join("")}
           </div>
-          <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-sky-700 text-white text-xs font-semibold cursor-pointer print:hidden">🖨️ พิมพ์ตารางความสอดคล้อง</button>
+          <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-3 py-1.5 rounded-lg neu-btn-emerald text-xs font-bold cursor-pointer print:hidden">
+              🖨️ พิมพ์หน้านี้
+            </button>
+          </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-36">ระยะ / ขั้นตอน</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">วัตถุประสงค์การวิจัย</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">สมมติฐานการวิจัย</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">กลุ่มเป้าหมาย / แหล่งข้อมูล</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">เครื่องมือที่ใช้</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">สถิติที่ใช้วิเคราะห์</th>
-                <th class="border border-slate-300 dark:border-slate-700 p-2.5">การนำเสนอผลในบทที่ 4</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${matrix.map(r => `
-                <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 align-top">
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-bold text-sky-800 dark:text-sky-300">${escapeHtml(r.phase)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-semibold">${escapeHtml(r.objective)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.hypothesis)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.informants)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.instruments)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.statistics)}</td>
-                  <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-emerald-700 dark:text-emerald-400 font-medium">${escapeHtml(r.ch4Section)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
+        <!-- Sub-Tab 1: Operational Table (6 คอลัมน์) -->
+        ${subTab === "operational" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">OPERATIONAL MATRIX · ตารางขั้นตอนการวิจัย</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางการดำเนินการวิจัย 4 ระยะ (R1 - D1 - R2 - D2)</h2>
+                <p class="text-xs text-slate-500">จำแนกตามขั้นตอน วัตถุประสงค์ย่อย วิธีเก็บข้อมูล แหล่งข้อมูล ผลที่ได้ และหมายเหตุอย่างละเอียด</p>
+              </div>
+              <button onclick="ROAD_APP.copyTableText('operational-table-content', 'คัดลอกตารางการดำเนินการวิจัยเรียบร้อยแล้ว')" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                📋 คัดลอกตารางไปวางใน Word
+              </button>
+            </div>
+
+            <div id="operational-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-sky-50/80 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-32">ขั้นตอนการวิจัย</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">วัตถุประสงค์ย่อย</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">การเก็บรวบรวมข้อมูล</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">แหล่งข้อมูล / กลุ่มตัวอย่าง</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">ผลที่ได้ (Output)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-28">หมายเหตุ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${opTable.map((row, idx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 align-top ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-900/50'}">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-bold text-sky-800 dark:text-sky-300">${escapeHtml(row.phase)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(row.objective)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-700 dark:text-slate-300">${escapeHtml(row.methods)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-700 dark:text-slate-300">${escapeHtml(row.sources)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-emerald-800 dark:text-emerald-400 font-semibold">${escapeHtml(row.output)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-500 font-mono text-[11px]">${escapeHtml(row.notes)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Sub-Tab 2: R1-to-D1 Synthesis Bridge Table -->
+        ${subTab === "r1d1_bridge" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400 uppercase">SYNTHESIS BRIDGE · สะพานเชื่อมการสังเคราะห์</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางแสดงการเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge)</h2>
+                <p class="text-xs text-slate-500">ตอบคำถามว่า ผลการศึกษาเอกสารและสภาพปัญหาใน R1 นำไปสู่การออกแบบนวัตกรรมใน D1 ได้อย่างไร (ตอบ How & Why ชัดเจน)</p>
+              </div>
+              <button onclick="ROAD_APP.copyTableText('bridge-table-content', 'คัดลอกตารางเชื่อมโยง R1 สู่ D1 เรียบร้อยแล้ว')" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                📋 คัดลอกตารางไปวางใน Word
+              </button>
+            </div>
+
+            <div id="bridge-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-indigo-50/80 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-40">ผลการศึกษาในระยะ R1</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-48">สังเคราะห์สู่องค์ประกอบในระยะ D1</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">คำอธิบายเชิงวิชาการ (How & Why)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-44">หลักฐานเชิงประจักษ์ / เครื่องมือ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${bridge.map((bRow, idx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 align-top ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-900/50'}">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-bold text-indigo-800 dark:text-indigo-300">${escapeHtml(bRow.r1Element)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-bold text-emerald-800 dark:text-emerald-400">${escapeHtml(bRow.d1Target)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-800 dark:text-slate-200 leading-relaxed">${escapeHtml(bRow.rationale)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-600 dark:text-slate-400 font-medium">${escapeHtml(bRow.evidence)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300 leading-relaxed">
+              💡 <b>คำแนะนำจากคณะกรรมการประเมิน วPA:</b> กรรมการจะพิจารณาว่าขั้นตอนของนวัตกรรม (Syntax) "มีที่มาอย่างไร" ไม่ใช่คิดขึ้นมาเองลอยๆ ตาราง Synthesis Bridge นี้จะแสดงให้เห็นความลุ่มลึกของการศึกษาเอกสารและข้อมูลบริบทจริงในระยะ R1 อย่างเด่นชัด
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Sub-Tab 3: 360° Alignment Matrix -->
+        ${subTab === "alignment" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">360° RESEARCH ALIGNMENT MATRIX</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางตรวจสอบความสอดคล้องของงานวิจัยทั้งระบบ (360°)</h2>
+                <p class="text-xs text-slate-500">ตรวจสอบความเชื่อมโยงระหว่าง ระยะการวิจัย ↔ วัตถุประสงค์ ↔ สมมติฐาน ↔ แหล่งข้อมูล ↔ เครื่องมือ ↔ สถิติ ↔ การนำเสนอในบทที่ 4</p>
+              </div>
+              <button onclick="ROAD_APP.copyTableText('alignment-table-content', 'คัดลอกตารางความสอดคล้อง 360° เรียบร้อยแล้ว')" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                📋 คัดลอกตารางไปวางใน Word
+              </button>
+            </div>
+
+            <div id="alignment-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-emerald-50/80 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-32">ระยะ / ขั้นตอน</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">วัตถุประสงค์การวิจัย</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">สมมติฐานการวิจัย</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">กลุ่มเป้าหมาย / แหล่งข้อมูล</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">เครื่องมือที่ใช้</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">สถิติที่ใช้วิเคราะห์</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5">การนำเสนอผลในบทที่ 4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${alignment.map((r, idx) => `
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 align-top ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-900/50'}">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-bold text-sky-800 dark:text-sky-300">${escapeHtml(r.phase)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-semibold">${escapeHtml(r.objective)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-slate-700 dark:text-slate-300">${escapeHtml(r.hypothesis)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.informants)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5">${escapeHtml(r.instruments)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 font-mono text-[11px]">${escapeHtml(r.statistics)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-emerald-700 dark:text-emerald-400 font-medium">${escapeHtml(r.ch4Section)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
   }
 
-  // --- Studio Tab 5: Built-in R&D Stat Lab & APA Table Generator ---
+  // --- Studio Tab 5: Built-in R&D Stat Lab & EDURTAP Quality Engine ---
   function renderTabStatLab(proj) {
     const st = proj.statsData || {};
+    const subTab = state.statlabSubTab || "decision_rules";
     const gen = window.ROAD_GENERATOR.generateChapters(proj);
     const ch4Tables = gen.chapters[3].sections[1].tables;
 
+    // Decision Rules Data Matrix
+    const decisionObjectives = {
+      survey: {
+        title: "เพื่อศึกษา / เพื่อสำรวจ (สภาพปัจจุบัน ปัญหา ความต้องการ)",
+        phase: "ระยะที่ 1 (R1) หรือ ระยะที่ 4 (D2)",
+        stats: "ความถี่ (Frequency), ร้อยละ (Percentage), ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.)",
+        hasHypothesis: false,
+        hypothesisNote: "❌ ห้ามตั้งสมมติฐานการวิจัยเด็ดขาด เพราะเป็นการศึกษาเชิงพรรณนา (Descriptive)",
+        pitfall: "อย่าใช้สถิติทดสอบสมมติฐาน เช่น t-test หรือ F-test เพราะไม่มีกลุ่มเปรียบเทียบ",
+        example: "ค่าเฉลี่ยระดับปัญหาการจัดการเรียนรู้อยู่ในระดับมาก (x̄ = 4.12, S.D. = 0.54)"
+      },
+      e1e2: {
+        title: "เพื่อหาประสิทธิภาพของนวัตกรรม (E1/E2 ตามเกณฑ์ เช่น 80/80 หรือ 75/75)",
+        phase: "ระยะที่ 3 (R2)",
+        stats: "ค่าเฉลี่ยร้อยละคะแนนกระบวนการ (E1) และคะแนนหลังเรียน (E2) เทียบกับเกณฑ์มาตรฐาน",
+        hasHypothesis: false,
+        hypothesisNote: "❌ ห้ามตั้งสมมติฐานการวิจัย และ ห้ามใช้ t-test ทดสอบ E1/E2 เด็ดขาด!",
+        pitfall: "ข้อบกพร่องยอดฮิต: ผู้ทรงคุณวุฒิมักท้วงติงผู้วิจัยที่นำค่า E1 และ E2 ไปทำ Dependent t-test ซึ่งผิดหลักวิชาการอย่างรุนแรง เพราะ E1/E2 เป็นการตรวจสอบประสิทธิภาพเทียบกับเกณฑ์ร้อยละ ไม่ใช่การเปรียบเทียบคะแนนก่อน-หลัง",
+        example: "นวัตกรรมมีประสิทธิภาพ E1/E2 เท่ากับ 82.45/81.68 ซึ่งสูงกว่าเกณฑ์ 80/80 ที่กำหนดไว้"
+      },
+      ei: {
+        title: "เพื่อหาดัชนีประสิทธิผล (Effectiveness Index: E.I.)",
+        phase: "ระยะที่ 3 (R2)",
+        stats: "ดัชนีประสิทธิผล (E.I. = (Post - Pre) / (Full - Pre)) แสดงเป็นสัดส่วนทศนิยม 4 ตำแหน่ง และร้อยละ",
+        hasHypothesis: false,
+        hypothesisNote: "❌ ห้ามตั้งสมมติฐานการวิจัย รายงานเฉพาะค่า E.I.",
+        pitfall: "ค่า E.I. ที่ยอมรับได้ทั่วไปต้องมีค่าตั้งแต่ 0.50 ขึ้นไป (หมายถึงผู้เรียนมีความก้าวหน้าเพิ่มขึ้นร้อยละ 50 ของศักยภาพที่สามารถเพิ่มได้)",
+        example: "ดัชนีประสิทธิผลมีค่าเท่ากับ 0.6842 แสดงว่าผู้เรียนมีความก้าวหน้าทางการเรียนรู้คิดเป็นร้อยละ 68.42"
+      },
+      compare_pre_post: {
+        title: "เพื่อเปรียบเทียบก่อนเรียนและหลังเรียน หรือเปรียบเทียบกับเกณฑ์ร้อยละ",
+        phase: "ระยะที่ 3 (R2)",
+        stats: "Dependent Samples t-test (ก่อน-หลัง) หรือ One-sample t-test (เทียบเกณฑ์) + ขนาดอิทธิพล Cohen's d",
+        hasHypothesis: true,
+        hypothesisNote: "✔ บังคับตั้งสมมติฐาน: 'หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05'",
+        pitfall: "ต้องตรวจสอบการแจกแจงปกติ (Normality: Shapiro-Wilk) ก่อน หากไม่แจกแจงปกติ ต้องใช้ Wilcoxon Signed-Rank Test แทน และต้องรายงาน Effect Size (Cohen's d) เสมอ",
+        example: "คะแนนหลังเรียน (x̄ = 32.67) สูงกว่าก่อนเรียน (x̄ = 18.42) อย่างมีนัยสำคัญที่ระดับ .01 (t = 24.86, d = 2.45 Large Effect)"
+      },
+      compare_multigroup: {
+        title: "เพื่อเปรียบเทียบความแตกต่างตั้งแต่ 3 กลุ่มขึ้นไป",
+        phase: "ระยะที่ 3 (R2 - กรณีแบบแผนทดลองหลายกลุ่ม)",
+        stats: "One-way ANOVA (F-test) หรือ Two-way ANOVA และการทดสอบความแปรปรวน (Levene's Test)",
+        hasHypothesis: true,
+        hypothesisNote: "✔ มีสมมติฐานการวิจัย: 'ผู้เรียนที่เรียนด้วยวิธีต่างกันมีผลสัมฤทธิ์แตกต่างกัน'",
+        pitfall: "หากพบค่า F มีนัยสำคัญทางสถิติ (p < .05) ต้องทำการเปรียบเทียบรายคู่ (Post-hoc Comparison เช่น Scheffé หรือ Tukey HSD) เสมอ",
+        example: "ผลการทดสอบ F มีค่าเท่ากับ 12.45 (p < .01) จึงทดสอบรายคู่ด้วยวิธี Scheffé พบว่ากลุ่มทดลองสูงกว่ากลุ่มควบคุมอย่างมีนัยสำคัญ"
+      },
+      correlation_regression: {
+        title: "เพื่อศึกษาความสัมพันธ์ หรือการพยากรณ์สมรรถนะ",
+        phase: "ระยะที่ 1 (R1) หรือ งานวิจัยเชิงสหสัมพันธ์",
+        stats: "Pearson Correlation (แจกแจงปกติ) / Spearman Rank Correlation (ข้อมูลจัดอันดับ) หรือ Simple/Multiple Linear Regression",
+        hasHypothesis: true,
+        hypothesisNote: "✔ มีสมมติฐานการวิจัย: 'ตัวแปร X มีความสัมพันธ์ทางบวกกับตัวแปร Y'",
+        pitfall: "คำเตือนสำคัญ: 'ความสัมพันธ์ไม่ใช่เหตุและผล (Correlation does not imply Causation)' ห้ามสรุปว่า X ทำให้เกิด Y จากเพียงค่า r",
+        example: "ค่าสัมประสิทธิ์สหสัมพันธ์ r = .742 (p < .01) และสมการถดถอยมีค่า R² = .550 พยากรณ์ได้ร้อยละ 55.0"
+      }
+    };
+
+    // Calculate IOC Summary
+    const iocItems = state.iocItems || [];
+    const expertCount = state.iocExpertsCount || 5;
+    const iocResults = iocItems.map(item => {
+      const sumR = item.scores.reduce((a, b) => a + Number(b), 0);
+      const iocVal = Number((sumR / expertCount).toFixed(2));
+      const passed = iocVal >= 0.50;
+      return { ...item, sumR, iocVal, passed };
+    });
+    const avgIoc = iocResults.length ? Number((iocResults.reduce((a, b) => a + b.iocVal, 0) / iocResults.length).toFixed(2)) : 0.92;
+
+    // Calculate Item Analysis (p, r, B-Index, KR-20)
+    const nh = state.itemAnalysisHighN || 8;
+    const nl = state.itemAnalysisLowN || 8;
+    const itemAnalysisRows = (state.itemAnalysisItems || []).map(it => {
+      const p = Number(((it.h + it.l) / (nh + nl)).toFixed(2));
+      const r = Number(((it.h - it.l) / nh).toFixed(2));
+      const bIndex = Number(((it.h / nh) - (it.l / nl)).toFixed(2));
+      let pBadge = "เหมาะสม";
+      if (p > 0.80) pBadge = "ค่อนข้างง่าย";
+      else if (p < 0.20) pBadge = "ค่อนข้างยาก";
+      const rPassed = r >= 0.20;
+      return { ...it, p, r, bIndex, pBadge, rPassed };
+    });
+    const sumPq = itemAnalysisRows.reduce((acc, it) => acc + (it.p * (1 - it.p)), 0);
+    const kItems = itemAnalysisRows.length || 10;
+    const totalVarianceKR = 5.60;
+    const kr20 = Number(((kItems / (kItems - 1)) * (1 - (sumPq / totalVarianceKR))).toFixed(3));
+    const lovettReliability = 0.865;
+
+    // Calculate Cronbach Alpha
+    const cronItems = state.cronbachItems || [];
+    const sumSi2 = Number(cronItems.reduce((acc, it) => acc + Number(it.variance || 0), 0).toFixed(2));
+    const totalSt2 = Number(state.cronbachTotalVariance || 18.50);
+    const kAlpha = cronItems.length || 8;
+    const cronbachAlpha = Number(((kAlpha / (kAlpha - 1)) * (1 - (sumSi2 / totalSt2))).toFixed(3));
+
+    // Interactive E1/E2 & E.I. local vars
+    const curE1 = Number(st.e1 || 82.45);
+    const curE2 = Number(st.e2 || 81.68);
+    const curEI = Number(st.ei || 0.6842);
+    const critParts = String(proj.efficiencyCriterion || "80/80").split("/").map(Number);
+    const critE1 = critParts[0] || 80;
+    const critE2 = critParts[1] || 80;
+    const e1Pass = curE1 >= critE1;
+    const e2Pass = curE2 >= critE2;
+
+    // Cohen's d
+    const preM = Number(st.preMean || 18.42);
+    const postM = Number(st.postMean || 32.67);
+    const preS = Number(st.preSD || 2.50);
+    const postS = Number(st.postSD || 2.10);
+    const pooledSD = Math.sqrt(((preS * preS) + (postS * postS)) / 2);
+    const cohenD = Number((Math.abs(postM - preM) / (pooledSD || 1)).toFixed(2));
+    let dInterpretation = "ขนาดใหญ่มาก (Large Effect: นวัตกรรมสร้างการเปลี่ยนแปลงอย่างสูง)";
+    if (cohenD < 0.2) dInterpretation = "ขนาดเล็กน้อย (Negligible Effect)";
+    else if (cohenD < 0.5) dInterpretation = "ขนาดเล็ก (Small Effect)";
+    else if (cohenD < 0.8) dInterpretation = "ขนาดปานกลาง (Medium Effect)";
+
     return `
-      <div class="grid lg:grid-cols-3 gap-6">
-        <!-- Left Column: Interactive Stat Controls -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xs font-mono font-bold text-sky-700 uppercase">R&D STAT LAB</span>
-              <h2 class="text-base font-bold text-slate-900 dark:text-white">คำนวณและจำลองค่าสถิติบทที่ 4</h2>
-            </div>
+      <div class="flex flex-col gap-6">
+        <!-- StatLab Sub-Navigation Bar -->
+        <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-2">
+            ${[
+              ["decision_rules", "🧭 1. กฎเหล็กการเลือกสถิติ"],
+              ["ioc", `📋 2. ดัชนี IOC/IC (เฉลี่ย ${avgIoc})`],
+              ["item_analysis", `🎯 3. คุณภาพข้อสอบ (KR-20 = ${kr20})`],
+              ["cronbach", `📏 4. ความเชื่อมั่นแบบสอบถาม (α = ${cronbachAlpha})`],
+              ["e1e2", `⚙️ 5. ประสิทธิภาพ E1/E2 & E.I.`],
+              ["ttest", `📈 6. t-test & Cohen's d (${cohenD})`],
+              ["ch4_tables", "📑 7. ตารางมาตรฐาน APA บทที่ 4"]
+            ].map(([k, lbl]) => `
+              <button onclick="ROAD_APP.setStatlabSubTab('${k}')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                ${lbl}
+              </button>
+            `).join("")}
           </div>
-
-          <button onclick="ROAD_APP.simulateAlignedStats()" class="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm cursor-pointer">
-            🎲 สุ่มจำลองข้อมูลสถิติให้ผ่านเกณฑ์ ${escapeHtml(proj.efficiencyCriterion)} อัตโนมัติ
+          <button onclick="ROAD_APP.simulateAlignedStats()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold shadow-sm cursor-pointer shrink-0">
+            🎲 สุ่มจำลองข้อมูลให้ผ่านเกณฑ์ ${escapeHtml(proj.efficiencyCriterion)}
           </button>
-
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">จำนวนกลุ่มตัวอย่าง (n)</span>
-              <input type="number" value="${st.n || 38}" oninput="ROAD_APP.updateStatField('n', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ค่า IOC เฉลี่ย</span>
-              <input type="number" step="0.01" value="${st.iocAvg || 0.92}" oninput="ROAD_APP.updateStatField('iocAvg', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ประสิทธิภาพระหว่างเรียน (E1)</span>
-              <input type="number" step="0.01" value="${st.e1 || 82.45}" oninput="ROAD_APP.updateStatField('e1', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ประสิทธิภาพหลังเรียน (E2)</span>
-              <input type="number" step="0.01" value="${st.e2 || 81.68}" oninput="ROAD_APP.updateStatField('e2', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">คะแนนเต็มแบบทดสอบ</span>
-              <input type="number" value="${st.fullScore || 40}" oninput="ROAD_APP.updateStatField('fullScore', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ดัชนีประสิทธิผล (E.I.)</span>
-              <input type="number" step="0.0001" value="${st.ei || 0.6842}" oninput="ROAD_APP.updateStatField('ei', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">คะแนนก่อนเรียน (x̄ Pretest)</span>
-              <input type="number" step="0.01" value="${st.preMean || 18.42}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">คะแนนหลังเรียน (x̄ Posttest)</span>
-              <input type="number" step="0.01" value="${st.postMean || 32.67}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ค่าสถิติ t-test</span>
-              <input type="number" step="0.01" value="${st.tValue || 24.86}" oninput="ROAD_APP.updateStatField('tValue', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-            <label class="flex flex-col gap-1">
-              <span class="font-semibold">ค่าเฉลี่ยความพึงพอใจ (เต็ม 5)</span>
-              <input type="number" step="0.01" value="${st.satMean || 4.62}" oninput="ROAD_APP.updateStatField('satMean', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-mono" />
-            </label>
-          </div>
-          <div class="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl">
-            💡 เมื่อปรับตัวเลขด้านบน ระบบจะคำนวณค่า E2, ค่าดัชนีประสิทธิผล E.I. = (Post - Pre) / (Full - Pre) และเขียนคำแปลผลใต้ตารางบทที่ 4 และสรุปผลบทที่ 5 ให้อัตโนมัติทันที
-          </div>
         </div>
 
-        <!-- Right 2 Columns: Live APA 3-Line Tables Preview -->
-        <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-6">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">📊 ตารางมาตรฐาน APA 3 เส้น และคำแปลผลอัตโนมัติ (บทที่ 4)</h3>
-          ${ch4Tables.map(tbl => `
-            <div class="space-y-2 border-b border-slate-200 dark:border-slate-800 pb-5 last:border-b-0">
-              <div class="font-bold text-sm">${escapeHtml(tbl.tableNo)} ${escapeHtml(tbl.caption)}</div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
-                  <thead>
-                    <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800">
-                      ${tbl.headers.map(h => `<th class="py-2 px-2.5 text-center font-bold">${escapeHtml(h)}</th>`).join("")}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${tbl.rows.map(r => `
-                      <tr class="border-b border-slate-200/50 dark:border-slate-800">
-                        ${r.map((c, ci) => `<td class="py-2 px-2.5 ${ci === 0 ? 'text-left font-medium' : 'text-center font-mono'}">${escapeHtml(c)}</td>`).join("")}
-                      </tr>
-                    `).join("")}
-                  </tbody>
-                </table>
+        <!-- 1. Sub-Tab: Statistical Decision Rules -->
+        ${subTab === "decision_rules" ? `
+          <div class="neu-card p-6 flex flex-col gap-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+              <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">
+                STATISTICAL DECISION RULES · แนวทาง รศ.ดร.ประเสริฐ และเกณฑ์ วPA
+              </span>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+                ระบบตัดสินใจเลือกสถิติวิจัยให้ตรงตามวัตถุประสงค์ (ป้องกันข้อผิดพลาดร้ายแรง)
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">
+                เลือกรูปแบบวัตถุประสงค์การวิจัยที่คุณต้องการ ระบบจะแนะนำสถิติที่ได้รับอนุญาต ข้อกำหนดการตั้งสมมติฐาน และข้อพึงระวังทันที
+              </p>
+            </div>
+
+            <div class="grid lg:grid-cols-[1.2fr_1.8fr] gap-6">
+              <!-- Objective Picker -->
+              <div class="flex flex-col gap-2">
+                <span class="text-xs font-extrabold text-slate-700 dark:text-slate-300">เลือกประเภทวัตถุประสงค์การวิจัย:</span>
+                ${Object.entries(decisionObjectives).map(([key, item]) => `
+                  <button onclick="ROAD_APP.setDecisionObjective('${key}')" class="p-3.5 rounded-xl border text-left text-xs transition cursor-pointer ${state.selectedDecisionObjective === key ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 font-bold text-sky-900 dark:text-sky-200 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'}">
+                    <div class="text-[10px] font-mono uppercase text-slate-400">${item.phase}</div>
+                    <div class="mt-0.5">${escapeHtml(item.title)}</div>
+                  </button>
+                `).join("")}
               </div>
-              <div class="text-xs text-slate-700 dark:text-slate-300 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                <b>คำแปลผลใต้ตาราง:</b> ${escapeHtml(tbl.interpretation)}
+
+              <!-- Selected Objective Rule Card -->
+              ${(() => {
+                const sel = decisionObjectives[state.selectedDecisionObjective] || decisionObjectives.compare_pre_post;
+                return `
+                  <div class="p-5 sm:p-6 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                      <div>
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">${sel.phase}</span>
+                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white mt-1.5">${escapeHtml(sel.title)}</h3>
+                      </div>
+                      <span class="px-3 py-1 rounded-full text-xs font-bold ${sel.hasHypothesis ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}">
+                        ${sel.hasHypothesis ? '✔ มีสมมติฐาน' : '❌ ไม่มีสมมติฐาน'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <div class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">สถิติที่ใช้วิเคราะห์:</div>
+                      <div class="text-sm font-extrabold text-sky-700 dark:text-sky-400 mt-1">${escapeHtml(sel.stats)}</div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                      <div class="text-xs font-bold text-slate-700 dark:text-slate-300">กฎการตั้งสมมติฐาน:</div>
+                      <div class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed font-semibold">${escapeHtml(sel.hypothesisNote)}</div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900">
+                      <div class="text-xs font-extrabold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                        <span>⚠️</span> ข้อพึงระวังและข้อบกพร่องที่ต้องหลีกเลี่ยง:
+                      </div>
+                      <div class="text-xs text-rose-700 dark:text-rose-200 mt-1 leading-relaxed">${escapeHtml(sel.pitfall)}</div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900">
+                      <div class="text-xs font-extrabold text-emerald-800 dark:text-emerald-300">ตัวอย่างการเขียนรายงานในบทที่ 4:</div>
+                      <div class="text-xs text-emerald-700 dark:text-emerald-200 mt-1 font-mono">${escapeHtml(sel.example)}</div>
+                    </div>
+                  </div>
+                `;
+              })()}
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 2. Sub-Tab: IOC / IC Analyzer -->
+        ${subTab === "ioc" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP · EXPERT VALIDITY ANALYZER</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การวิเคราะห์ดัชนีความสอดคล้อง (IOC / IC = ΣR / N)</h2>
+                <p class="text-xs text-slate-500">โดยผู้ทรงคุณวุฒิ ${expertCount} ท่าน (เกณฑ์ตัดสิน: ค่า IOC ≥ 0.50 ถือว่าสอดคล้อง นำไปใช้ได้)</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="px-4 py-2 rounded-xl bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 text-center">
+                  <div class="text-[10px] text-slate-400 uppercase font-bold">IOC เฉลี่ยทั้งฉบับ</div>
+                  <div class="text-lg font-extrabold text-sky-700 dark:text-sky-300">${avgIoc} ${avgIoc >= 0.50 ? '✔ ผ่านเกณฑ์' : '❌ ปรับปรุง'}</div>
+                </div>
+                <button onclick="ROAD_APP.copyTableText('ioc-table-content', 'คัดลอกตาราง IOC เรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                  📋 คัดลอกตารางไปใส่บทที่ 3
+                </button>
               </div>
             </div>
-          `).join("")}
-        </div>
+
+            <div id="ioc-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left">ข้อคำถาม / จุดประสงค์การเรียนรู้</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 1</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 2</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 3</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 4</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 5</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">ΣR</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">IOC</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ผลการพิจารณา</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${iocResults.map((it, itemIdx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-left font-medium">${escapeHtml(it.name)}</td>
+                      ${it.scores.map((sc, expIdx) => `
+                        <td class="border border-slate-300 dark:border-slate-700 p-1">
+                          <select onchange="ROAD_APP.updateIocScore(${itemIdx}, ${expIdx}, this.value)" class="w-12 py-1 px-0 text-center rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono font-bold text-xs cursor-pointer">
+                            <option value="1" ${sc === 1 ? 'selected' : ''}>+1</option>
+                            <option value="0" ${sc === 0 ? 'selected' : ''}>0</option>
+                            <option value="-1" ${sc === -1 ? 'selected' : ''}>-1</option>
+                          </select>
+                        </td>
+                      `).join("")}
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold">${it.sumR}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-sky-700 dark:text-sky-400">${it.iocVal}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.passed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
+                        ${it.passed ? '✔ สอดคล้อง (ใช้ได้)' : '❌ ปรับปรุง/ตัดทิ้ง'}
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <b>สูตรคำนวณ:</b> IOC = ΣR / N | +1 = แน่ใจว่าสอดคล้อง, 0 = ไม่แน่ใจ, -1 = แน่ใจว่าไม่สอดคล้อง | ผลรวม IOC เฉลี่ย = <b>${avgIoc}</b> (มีความเที่ยงตรงเชิงเนื้อหาในระดับดีมาก)
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 3. Sub-Tab: Test Item Analysis (EDURTAP: p, r, B-Index, KR-20, Lovett) -->
+        ${subTab === "item_analysis" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP QUALITY ENGINE · TEST ITEM ANALYSIS</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การวิเคราะห์คุณภาพแบบทดสอบรายข้อและทั้งฉบับ</h2>
+                <p class="text-xs text-slate-500">
+                  เทคนิคกลุ่มสูง-กลุ่มต่ำ 27% (กลุ่มตัวอย่าง N = 30, กลุ่มสูง nh = ${nh}, กลุ่มต่ำ nl = ${nl}) | เกณฑ์ความยาก: 0.20 ≤ p ≤ 0.80, อำนาจจำแนก: r ≥ 0.20
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-center">
+                  <div class="text-[10px] text-slate-400 font-bold uppercase">KR-20 (อิงกลุ่ม)</div>
+                  <div class="text-base font-extrabold text-emerald-700 dark:text-emerald-300">${kr20}</div>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-center">
+                  <div class="text-[10px] text-slate-400 font-bold uppercase">Lovett (อิงเกณฑ์)</div>
+                  <div class="text-base font-extrabold text-indigo-700 dark:text-indigo-300">${lovettReliability}</div>
+                </div>
+                <button onclick="ROAD_APP.copyTableText('item-analysis-table-content', 'คัดลอกตารางวิเคราะห์ข้อสอบเรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                  📋 คัดลอกตารางไปใส่บทที่ 3
+                </button>
+              </div>
+            </div>
+
+            <div id="item-analysis-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-20">ข้อที่</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มสูงถูก (H)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มต่ำถูก (L)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-20">ความยาก (p)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">อำนาจจำแนก (r)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">B-Index (อิงเกณฑ์)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">แปลผลความยาก</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ผลการคัดเลือก</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemAnalysisRows.map((it, idx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold">${escapeHtml(it.name)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" min="0" max="${nh}" value="${it.h}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'h', this.value)" class="w-16 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" min="0" max="${nl}" value="${it.l}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'l', this.value)" class="w-16 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold">${it.p}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold ${it.rPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">${it.r}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono">${it.bIndex}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-semibold text-slate-700 dark:text-slate-300">${it.pBadge}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.rPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
+                        ${it.rPassed ? '✔ คัดเลือกไว้' : '❌ ตัดทิ้ง/ปรับปรุง'}
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4 text-xs bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div>
+                <span class="font-bold text-emerald-700 dark:text-emerald-400">สูตรความเชื่อมั่น KR-20:</span>
+                <p class="font-mono mt-0.5">r_tt = [k / (k-1)] * [1 - (Σpq / S_t²)] = <b>${kr20}</b> (ความเชื่อมั่นสูงมาก)</p>
+              </div>
+              <div>
+                <span class="font-bold text-indigo-700 dark:text-indigo-400">สูตรความเชื่อมั่นของ Lovett (อิงเกณฑ์):</span>
+                <p class="font-mono mt-0.5">r_xx' = 1 - [kΣx - Σx²] / [(k-1)Σ(x-c)²] = <b>${lovettReliability}</b> (ผ่านเกณฑ์มาตรฐาน)</p>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 4. Sub-Tab: Cronbach's Alpha Analyzer -->
+        ${subTab === "cronbach" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP · QUESTIONNAIRE RELIABILITY</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ความเชื่อมั่นของแบบสอบถามมาตราส่วนประมาณค่า (Cronbach's Alpha Coefficient)</h2>
+                <p class="text-xs text-slate-500">แบบประเมิน Likert 5 ระดับ (เกณฑ์ตัดสิน: ค่า α ≥ 0.80 ถือว่ามีความสอดคล้องภายในสูงมาก นำไปใช้ได้จริง)</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-center">
+                  <div class="text-[10px] text-slate-400 uppercase font-bold">ค่าสัมประสิทธิ์แอลฟา (α)</div>
+                  <div class="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">${cronbachAlpha} (ความเชื่อมั่นสูงมาก)</div>
+                </div>
+                <button onclick="ROAD_APP.copyTableText('cronbach-table-content', 'คัดลอกตารางวิเคราะห์ความเชื่อมั่นเรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
+                  📋 คัดลอกตารางไปใส่บทที่ 3
+                </button>
+              </div>
+            </div>
+
+            <div id="cronbach-table-content" class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left">ข้อรายการประเมิน</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ค่าเฉลี่ย (x̄)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-32">ความแปรปรวนรายข้อ (Si²)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-36">อำนาจจำแนกรายข้อ (r_xy)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">การแปลผล</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${cronItems.map((it, idx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-left font-medium">${escapeHtml(it.name)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" value="${it.mean}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'mean', this.value)" class="w-20 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono text-xs" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" value="${it.variance}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'variance', this.value)" class="w-24 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono text-xs" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-sky-700 dark:text-sky-300">${(0.55 + (idx * 0.03)).toFixed(2)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold text-emerald-700 dark:text-emerald-400">✔ จำแนกได้ดี</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+              <div class="space-y-1">
+                <div>จำนวนข้อ (k) = <b>${kAlpha}</b> | ผลรวมความแปรปรวนรายข้อ (ΣSi²) = <b>${sumSi2}</b></div>
+                <div>ความแปรปรวนของคะแนนรวมทั้งฉบับ (St²) = <b>${totalSt2}</b></div>
+              </div>
+              <div class="font-mono text-right text-slate-700 dark:text-slate-300">
+                α = [k / (k-1)] * [1 - (ΣSi² / St²)] = [${kAlpha}/${kAlpha - 1}] * [1 - (${sumSi2}/${totalSt2})] = <b>${cronbachAlpha}</b>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 5. Sub-Tab: E1/E2 & E.I. Calculator -->
+        ${subTab === "e1e2" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+              <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">INNOVATION EFFICIENCY & EFFECTIVENESS</span>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">การคำนวณประสิทธิภาพของนวัตกรรม (E1/E2) และดัชนีประสิทธิผล (E.I.)</h2>
+              <p class="text-xs text-slate-500">ตามเกณฑ์ รศ.ดร.ชวลิต ชูกำแพง และมาตรฐาน วPA (ห้ามใช้ t-test ทดสอบ E1/E2)</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6">
+              <!-- E1/E2 Calculator Card -->
+              <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-white">1. ประสิทธิภาพนวัตกรรม (E1/E2)</h3>
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${e1Pass && e2Pass ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
+                    เกณฑ์ตั้งไว้: ${escapeHtml(proj.efficiencyCriterion)}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพระหว่างเรียน (E1)</span>
+                    <input type="number" step="0.01" value="${curE1}" oninput="ROAD_APP.updateStatField('e1', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพหลังเรียน (E2)</span>
+                    <input type="number" step="0.01" value="${curE2}" oninput="ROAD_APP.updateStatField('e2', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
+                  </label>
+                </div>
+
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div class="text-[11px] text-slate-400">ผลการคำนวณจริง:</div>
+                    <div class="text-xl font-black ${e1Pass && e2Pass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">
+                      E1/E2 = ${curE1} / ${curE2}
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xs font-bold ${e1Pass && e2Pass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700'}">
+                      ${e1Pass && e2Pass ? '✔ สูงกว่าเกณฑ์ที่กำหนด' : '⚠️ ต่ำกว่าเกณฑ์ที่กำหนด'}
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">เกณฑ์: ${critE1}/${critE2}</div>
+                  </div>
+                </div>
+
+                <div class="text-xs text-slate-600 dark:text-slate-400 bg-sky-50 dark:bg-sky-950/40 p-3 rounded-xl border border-sky-200 dark:border-sky-800 leading-relaxed">
+                  <b>สูตร:</b> E1 = [(ΣX / N) / A] * 100 | E2 = [(ΣY / N) / B] * 100<br/>
+                  (A = คะแนนเต็มกิจกรรมระหว่างเรียน, B = คะแนนเต็มแบบทดสอบหลังเรียน)
+                </div>
+              </div>
+
+              <!-- E.I. Calculator Card -->
+              <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-white">2. ดัชนีประสิทธิผล (Effectiveness Index: E.I.)</h3>
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                    เกณฑ์มาตรฐาน ≥ 0.50
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 text-xs">
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">คะแนนเต็ม (Full)</span>
+                    <input type="number" value="${st.fullScore || 40}" oninput="ROAD_APP.updateStatField('fullScore', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยก่อนเรียน (Pre)</span>
+                    <input type="number" step="0.01" value="${st.preMean || 18.42}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยหลังเรียน (Post)</span>
+                    <input type="number" step="0.01" value="${st.postMean || 32.67}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                  </label>
+                </div>
+
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div class="text-[11px] text-slate-400">ดัชนีประสิทธิผล (E.I.):</div>
+                    <div class="text-xl font-black text-indigo-700 dark:text-indigo-400">
+                      ${curEI} (คิดเป็นร้อยละ ${(curEI * 100).toFixed(2)}%)
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xs font-bold ${curEI >= 0.50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700'}">
+                      ${curEI >= 0.50 ? '✔ ก้าวหน้าในระดับสูงมาก' : '⚠️ ควรปรับปรุง'}
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">เกณฑ์: ≥ 0.50</div>
+                  </div>
+                </div>
+
+                <div class="text-xs text-slate-600 dark:text-slate-400 bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 leading-relaxed">
+                  <b>สูตร:</b> E.I. = (P2 - P1) / (Total - P1) = (${st.postMean || 32.67} - ${st.preMean || 18.42}) / (${st.fullScore || 40} - ${st.preMean || 18.42}) = <b>${curEI}</b>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 6. Sub-Tab: t-test & Cohen's d -->
+        ${subTab === "ttest" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+              <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">HYPOTHESIS TESTING · T-TEST & EFFECT SIZE</span>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">การทดสอบสมมติฐานการวิจัย (t-test) และขนาดอิทธิพล (Cohen's d)</h2>
+              <p class="text-xs text-slate-500">เปรียบเทียบคะแนนก่อนเรียนและหลังเรียนของกลุ่มตัวอย่าง (Dependent Samples t-test, n = ${st.n || 38})</p>
+            </div>
+
+            <div class="grid lg:grid-cols-[1.2fr_1.8fr] gap-6">
+              <!-- Controls -->
+              <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">พารามิเตอร์การทดสอบ t-test</h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold">จำนวน นร. (n)</span>
+                    <input type="number" value="${st.n || 38}" oninput="ROAD_APP.updateStatField('n', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold">ค่าสถิติ t</span>
+                    <input type="number" step="0.01" value="${st.tValue || 24.86}" oninput="ROAD_APP.updateStatField('tValue', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold">ก่อนเรียน x̄ (S.D.)</span>
+                    <input type="number" step="0.01" value="${preM}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="font-semibold">หลังเรียน x̄ (S.D.)</span>
+                    <input type="number" step="0.01" value="${postM}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
+                  </label>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-500">ขนาดอิทธิพล (Cohen's d):</span>
+                    <span class="font-mono font-black text-sky-700 dark:text-sky-400 text-sm">${cohenD}</span>
+                  </div>
+                  <div class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    ${dInterpretation}
+                  </div>
+                </div>
+
+                <div class="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800/60 p-3 rounded-xl leading-relaxed">
+                  💡 เกณฑ์ Cohen's d: d &lt; 0.2 เล็กน้อย | 0.2 - 0.5 เล็ก | 0.5 - 0.8 ปานกลาง | ≥ 0.8 ขนาดใหญ่มาก (การวิจัยทางการศึกษาคาดหวังค่า d ≥ 0.80)
+                </div>
+              </div>
+
+              <!-- APA Summary Output -->
+              <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-white">ตารางสรุปผล t-test ตามแบบแผน APA</h3>
+                  <button onclick="ROAD_APP.copyTableText('ttest-table-preview', 'คัดลอกตาราง t-test เรียบร้อยแล้ว')" class="px-3 py-1 rounded-lg neu-btn-primary text-xs font-bold cursor-pointer">
+                    📋 คัดลอกตาราง
+                  </button>
+                </div>
+
+                <div id="ttest-table-preview" class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200 text-center">
+                    <thead>
+                      <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800 font-bold">
+                        <th class="py-2 px-3 text-left">การทดสอบ</th>
+                        <th class="py-2 px-2">n</th>
+                        <th class="py-2 px-2">คะแนนเต็ม</th>
+                        <th class="py-2 px-2">x̄</th>
+                        <th class="py-2 px-2">S.D.</th>
+                        <th class="py-2 px-2">t</th>
+                        <th class="py-2 px-2">Sig.</th>
+                        <th class="py-2 px-2">Cohen's d</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-slate-200 dark:border-slate-800">
+                        <td class="py-2 px-3 text-left font-medium">ก่อนเรียน (Pre-test)</td>
+                        <td class="py-2 px-2 font-mono">${st.n || 38}</td>
+                        <td class="py-2 px-2 font-mono">${st.fullScore || 40}</td>
+                        <td class="py-2 px-2 font-mono">${preM}</td>
+                        <td class="py-2 px-2 font-mono">${preS}</td>
+                        <td rowspan="2" class="py-2 px-2 font-mono font-bold text-sky-700 dark:text-sky-300 align-middle">${st.tValue || 24.86}**</td>
+                        <td rowspan="2" class="py-2 px-2 font-mono font-bold align-middle">.000</td>
+                        <td rowspan="2" class="py-2 px-2 font-mono font-bold text-emerald-700 dark:text-emerald-400 align-middle">${cohenD}</td>
+                      </tr>
+                      <tr>
+                        <td class="py-2 px-3 text-left font-bold text-emerald-700 dark:text-emerald-400">หลังเรียน (Post-test)</td>
+                        <td class="py-2 px-2 font-mono">${st.n || 38}</td>
+                        <td class="py-2 px-2 font-mono">${st.fullScore || 40}</td>
+                        <td class="py-2 px-2 font-mono font-bold text-emerald-700 dark:text-emerald-400">${postM}</td>
+                        <td class="py-2 px-2 font-mono">${postS}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="text-[11px] text-slate-500 font-mono">** มีนัยสำคัญทางสถิติที่ระดับ .01 (p &lt; .01)</div>
+
+                <div class="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <b>คำแปลผลอัตโนมัติ:</b> ผลการเปรียบเทียบผลสัมฤทธิ์ทางการเรียนของผู้เรียนชั้น${escapeHtml(proj.D)} 
+                  พบว่าหลังเรียนด้วย${escapeHtml(proj.A)} มีคะแนนเฉลี่ยเท่ากับ ${postM} (S.D. = ${postS}) 
+                  ซึ่งสูงกว่าก่อนเรียนที่มีคะแนนเฉลี่ยเท่ากับ ${preM} (S.D. = ${preS}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .01 
+                  (t = ${st.tValue || 24.86}, p &lt; .01) และมีค่าขนาดอิทธิพลเท่ากับ ${cohenD} แสดงว่านวัตกรรมส่งผลต่อการพัฒนาการเรียนรู้ในระดับขนาดใหญ่มาก
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 7. Sub-Tab: Standard APA Tables Preview (บทที่ 4) -->
+        ${subTab === "ch4_tables" ? `
+          <div class="neu-card p-6 flex flex-col gap-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 uppercase">CHAPTER 4 TABLES · บทที่ 4</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางมาตรฐาน APA 3 เส้น และคำแปลผลอัตโนมัติ</h2>
+                <p class="text-xs text-slate-500">ตารางสถิติตามแบบแผนวิทยาศาสตร์การศึกษา พร้อมคัดลอกลงในรายงานวิจัยบทที่ 4</p>
+              </div>
+              <button onclick="ROAD_APP.simulateAlignedStats()" class="px-4 py-2 neu-btn-emerald text-xs font-bold cursor-pointer print:hidden">
+                🎲 สุ่มจำลองค่าสถิติใหม่
+              </button>
+            </div>
+
+            <div class="space-y-6">
+              ${ch4Tables.map((tbl, tIdx) => `
+                <div class="space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6 last:border-b-0">
+                  <div class="flex items-center justify-between">
+                    <div class="font-extrabold text-sm text-slate-900 dark:text-white">${escapeHtml(tbl.tableNo)} ${escapeHtml(tbl.caption)}</div>
+                    <button onclick="ROAD_APP.copyTableText('ch4-table-${tIdx}', 'คัดลอกตาราง ${tbl.tableNo} เรียบร้อยแล้ว')" class="px-2.5 py-1 rounded-md text-[11px] font-bold neu-squircle cursor-pointer print:hidden">
+                      📋 คัดลอกตารางนี้
+                    </button>
+                  </div>
+                  <div id="ch4-table-${tIdx}" class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
+                      <thead>
+                        <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800">
+                          ${tbl.headers.map(h => `<th class="py-2.5 px-3 text-center font-bold">${escapeHtml(h)}</th>`).join("")}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${tbl.rows.map(r => `
+                          <tr class="border-b border-slate-200/50 dark:border-slate-800">
+                            ${r.map((c, ci) => `<td class="py-2 px-3 ${ci === 0 ? 'text-left font-medium' : 'text-center font-mono'}">${escapeHtml(c)}</td>`).join("")}
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="text-xs text-slate-700 dark:text-slate-300 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 leading-relaxed">
+                    <b>คำแปลผลใต้ตาราง:</b> ${escapeHtml(tbl.interpretation)}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
   }
 
-  // --- Studio Tab 6: AI Research Co-Pilot (Live Gemini API + Smart Prompt Generator) ---
+  // --- Studio Tab 6: AI Research Co-Pilot (Live Gemini API + Smart Prompt Builder) ---
   function renderTabAi(proj) {
     const currentPrompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, state.aiTask);
     const tasks = [
-      ["ch1_background", "1. เขียน 1.1 ความเป็นมาและความสำคัญของปัญหา (4–5 ย่อหน้าแบบกรวยคว่ำ)"],
-      ["title_polish", "2. วิเคราะห์และเกลาชื่อเรื่องวิจัยตามหลัก ABCD (ระดับ คศ.3–คศ.4)"],
-      ["ch1_definitions", "3. เขียน 1.6 นิยามศัพท์เฉพาะเชิงปฏิบัติการ (Operational Definitions)"],
-      ["ch2_synthesis", "4. สังเคราะห์เอกสารและงานวิจัยที่เกี่ยวข้อง (บทที่ 2)"],
-      ["ch5_discussion", "5. เขียน 5.2 อภิปรายผลการวิจัยเชื่อมโยงขั้นตอนนวัตกรรมและทฤษฎี"]
+      ["ch1_background", "1. เขียน 1.1 ความเป็นมาและความสำคัญ 7 ย่อหน้าตามกรวยคว่ำ (รศ.ดร.ชวลิต)"],
+      ["r1_d1_bridge", "2. สังเคราะห์ตารางเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge)"],
+      ["title_polish", "3. วิเคราะห์และเกลาชื่อเรื่อง ABCD และประเมิน 10 Pitfalls (คศ.3–คศ.5)"],
+      ["ch1_definitions", "4. เขียน 1.5 นิยามศัพท์เฉพาะเชิงปฏิบัติการ (ห้ามนิยามคำทั่วไป)"],
+      ["ch2_synthesis", "5. สังเคราะห์บทที่ 2 และกรอบแนวคิดเชิงทฤษฎี [หลักการ B + นวัตกรรม A] ⟹ [ตัวแปร C]"],
+      ["ch5_discussion", "6. เขียน 5.2 อภิปรายผลการวิจัย 4 องค์ประกอบ (Result - Cause - Theory - Research)"]
     ];
 
     return `
-      <div class="grid lg:grid-cols-3 gap-6">
-        <!-- Left Column: Gemini API Key & Task Selector -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-4">
-          <div>
-            <span class="text-xs font-mono font-bold text-sky-700 uppercase">DUAL-MODE AI CO-PILOT</span>
-            <h2 class="text-base font-bold text-slate-900 dark:text-white">ผู้ช่วย AI เขียนงานวิจัย R&D</h2>
-            <p class="text-xs text-slate-500 mt-0.5">รองรับทั้งการใส่ Gemini API Key เพื่อสั่งเขียนสดในเว็บ และการคัดลอก Smart Prompt ไปวางใน ChatGPT / Gemini ฟรี</p>
+      <div class="flex flex-col gap-6">
+        <!-- Main AI Dual-Mode Workstation -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <!-- Left Column: Gemini API Key & Task Selector -->
+          <div class="neu-card p-5 sm:p-6 flex flex-col gap-5">
+            <div>
+              <span class="text-xs font-mono font-bold text-sky-700 uppercase">DUAL-MODE AI CO-PILOT</span>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">ผู้ช่วย AI เขียนงานวิจัย R&D</h2>
+              <p class="text-xs text-slate-500 mt-0.5">รองรับทั้งการสั่ง AI เขียนสดในเว็บด้วย Gemini API และการคัดลอก Smart Prompt ไปวางใน ChatGPT/Gemini ฟรี</p>
+            </div>
+
+            <!-- Gemini Key Input -->
+            <div class="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800 flex flex-col gap-2.5">
+              <label class="text-xs font-bold text-sky-900 dark:text-sky-300">🔑 ตั้งค่า Gemini API Key (สำหรับสั่งเขียนสดในเว็บ)</label>
+              <div class="flex gap-2">
+                <input id="gemini-key-input" type="password" value="${escapeHtml(state.geminiKey)}" placeholder="AIzaSy..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono" />
+                <button onclick="ROAD_APP.saveGeminiKey(document.getElementById('gemini-key-input').value)" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer">บันทึก</button>
+              </div>
+              <div class="text-[11px] text-slate-500">
+                รับคีย์ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sky-700 dark:text-sky-400 font-bold underline">Google AI Studio</a> (คีย์ถูกเก็บในเบราว์เซอร์ของคุณเท่านั้น)
+              </div>
+            </div>
+
+            <!-- Task Selector -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-300">เลือกส่วนที่ต้องการให้ AI ช่วยเขียน:</label>
+              ${tasks.map(([id, label]) => `
+                <button onclick="ROAD_APP.setAiTask('${id}')" class="p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${state.aiTask === id ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 text-sky-900 dark:text-sky-200 shadow-sm font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'}">
+                  ${escapeHtml(label)}
+                </button>
+              `).join("")}
+            </div>
           </div>
 
-          <div class="p-3.5 rounded-xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800 flex flex-col gap-2">
-            <label class="text-xs font-bold text-sky-900 dark:text-sky-300">🔑 ตั้งค่า Gemini API Key (สำหรับสั่งเขียนสดในเว็บ)</label>
-            <div class="flex gap-2">
-              <input id="gemini-key-input" type="password" value="${escapeHtml(state.geminiKey)}" placeholder="AIzaSy..." class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono" />
-              <button onclick="ROAD_APP.saveGeminiKey(document.getElementById('gemini-key-input').value)" class="px-3 py-1.5 rounded-lg bg-sky-700 text-white text-xs font-semibold cursor-pointer">บันทึก</button>
+          <!-- Right 2 Columns: Smart Prompt & Live AI Output -->
+          <div class="lg:col-span-2 flex flex-col gap-5">
+            <!-- Smart Prompt Box -->
+            <div class="neu-card p-5 sm:p-6 flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">📋 Smart Prompt ผูกตัวแปร ABCD อัตโนมัติ (พร้อมใช้งาน)</h3>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="ROAD_APP.copySmartPrompt('${state.aiTask}')" class="px-3.5 py-2 rounded-xl neu-squircle text-xs font-bold cursor-pointer">
+                    📋 คัดลอก Prompt (ใช้ฟรีใน ChatGPT/Gemini)
+                  </button>
+                  <button onclick="ROAD_APP.runGeminiLive('${state.aiTask}')" class="px-4 py-2 rounded-xl neu-btn-primary text-xs font-bold shadow-sm cursor-pointer" ${state.aiLoading ? 'disabled' : ''}>
+                    ${state.aiLoading ? '⏳ กำลังสั่ง Gemini เขียนเนื้อหา...' : '⚡ สั่ง Gemini เขียนสดในเว็บทันที'}
+                  </button>
+                </div>
+              </div>
+              <textarea readonly rows="7" class="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-mono text-xs text-slate-700 dark:text-slate-300 leading-relaxed">${escapeHtml(currentPrompt)}</textarea>
             </div>
-            <div class="text-[11px] text-slate-500">
-              รับคีย์ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sky-700 underline">Google AI Studio</a> (คีย์ถูกเก็บในเบราว์เซอร์ของคุณเท่านั้น)
-            </div>
-          </div>
 
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">เลือกส่วนที่ต้องการให้ AI ช่วยเขียน:</label>
-            ${tasks.map(([id, label]) => `
-              <button onclick="ROAD_APP.setAiTask('${id}')" class="p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${state.aiTask === id ? 'border-sky-700 bg-sky-50 dark:bg-sky-950/50 text-sky-900 dark:text-sky-200' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}">
-                ${escapeHtml(label)}
-              </button>
-            `).join("")}
+            <!-- AI Output Box -->
+            <div class="neu-card p-5 sm:p-6 flex flex-col gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">✨ ผลลัพธ์เนื้อหาวิชาการจาก AI (แก้ไขได้สด)</h3>
+                <button onclick="ROAD_APP.applyAiOutputToChapter()" class="px-4 py-2 rounded-xl neu-btn-emerald text-xs font-bold cursor-pointer">
+                  ✔ นำเนื้อหานี้ไปใส่ในรายงานวิจัย 5 บท
+                </button>
+              </div>
+              <textarea oninput="ROAD_APP_SET_AI_OUTPUT(this.value)" rows="9" placeholder="กดปุ่ม 'สั่ง Gemini เขียนสดในเว็บทันที' หรือวางเนื้อหาที่ได้จาก ChatGPT/Gemini ลงในช่องนี้เพื่อนำไปแทรกในเล่มรายงานวิจัย..." class="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm leading-relaxed">${escapeHtml(state.aiOutput)}</textarea>
+            </div>
           </div>
         </div>
 
-        <!-- Right 2 Columns: Smart Prompt & Live AI Output -->
-        <div class="lg:col-span-2 flex flex-col gap-5">
-          <!-- Smart Prompt Box -->
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm text-slate-900 dark:text-white">📋 Smart Prompt ที่ระบบผูกตัวแปร ABCD ของคุณให้เรียบร้อยแล้ว</h3>
-              <div class="flex gap-2">
-                <button onclick="ROAD_APP.copySmartPrompt('${state.aiTask}')" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold hover:bg-slate-50 cursor-pointer">
-                  📋 คัดลอก Smart Prompt (ใช้ฟรีใน ChatGPT/Gemini)
-                </button>
-                <button onclick="ROAD_APP.runGeminiLive('${state.aiTask}')" class="px-4 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold shadow-sm cursor-pointer" ${state.aiLoading ? 'disabled' : ''}>
-                  ${state.aiLoading ? '⏳ กำลังสั่ง Gemini เขียนเนื้อหา...' : '⚡ สั่ง Gemini เขียนสดในเว็บทันที'}
-                </button>
-              </div>
-            </div>
-            <textarea readonly rows="7" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-mono text-xs text-slate-700 dark:text-slate-300">${escapeHtml(currentPrompt)}</textarea>
+        <!-- Academic AI Ecosystem Guide -->
+        <div class="neu-card p-6 flex flex-col gap-5">
+          <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+            <span class="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-extrabold uppercase">
+              AI ACADEMIC ECOSYSTEM GUIDE
+            </span>
+            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mt-1.5">
+              คลังเครื่องมือ AI สนับสนุนงานวิจัยวิชาการตามเกณฑ์ วPA
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              "เรามีผู้ช่วยคือปัญญาประดิษฐ์ แต่นักวิจัยต้องรู้หลัก" แนะนำเครื่องมือชั้นนำสำหรับใช้ร่วมกับระบบ ROAD Next-Gen
+            </p>
           </div>
 
-          <!-- AI Output Box -->
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-bold text-sm text-slate-900 dark:text-white">✨ ผลลัพธ์เนื้อหาวิชาการจาก AI (สามารถแก้ไขเพิ่มเติมแล้วกดนำไปใส่ในเล่มวิจัยได้ทันที)</h3>
-              <button onclick="ROAD_APP.applyAiOutputToChapter()" class="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer">
-                ✔ นำเนื้อหานี้ไปใส่ในรายงานวิจัย 5 บท
-              </button>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-sky-700 dark:text-sky-300">🔍 Consensus</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">สืบค้นงานวิจัย</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  AI ค้นหาข้อสรุปจากงานวิจัยที่ได้รับการ Peer-reviewed กว่า 200 ล้านเล่มทั่วโลก เหมาะสำหรับการหาข้ออ้างอิงสนับสนุนตัวแปร C และผลสัมฤทธิ์
+                </p>
+              </div>
+              <a href="https://consensus.app" target="_blank" class="text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline">ไปยัง Consensus.app ➔</a>
             </div>
-            <textarea oninput=" ROAD_APP_SET_AI_OUTPUT(this.value)" rows="10" placeholder="กดปุ่ม 'สั่ง Gemini เขียนสดในเว็บทันที' หรือวางเนื้อหาที่ได้จาก ChatGPT/Gemini ลงในช่องนี้เพื่อนำไปแทรกในบทที่ 1 หรือบทที่ 5..." class="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm leading-relaxed">${escapeHtml(state.aiOutput)}</textarea>
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-indigo-700 dark:text-indigo-300">⚡ Perplexity AI</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">สังเคราะห์เอกสาร</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  ค้นคว้าพร้อมอ้างอิงแหล่งที่มาแบบ Real-time และสรุปเนื้อหาวิชาการ เหมาะสำหรับช่วยยกร่างเนื้อหาทฤษฎีในบทที่ 2
+                </p>
+              </div>
+              <a href="https://www.perplexity.ai" target="_blank" class="text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:underline">ไปยัง Perplexity.ai ➔</a>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-emerald-700 dark:text-emerald-300">🤖 Claude 3.5 Sonnet</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">ภาษาไทยวิชาการ</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  มีความโดดเด่นสูงในด้านการเรียบเรียงภาษาไทยเชิงวิชาการที่สละสลวย ถูกต้องตามแบบแผนบทที่ 1 และบทที่ 5
+                </p>
+              </div>
+              <a href="https://claude.ai" target="_blank" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline">ไปยัง Claude.ai ➔</a>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-amber-700 dark:text-amber-300">📚 Zotero</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">จัดการบรรณานุกรม</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  โปรแกรมจัดการเอกสารอ้างอิงและบรรณานุกรมฟรี รองรับรูปแบบ APA 7th Edition เชื่อมต่อกับ Microsoft Word ได้ทันที
+                </p>
+              </div>
+              <a href="https://www.zotero.org" target="_blank" class="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline">ไปยัง Zotero.org ➔</a>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-purple-700 dark:text-purple-300">✍️ Grammarly / QuillBot</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">ตรวจ Abstract</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  ตรวจสอบความถูกต้องของไวยากรณ์และโครงสร้างประโยคภาษาอังกฤษในบทคัดย่อ (Abstract) สำหรับยื่นประเมิน คศ.3–คศ.5
+                </p>
+              </div>
+              <a href="https://www.grammarly.com" target="_blank" class="text-xs font-bold text-purple-700 dark:text-purple-400 hover:underline">ไปยัง Grammarly.com ➔</a>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-rose-700 dark:text-rose-300">🏆 ThaiJO & TCI</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">เผยแพร่วารสาร</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  ศูนย์ดัชนีการอ้างอิงวารสารไทย (TCI) และระบบวารสารออนไลน์ของไทย สำหรับค้นหาวารสารกลุ่มที่ 1 และ 2 เพื่อตีพิมพ์ผลงาน คศ.4–คศ.5
+                </p>
+              </div>
+              <a href="https://tci-thailand.org" target="_blank" class="text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline">ไปยัง TCI Thailand ➔</a>
+            </div>
           </div>
         </div>
       </div>

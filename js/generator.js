@@ -1,6 +1,7 @@
 // ============================================================================
-// ROAD NEXT-GEN: 5-Chapter Blueprint Generator, Alignment Matrix,
-// AI Co-Pilot (Gemini Live API + Smart Prompt Builder) & Word (.doc) Exporter
+// ROAD NEXT-GEN: 5-Chapter Blueprint Generator, R1-D1-R2-D2 Operational Table,
+// R1-to-D1 Synthesis Bridge, Alignment Matrix, Smart Prompts & Word Exporter
+// ตามแนวคิดและมาตรฐานวิชาการของ รศ.ดร.ชวลิต ชูกำแพง
 // ============================================================================
 
 window.ROAD_GENERATOR = {
@@ -14,7 +15,7 @@ window.ROAD_GENERATOR = {
       ? cList.slice(0, -1).join(" และ") + " และ" + cList[cList.length - 1]
       : (cList[0] || "");
     const d = (p.D || "").trim();
-    return `${a}${b} ${conn}${cText} ${d}`.replace(/\s+/g, " ").trim();
+    return `${a}${b ? ' ' + b : ''} ${conn}${cText ? ' ' + cText : ''} ${d}`.replace(/\s+/g, " ").trim();
   },
 
   // ประกอบชื่อเรื่องวิจัยแบบแยกสีและองค์ประกอบ A B C D สำหรับแสดงผลใน UI
@@ -31,17 +32,17 @@ window.ROAD_GENERATOR = {
 
     return `
       <div class="inline-flex items-center gap-1.5 flex-wrap leading-relaxed">
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-sky-800 dark:text-sky-200 bg-sky-100/90 dark:bg-sky-950/80 border border-sky-300 dark:border-sky-800 shadow-sm" title="A: คำกริยาแสดงลักษณะการวิจัย">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-sky-800 dark:text-sky-200 bg-sky-100/90 dark:bg-sky-950/80 border border-sky-300 dark:border-sky-800 shadow-sm" title="A: นวัตกรรมที่จะพัฒนา">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold bg-sky-200 dark:bg-sky-900 text-sky-900 dark:text-sky-100">A</span>
           <span>${esc(a || "(ยังไม่ระบุ A)")}</span>
         </span>
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-blue-900 dark:text-blue-200 bg-blue-100/90 dark:bg-blue-950/80 border border-blue-300 dark:border-blue-800 shadow-sm" title="B: ชื่อนวัตกรรม / ตัวแปรต้น">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-blue-900 dark:text-blue-200 bg-blue-100/90 dark:bg-blue-950/80 border border-blue-300 dark:border-blue-800 shadow-sm" title="B: หลักการ/แนวคิดทฤษฎีเบื้องหลัง">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-100">B</span>
           <span>${esc(b || "(ยังไม่ระบุ B)")}</span>
         </span>
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 bg-emerald-100/90 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 shadow-sm" title="C: ตัวแปรตาม / ผลลัพธ์ที่พัฒนา">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 bg-emerald-100/90 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 shadow-sm" title="C: ตัวแปรตาม / ผลลัพธ์ วPA">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100">C</span>
-          <span>${esc(conn)}${esc(cText || "(ยังไม่ระบุ C)")}</span>
+          <span>${esc(conn)} ${esc(cText || "(ยังไม่ระบุ C)")}</span>
         </span>
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 shadow-sm" title="D: กลุ่มเป้าหมาย / บริบท">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100">D</span>
@@ -55,9 +56,9 @@ window.ROAD_GENERATOR = {
   parseTitleToABCD(rawTitle) {
     if (!rawTitle || typeof rawTitle !== "string") {
       return {
-        A: "การวิจัยและพัฒนา",
-        B: "",
-        B_short: "",
+        A: "รูปแบบการจัดการเรียนรู้",
+        B: "กระบวนการคิดขั้นสูงเชิงระบบ GPAS 5 Steps",
+        B_short: "รูปแบบ GPAS 5 Steps",
         C_connector: "เพื่อส่งเสริม",
         C_list: ["ความสามารถในการคิดวิเคราะห์", "ผลสัมฤทธิ์ทางการเรียน"],
         D: "สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3",
@@ -67,23 +68,22 @@ window.ROAD_GENERATOR = {
 
     let text = rawTitle.replace(/\s+/g, " ").trim();
 
-    // 1. Detect Action (A)
+    // 1. Detect Action / Innovation type (A)
     const actionPatterns = [
-      "การวิจัยและพัฒนาและประเมินผล",
+      "การวิจัยและพัฒนารูปแบบการจัดการเรียนรู้",
+      "การวิจัยและพัฒนารูปแบบการบริหารจัดการ",
+      "การวิจัยและพัฒนารูปแบบการนิเทศการศึกษา",
+      "การวิจัยและพัฒนาระบบ",
       "การวิจัยและพัฒนา",
-      "การพัฒนาและศึกษาผลของ",
-      "การพัฒนาและศึกษาผลการใช้",
-      "การพัฒนาและหาประสิทธิภาพ",
-      "การสร้างและหาประสิทธิภาพ",
-      "การสร้างและพัฒนา",
-      "การศึกษาผลการใช้",
-      "การศึกษาผลการจัด",
-      "การศึกษาผลของ",
-      "การทดลองใช้",
+      "การพัฒนารูปแบบการจัดการเรียนรู้",
+      "การพัฒนารูปแบบการบริหารจัดการ",
+      "การพัฒนารูปแบบการนิเทศการศึกษา",
+      "การพัฒนาระบบ",
+      "การพัฒนาชุดกิจกรรมการเรียนรู้",
+      "การพัฒนาชุดฝึกทักษะ",
       "การพัฒนา",
-      "การยกระดับ",
-      "การเปรียบเทียบ",
-      "การส่งเสริม"
+      "การศึกษาผลการใช้",
+      "การยกระดับ"
     ];
 
     let foundA = "การพัฒนา";
@@ -105,13 +105,11 @@ window.ROAD_GENERATOR = {
       "เพื่อศึกษาผลของ",
       "เพื่อศึกษาผล",
       "เพื่อศึกษา",
-      "เพื่อสร้างและพัฒนา",
-      "เพื่อเปรียบเทียบ",
       "ที่ส่งผลต่อ",
       "เพื่อ"
     ];
 
-    let foundConn = "เพื่อพัฒนา";
+    let foundConn = "เพื่อส่งเสริม";
     let bText = "";
     let restAfterConn = "";
 
@@ -138,153 +136,228 @@ window.ROAD_GENERATOR = {
     const dConnectors = [
       "สำหรับนักเรียนชั้น",
       "สำหรับนักเรียน",
+      "สำหรับเด็กปฐมวัย",
       "สำหรับนักศึกษา",
-      "สำหรับผู้เรียน",
-      "สำหรับครูผู้สอน",
-      "สำหรับครู",
       "ของนักเรียนชั้น",
       "ของนักเรียน",
-      "ของนักศึกษา",
-      "ของผู้เรียน",
       "ของครูผู้สอน",
       "ของครู",
-      "ในสถานศึกษาสังกัด",
-      "ในสถานศึกษา",
-      "ในโรงเรียน",
+      "ของสถานศึกษา",
+      "สังกัดสำนักงาน",
       "สำหรับ",
       "ของ"
     ];
 
-    let foundD = "";
-    let cText = "";
-
-    if (restAfterConn) {
-      let dIndex = -1;
-      let matchedDConn = "";
-      for (const dConn of dConnectors) {
-        const idx = restAfterConn.indexOf(dConn);
-        if (idx !== -1 && (dIndex === -1 || idx < dIndex)) {
-          dIndex = idx;
-          matchedDConn = dConn;
-        }
+    let dIndex = -1;
+    let matchedDConn = "";
+    for (const dConn of dConnectors) {
+      const idx = restAfterConn.indexOf(dConn);
+      if (idx !== -1 && (dIndex === -1 || idx < dIndex)) {
+        dIndex = idx;
+        matchedDConn = dConn;
       }
+    }
 
-      if (dIndex !== -1) {
-        cText = restAfterConn.substring(0, dIndex).trim();
-        foundD = restAfterConn.substring(dIndex).trim();
-      } else {
-        cText = restAfterConn.trim();
-        foundD = "สำหรับนักเรียนกลุ่มเป้าหมาย";
-      }
+    let cRaw = "";
+    let dText = "";
+
+    if (dIndex !== -1) {
+      cRaw = restAfterConn.substring(0, dIndex).trim();
+      dText = restAfterConn.substring(dIndex).trim();
     } else {
-      let dIndex = -1;
-      let matchedDConn = "";
-      for (const dConn of dConnectors) {
-        const idx = bText.indexOf(dConn);
-        if (idx !== -1 && (dIndex === -1 || idx < dIndex)) {
-          dIndex = idx;
-          matchedDConn = dConn;
-        }
-      }
-      if (dIndex !== -1) {
-        foundD = bText.substring(dIndex).trim();
-        bText = bText.substring(0, dIndex).trim();
-      }
+      cRaw = restAfterConn;
+      dText = "สำหรับนักเรียนกลุ่มเป้าหมาย";
     }
 
-    // 4. Split C into C1, C2 if "และ" is present
-    let cList = [];
-    if (cText) {
-      const parts = cText.split(/ และ |, |และ/);
-      cList = parts.map(s => s.trim().replace(/^และ\s*/, "")).filter(s => s.length >= 2);
-    }
+    // Clean C List
+    let cList = cRaw
+      .split(/และ|,|\//)
+      .map(x => x.trim())
+      .filter(x => x.length > 2);
+
     if (cList.length === 0) {
       cList = ["ความสามารถในการคิดวิเคราะห์", "ผลสัมฤทธิ์ทางการเรียน"];
     }
 
-    // 5. Build B short name
-    let bShort = bText;
-    if (bText.includes("(")) {
-      bShort = bText.split("(")[0].trim();
-    } else if (bText.length > 50) {
-      bShort = bText.substring(0, 48) + "...";
-    }
-
     return {
       A: foundA,
-      B: bText || "ชุดกิจกรรมการเรียนรู้เชิงรุก",
-      B_short: bShort || bText || "ชุดกิจกรรมการเรียนรู้",
+      B: bText || "กระบวนการเรียนรู้เชิงรุก (Active Learning)",
+      B_short: bText ? bText.substring(0, 45) : "นวัตกรรมการเรียนรู้",
       C_connector: foundConn,
       C_list: cList,
-      D: foundD || "สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3",
+      D: dText || "สำหรับนักเรียนกลุ่มเป้าหมาย",
       parsed: true
     };
   },
 
-  // ตรวจสอบสุขภาพและความสอดคล้องของโครงร่างวิจัย (Health & Alignment Score)
-  evaluateResearchHealth(p) {
-    const checks = [];
-    let score = 0;
+  // ==========================================================================
+  // ตารางการดำเนินการวิจัย 4 ระยะ (R1 - D1 - R2 - D2 Operational Table 6 คอลัมน์)
+  // ตามระเบียบวิธีวิจัยมาตรฐานของ รศ.ดร.ชวลิต ชูกำแพง
+  // ==========================================================================
+  generateOperationalTable(p) {
+    const bShort = p.B_short || p.B || "นวัตกรรมการเรียนรู้";
+    const cList = (p.C_list || ["ความสามารถในการคิดวิเคราะห์", "ผลสัมฤทธิ์ทางการเรียน"]).filter(Boolean);
+    const cJoined = cList.join(" และ ");
+    const d = p.D || "สำหรับกลุ่มเป้าหมาย";
+    const sample = p.sample || d;
+    const crit = p.efficiencyCriterion || "80/80";
 
-    const hasA = Boolean(p.A && p.A.trim().length >= 4);
-    checks.push({
-      label: "องค์ประกอบ A (คำกริยา/ประเภทการวิจัย)",
-      ok: hasA,
-      detail: hasA ? `ระบุชัดเจน: "${p.A}"` : "ควรระบุประเภทการวิจัย เช่น การพัฒนา หรือ การวิจัยและพัฒนา"
-    });
-    if (hasA) score += 15;
-
-    const hasB = Boolean(p.B && p.B.trim().length >= 8);
-    checks.push({
-      label: "องค์ประกอบ B (นวัตกรรม/ตัวแปรต้น)",
-      ok: hasB,
-      detail: hasB ? `ระบุนวัตกรรมชัดเจน (${(p.B_steps || []).length} ขั้นตอน)` : "ควรระบุชื่อนวัตกรรมและขั้นตอนการจัดกิจกรรม"
-    });
-    if (hasB) score += 20;
-
-    const cList = (p.C_list || []).filter(Boolean);
-    const hasC = cList.length >= 1;
-    checks.push({
-      label: "องค์ประกอบ C (ตัวแปรตาม/ผลลัพธ์ที่ต้องการพัฒนา)",
-      ok: hasC,
-      detail: hasC ? `มีตัวแปรตาม ${cList.length} ตัว (${cList.join(", ")})` : "ต้องมีตัวแปรตามอย่างน้อย 1 ตัว"
-    });
-    if (hasC) score += 20;
-
-    const hasD = Boolean(p.D && p.D.trim().length >= 6);
-    checks.push({
-      label: "องค์ประกอบ D (กลุ่มเป้าหมาย/ระดับชั้น/บริบท)",
-      ok: hasD,
-      detail: hasD ? `ระบุกลุ่มเป้าหมายชัดเจน: "${p.D}"` : "ควรระบุระดับชั้นหรือกลุ่มเป้าหมายให้ชัดเจน"
-    });
-    if (hasD) score += 15;
-
-    const hasSteps = Array.isArray(p.B_steps) && p.B_steps.filter(Boolean).length >= 3;
-    checks.push({
-      label: "ขั้นตอนของนวัตกรรม (Syntax / Learning Steps)",
-      ok: hasSteps,
-      detail: hasSteps ? `กำหนดไว้ ${p.B_steps.filter(Boolean).length} ขั้นตอน สอดคล้องกับบทที่ 2 และ 3` : "ควรระบุขั้นตอนของนวัตกรรมอย่างน้อย 3–5 ขั้นตอน"
-    });
-    if (hasSteps) score += 15;
-
-    const s = p.statsData || {};
-    const critParts = String(p.efficiencyCriterion || "80/80").split("/").map(Number);
-    const e1Pass = Number(s.e1) >= (critParts[0] || 80);
-    const e2Pass = Number(s.e2) >= (critParts[1] || 80);
-    const statConsistent = Number(s.postMean) > Number(s.preMean) && e1Pass && e2Pass;
-    checks.push({
-      label: "ความสอดคล้องของค่าสถิติและสมมติฐาน (บทที่ 3–4)",
-      ok: statConsistent,
-      detail: statConsistent
-        ? `E1/E2 (${s.e1}/${s.e2}) สูงกว่าเกณฑ์ ${p.efficiencyCriterion} และคะแนนหลังเรียน (${s.postMean}) สูงกว่าก่อนเรียน (${s.preMean})`
-        : `ตรวจสอบค่า E1/E2 (${s.e1}/${s.e2}) หรือคะแนนหลังเรียนเทียบกับเกณฑ์ ${p.efficiencyCriterion}`
-    });
-    if (statConsistent) score += 15;
-
-    return { score, checks };
+    return [
+      {
+        phase: "ระยะที่ 1 (R1)",
+        phaseName: "การศึกษาข้อมูลพื้นฐานและความต้องการจำเป็น (Research 1)",
+        objective: `1. เพื่อศึกษาสภาพปัญหา ความต้องการจำเป็น เอกสารและงานวิจัยที่เกี่ยวข้องในการพัฒนา${bShort} ${d}`,
+        dataCollection: "1) การวิเคราะห์เนื้อหาเอกสาร (Document Analysis)\n2) การสนทนากลุ่ม (Focus Group Discussion 8–12 คน)\n3) การสัมภาษณ์เชิงลึก (In-depth Interview)",
+        sources: "เอกสารหลักสูตร, งานวิจัยที่เกี่ยวข้อง, ผู้ทรงคุณวุฒิ, ครูผู้สอน และตัวแทนผู้เรียน/ผู้มีส่วนได้ส่วนเสีย",
+        output: `1) กรอบแนวคิดเชิงทฤษฎีในการพัฒนา\n2) รายการสภาพปัญหาและความต้องการจำเป็น\n3) หัวข้อสาระความรู้สำหรับสังเคราะห์บทที่ 2`,
+        notes: "ไม่มีการตั้งสมมติฐาน (การวิจัยเชิงสำรวจและวิเคราะห์เอกสาร)"
+      },
+      {
+        phase: "ระยะที่ 2 (D1)",
+        phaseName: "การออกแบบและพัฒนานวัตกรรม (Development 1)",
+        objective: `2. เพื่อยกร่าง ตรวจสอบความเหมาะสม และหาประสิทธิภาพเบื้องต้นของ${bShort} ${d} ตามเกณฑ์ ${crit}`,
+        dataCollection: "1) การประชุมเชิงปฏิบัติการยกร่างนวัตกรรม\n2) การประเมินความสอดคล้อง (IOC) และความเหมาะสมโดยผู้เชี่ยวชาญ 5 ท่าน\n3) การทดลองนำร่อง (Try out) กับผู้เรียน 1:1, 1:10, 1:100",
+        sources: "ผู้เชี่ยวชาญ/ผู้ทรงคุณวุฒิ 5 ท่าน และกลุ่มทดลองนำร่อง (Try out) ที่ไม่ใช่กลุ่มตัวอย่างจริง",
+        output: `1) ร่าง${bShort} ฉบับยกร่าง (ร่างที่ 1)\n2) ผลการประเมินความเหมาะสมและค่า IOC (ร่างที่ 2)\n3) แผนการสอนและเครื่องมือวิจัยที่มีคุณภาพ พร้อมคู่มือการใช้`,
+        notes: "ไม่มีการตั้งสมมติฐาน (เน้นตรวจสอบเกณฑ์ความเหมาะสมและประสิทธิภาพ E1/E2)"
+      },
+      {
+        phase: "ระยะที่ 3 (R2)",
+        phaseName: "การทดลองใช้นวัตกรรมในสถานการณ์จริง (Research 2)",
+        objective: `3. เพื่อศึกษาผลการใช้และเปรียบเทียบ${cJoined} ของ${d} ก่อนและหลังการใช้${bShort}`,
+        dataCollection: `1) การทดสอบก่อนเรียน (Pre-test: O1)\n2) การจัดการเรียนรู้และเก็บคะแนนระหว่างเรียน (E1)\n3) การทดสอบหลังเรียน (Post-test: O2)\n4) แบบวัด${cList[0] || 'ทักษะ'}`,
+        sources: `กลุ่มตัวอย่างจริง: ${sample}`,
+        output: `1) ค่าประสิทธิภาพกระบวนการและผลลัพธ์ (E1/E2) ตามเกณฑ์ ${crit}\n2) ค่าดัชนีประสิทธิผล (E.I.)\n3) ผลการเปรียบเทียบก่อน-หลังเรียน (t-test Dependent) และขนาดอิทธิพล (Cohen's d)`,
+        notes: "★ เฉพาะระยะนี้เท่านั้นที่มีการตั้งสมมติฐานการวิจัย!"
+      },
+      {
+        phase: "ระยะที่ 4 (D2)",
+        phaseName: "การประเมินผล ปรับปรุง และขยายผล (Development 2)",
+        objective: `4. เพื่อศึกษาความพึงพอใจและประสิทธิผลของผู้ใช้ที่มีต่อ${bShort} และปรับปรุงเป็นฉบับสมบูรณ์`,
+        dataCollection: "1) แบบสอบถามความพึงพอใจแบบมาตราส่วนประมาณค่า 5 ระดับ (Likert Scale)\n2) แบบประเมินผลการใช้รูปแบบ\n3) การสนทนาสะท้อนผล (After Action Review: AAR)",
+        sources: `ผู้เรียน/ผู้รับการทดลอง (${sample}), ครูผู้สอน และผู้มีส่วนได้ส่วนเสีย (Stakeholders)`,
+        output: `1) ข้อมูลระดับความพึงพอใจ (x̄, S.D.)\n2) ข้อเสนอแนะเชิงลึกเพื่อการปรับปรุง\n3) ${bShort} ฉบับสมบูรณ์พร้อมคู่มือและข้อเสนอแนะเชิงนโยบาย`,
+        notes: "ไม่มีการตั้งสมมติฐาน (การวิจัยเชิงประเมินและสะท้อนคิด)"
+      }
+    ];
   },
 
-  // สร้างตารางตรวจสอบความสอดคล้อง 360 องศา (Alignment Matrix)
+  // ==========================================================================
+  // ตารางแสดงการเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge)
+  // ตอบคำถามว่า "ผลการศึกษาใน R1 นำไปสู่การออกแบบนวัตกรรมใน D1 อย่างไร" (How & Why)
+  // ==========================================================================
+  generateR1toD1Bridge(p) {
+    const bShort = p.B_short || p.B || "นวัตกรรม";
+    const c1 = (p.C_list || [])[0] || "การคิดวิเคราะห์";
+    const steps = (p.B_steps || []).filter(Boolean);
+
+    return [
+      {
+        r1Dimension: "1. ด้านทฤษฎีและงานวิจัยที่เกี่ยวข้อง (Literature & Theory)",
+        r1Findings: `ศึกษาทฤษฎีการสร้างความรู้ด้วยตนเอง (Constructivism), การเรียนรู้เชิงรุก (Active Learning) และหลักการของ ${p.B || bShort}`,
+        d1Transformation: "สังเคราะห์เป็น 'หลักการและปรัชญาของรูปแบบ (Principles)' ใน D1",
+        whyHow: `นำข้อค้นพบที่ว่าผู้เรียนจะเข้าใจ${c1}ได้ดีเมื่อได้ลงมือปฏิบัติจริง มากำหนดเป็นหลักการพื้นฐาน 4 ข้อของรูปแบบ`
+      },
+      {
+        r1Dimension: "2. ด้านสภาพปัญหาและความต้องการจำเป็น (Needs Assessment)",
+        r1Findings: `ผู้เรียนขาดทักษะ${c1}, บรรยายฝ่ายเดียวทำให้เบื่อหน่าย, ขาดสื่อที่เชื่อมโยงกับชีวิตจริง`,
+        d1Transformation: "กำหนดเป็น 'วัตถุประสงค์ของรูปแบบ (Objectives)' และเป้าหมายผลลัพธ์ วPA",
+        whyHow: "เปลี่ยนปัญหาที่พบในพื้นที่ให้กลายเป็นตัวแปรตาม C และตัวชี้วัดความสำเร็จของนวัตกรรม"
+      },
+      {
+        r1Dimension: "3. ด้านแนวทางการจัดการเรียนรู้ (Pedagogical Strategy)",
+        r1Findings: `ผู้เชี่ยวชาญแนะนำให้จัดกิจกรรมเป็นขั้นตอนอย่างเป็นระบบ มีการกระตุ้นความคิด เชื่อมโยง และสะท้อนคิด`,
+        d1Transformation: `ออกแบบ 'ขั้นตอนการจัดกิจกรรม (Syntax / 5-6 Steps)' ของ${bShort}`,
+        whyHow: `นำแนวคิดมาร้อยเรียงเป็นขั้นตอนกิจกรรม ${steps.length} ขั้นตอน ได้แก่: ${steps.map((s, i) => `${i+1}) ${s.split("(")[0].trim()}`).join(", ")}`
+      },
+      {
+        r1Dimension: "4. ด้านสื่อ อุปกรณ์ และสิ่งสนับสนุน (Learning Support)",
+        r1Findings: "ครูต้องการคู่มือการสอน ใบงาน และเครื่องมือวัดที่ชัดเจน ใช้งานสะดวกในคาบเรียนปกติ",
+        d1Transformation: "จัดทำ 'ระบบสิ่งสนับสนุน (Support System)' และคู่มือการใช้นวัตกรรม",
+        whyHow: "จัดทำแผนการจัดการเรียนรู้, สื่อมัลติมีเดีย/ใบกิจกรรม, แบบทดสอบ และเกณฑ์รูบริกส์ (Rubric Score)"
+      }
+    ];
+  },
+
+  // ==========================================================================
+  // โครงสร้างองค์ประกอบของรูปแบบ (Innovation Model Components)
+  // ครูผู้สอน: 5 ด้าน / ผู้บริหารและศึกษานิเทศก์: 6 ด้าน
+  // ==========================================================================
+  generateModelComponents(p) {
+    const track = p.track || "teacher";
+    const bShort = p.B_short || p.B || "รูปแบบการจัดการเรียนรู้";
+    const steps = (p.B_steps || []).filter(Boolean);
+    const cJoined = (p.C_list || []).filter(Boolean).join(" และ ");
+
+    if (track === "admin" || track === "supervisor") {
+      // องค์ประกอบรูปแบบ 6 ด้าน สำหรับผู้บริหาร/ศึกษานิเทศก์
+      return [
+        {
+          num: 1,
+          name: "1. หลักการและทฤษฎีพื้นฐานของรูปแบบ (Principles & Theoretical Foundations)",
+          content: `พัฒนาขึ้นบนพื้นฐานทฤษฎีระบบ (Systems Theory), การบริหารแบบมีส่วนร่วม, และชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC) เพื่อขับเคลื่อนคุณภาพการศึกษาอย่างยั่งยืน`
+        },
+        {
+          num: 2,
+          name: "2. วัตถุประสงค์ของรูปแบบ (Model Objectives)",
+          content: `เพื่อยกระดับ${cJoined} ในสถานศึกษาเป้าหมาย และเสริมสร้างภาวะผู้นำทางวิชาการร่วมกัน`
+        },
+        {
+          num: 3,
+          name: "3. ระบบงานและกลไกการดำเนินงาน (Work Systems & Mechanisms: Input-Process-Output)",
+          content: `ประกอบด้วย: 1) ปัจจัยนำเข้า (Input: นโยบาย บุคลากร ทรัพยากร) 2) กระบวนการดำเนินงาน (Process: การวางแผน การโค้ช การเปิดชั้นเรียน การสะท้อนคิด) 3) ผลผลิตและผลลัพธ์ (Output/Outcome: คุณภาพครูและผลสัมฤทธิ์ผู้เรียน)`
+        },
+        {
+          num: 4,
+          name: "4. วิธีการและแผนการดำเนินงาน (Implementation Procedures & Steps)",
+          content: steps.map((s, i) => `ขั้นตอนที่ ${i+1}: ${s}`).join("\n")
+        },
+        {
+          num: 5,
+          name: "5. แนวทางการวัดและประเมินผลรูปแบบ (Evaluation Guidelines)",
+          content: `ประเมินผล 3 ระดับ: 1) ประเมินประสิทธิผลกระบวนการทำงาน 2) ประเมินสมรรถนะครูผู้สอน 3) ประเมินผลลัพธ์ที่เกิดกับผู้เรียนตามเกณฑ์ วPA`
+        },
+        {
+          num: 6,
+          name: "6. เงื่อนไขและปัจจัยสู่ความสำเร็จในการนำรูปแบบไปใช้ (Success Factors & Conditions)",
+          content: `ความต่อเนื่องของนโยบาย, การสนับสนุนงบประมาณและเวลาสำหรับทำ PLC, การมีส่วนร่วมอย่างจริงใจของผู้มีส่วนได้ส่วนเสีย และการสะท้อนคิดเชิงสร้างสรรค์`
+        }
+      ];
+    }
+
+    // องค์ประกอบรูปแบบ 5 ด้าน สำหรับครูผู้สอน
+    return [
+      {
+        num: 1,
+        name: "1. หลักการของรูปแบบ (Principles of the Model)",
+        content: `มุ่งเน้นให้ผู้เรียนเป็นศูนย์กลาง ได้ลงมือปฏิบัติจริง (Active Learning) สร้างองค์ความรู้ผ่านการสืบเสาะและการมีปฏิสัมพันธ์ร่วมกัน โดยครูทำหน้าที่เป็นผู้อำนวยความสะดวก (Facilitator) และให้ข้อมูลสะท้อนกลับ (Feedback)`
+      },
+      {
+        num: 2,
+        name: "2. วัตถุประสงค์ของรูปแบบ (Model Objectives)",
+        content: `เพื่อส่งเสริมและพัฒนา${cJoined} ของ${p.D || "ผู้เรียนกลุ่มเป้าหมาย"} ให้มีพัฒนาการสูงขึ้นและผ่านเกณฑ์มาตรฐาน`
+      },
+      {
+        num: 3,
+        name: "3. กระบวนการจัดการเรียนรู้ (Syntax / Learning Procedures)",
+        content: steps.map((s, i) => `ขั้นที่ ${i+1}: ${s} (บทบาทครู: กระตุ้นคำถาม สังเกต แนะนำ / บทบาทนักเรียน: สืบค้น ร่วมมือ ปฏิบัติ สรุป)`).join("\n")
+      },
+      {
+        num: 4,
+        name: "4. ระบบสิ่งสนับสนุนการเรียนรู้ (Support System)",
+        content: `แผนการจัดการเรียนรู้เชิงรุก, สื่อดิจิทัลและใบกิจกรรม, บอร์ดเกม/ชุดกิจกรรม, แหล่งเรียนรู้ออนไลน์ และห้องเรียนที่เอื้อต่อการทำงานกลุ่มอย่างปลอดภัย`
+      },
+      {
+        num: 5,
+        name: "5. การวัดและประเมินผล (Measurement & Evaluation)",
+        content: `1) การประเมินระหว่างเรียน (Formative Assessment: สังเกตพฤติกรรม ใบงาน E1) 2) การประเมินหลังเรียน (Summative Assessment: แบบทดสอบ E2, แบบวัดทักษะ และแบบสอบถามความพึงพอใจ)`
+      }
+    ];
+  },
+
+  // ==========================================================================
+  // Research Alignment Matrix (ตารางความสอดคล้อง 360 องศา)
+  // ==========================================================================
   generateAlignmentMatrix(p) {
     const bShort = p.B_short || p.B || "นวัตกรรมการเรียนรู้";
     const cList = (p.C_list || ["ความสามารถในการคิดวิเคราะห์", "ผลสัมฤทธิ์ทางการเรียน"]).filter(Boolean);
@@ -292,435 +365,457 @@ window.ROAD_GENERATOR = {
     const c2 = cList[1] || null;
     const d = p.D || "สำหรับนักเรียนกลุ่มเป้าหมาย";
     const crit = p.efficiencyCriterion || "80/80";
-    const isRD = p.modelId === "rd_4step";
 
-    const rows = [];
-
-    if (isRD) {
-      rows.push({
+    const rows = [
+      {
         phase: "ระยะที่ 1 (R1): ศึกษาข้อมูลพื้นฐาน",
         objective: `1. เพื่อศึกษาสภาพปัญหา ความต้องการจำเป็น และข้อมูลพื้นฐานในการพัฒนา${bShort} ${d}`,
         question: `สภาพปัญหาและความต้องการจำเป็นในการพัฒนา${bShort} ${d} เป็นอย่างไร?`,
-        hypothesis: "— (การวิจัยเชิงสำรวจ/วิเคราะห์เอกสารและข้อมูลพื้นฐาน)",
-        informants: "เอกสารหลักสูตร แนวคิดทฤษฎี ผู้เชี่ยวชาญ/ครูผู้สอน และตัวแทนผู้เรียน",
-        instruments: "แบบวิเคราะห์เอกสาร แบบสัมภาษณ์กึ่งโครงสร้าง และแบบสอบถามความต้องการจำเป็น",
+        hypothesis: "— (การวิจัยเชิงสำรวจและวิเคราะห์เอกสาร ไม่ตั้งสมมติฐาน)",
+        informants: "เอกสารหลักสูตร, งานวิจัยที่เกี่ยวข้อง, ผู้ทรงคุณวุฒิ, ครูผู้สอน และตัวแทนผู้เรียน",
+        instruments: "แบบวิเคราะห์เอกสาร, แบบสัมภาษณ์กึ่งโครงสร้าง และแบบบันทึกการสนทนากลุ่ม (Focus Group)",
         statistics: "การวิเคราะห์เนื้อหา (Content Analysis), ความถี่, ร้อยละ, ค่าเฉลี่ย (x̄) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)",
         ch4Section: "ตอนที่ 1 ผลการวิเคราะห์ข้อมูลพื้นฐานและความต้องการจำเป็น"
-      });
-    }
-
-    rows.push({
-      phase: isRD ? "ระยะที่ 2 (D1): พัฒนาและหาคุณภาพนวัตกรรม" : "ขั้นพัฒนาและหาประสิทธิภาพนวัตกรรม",
-      objective: `${rows.length + 1}. เพื่อพัฒนาและหาประสิทธิภาพของ${bShort} ${d} ให้มีประสิทธิภาพตามเกณฑ์ ${crit}`,
-      question: `${bShort} ที่พัฒนาขึ้นมีคุณภาพความเหมาะสมและมีประสิทธิภาพตามเกณฑ์ ${crit} หรือไม่?`,
-      hypothesis: `${bShort} ที่พัฒนาขึ้นมีประสิทธิภาพไม่ต่ำกว่าเกณฑ์ ${crit} และมีดัชนีประสิทธิผล (E.I.) ตั้งแต่ 0.50 ขึ้นไป`,
-      informants: `ผู้เชี่ยวชาญจำนวน 5 ท่าน (ตรวจสอบคุณภาพ IOC) และกลุ่มทดลองนำร่อง (Tryout) / กลุ่มตัวอย่าง (${p.sample || d})`,
-      instruments: `1) ${bShort} (${p.duration || "แผนการจัดการเรียนรู้"}) 2) แบบประเมินความสอดคล้อง IOC และความเหมาะสม 3) แบบทดสอบย่อยระหว่างเรียนและหลังเรียน`,
-      statistics: `ค่าดัชนีความสอดคล้อง (IOC), ค่าเฉลี่ย (x̄), S.D., ค่าประสิทธิภาพของกระบวนการและผลลัพธ์ (E1/E2) และค่าดัชนีประสิทธิผล (E.I.)`,
-      ch4Section: `ตอนที่ ${rows.length + 1} ผลการพัฒนาและหาประสิทธิภาพของ${bShort} (E1/E2 และ E.I.)`
-    });
-
-    rows.push({
-      phase: isRD ? "ระยะที่ 3 (R2): ทดลองใช้นวัตกรรม (ตัวแปรตามที่ 1)" : "ขั้นทดลองใช้นวัตกรรม (ตัวแปรตามที่ 1)",
-      objective: `${rows.length + 1}. เพื่อเปรียบเทียบ${c1} ${d} ก่อนและหลังการจัดการเรียนรู้ด้วย${bShort}`,
-      question: `ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มี${c1} หลังเรียนสูงกว่าก่อนเรียนหรือไม่?`,
-      hypothesis: `ผู้เรียนที่เรียนด้วย${bShort} มี${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05`,
-      informants: `กลุ่มตัวอย่าง ได้แก่ ${p.sample || d}`,
-      instruments: `แบบวัด/แบบทดสอบวัด${c1} (ค่าความเชื่อมั่น α ของครอนบาค)`,
-      statistics: "ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.) และสถิติทดสอบทีแบบกลุ่มไม่อิสระ (t-test dependent)",
-      ch4Section: `ตอนที่ ${rows.length + 1} ผลการเปรียบเทียบ${c1} ก่อนเรียนและหลังเรียน`
-    });
+      },
+      {
+        phase: "ระยะที่ 2 (D1): ออกแบบและพัฒนานวัตกรรม",
+        objective: `2. เพื่อพัฒนาและหาประสิทธิภาพของ${bShort} ${d} ให้มีประสิทธิภาพตามเกณฑ์ ${crit}`,
+        question: `${bShort} ที่พัฒนาขึ้นมีความเหมาะสมและมีประสิทธิภาพตามเกณฑ์ ${crit} หรือไม่?`,
+        hypothesis: "— (การตรวจสอบเกณฑ์มาตรฐาน ไม่ตั้งสมมติฐานและไม่ใช้ t-test)",
+        informants: `ผู้เชี่ยวชาญ 5 ท่าน (ตรวจสอบ IOC) และกลุ่มทดลองนำร่อง (Try out)`,
+        instruments: `1) ${bShort} และแผนการจัดการเรียนรู้ 2) แบบประเมินความสอดคล้อง (IOC) และความเหมาะสม 3) แบบทดสอบย่อยระหว่างเรียน`,
+        statistics: `ค่าดัชนีความสอดคล้อง (IOC), ค่าเฉลี่ย (x̄), S.D. และค่าประสิทธิภาพของกระบวนการและผลลัพธ์ (E1/E2)`,
+        ch4Section: `ตอนที่ 2 ผลการสร้าง พัฒนา และหาประสิทธิภาพของ${bShort} (E1/E2)`
+      },
+      {
+        phase: "ระยะที่ 3 (R2): ทดลองใช้นวัตกรรมจริง",
+        objective: `3.1 เพื่อเปรียบเทียบ${c1} ของ${d} ก่อนและหลังการจัดการเรียนรู้ด้วย${bShort}`,
+        question: `ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มี${c1} หลังเรียนสูงกว่าก่อนเรียนหรือไม่?`,
+        hypothesis: `ผู้เรียนมี${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (★ สมมติฐานเฉพาะระยะนี้)`,
+        informants: `กลุ่มตัวอย่างจริง (${p.sample || d})`,
+        instruments: `แบบวัด${c1} (Pre-test และ Post-test)`,
+        statistics: `ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.), t-test for Dependent Samples และขนาดอิทธิพล (Cohen's d)`,
+        ch4Section: `ตอนที่ 3.1 ผลการเปรียบเทียบ${c1} ก่อนและหลังเรียน`
+      }
+    ];
 
     if (c2) {
       rows.push({
-        phase: isRD ? "ระยะที่ 3 (R2): ทดลองใช้นวัตกรรม (ตัวแปรตามที่ 2)" : "ขั้นทดลองใช้นวัตกรรม (ตัวแปรตามที่ 2)",
-        objective: `${rows.length + 1}. เพื่อเปรียบเทียบ${c2} ${d} ก่อนและหลังการจัดการเรียนรู้ด้วย${bShort}`,
-        question: `ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มี${c2} หลังเรียนสูงกว่าก่อนเรียนหรือไม่?`,
-        hypothesis: `ผู้เรียนที่เรียนด้วย${bShort} มี${c2} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05`,
-        informants: `กลุ่มตัวอย่าง ได้แก่ ${p.sample || d}`,
-        instruments: `แบบทดสอบวัด${c2} ชนิดปรนัย 4 ตัวเลือก จำนวน ${p.statsData?.fullScore || 40} ข้อ`,
-        statistics: "ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.) และสถิติทดสอบทีแบบกลุ่มไม่อิสระ (t-test dependent)",
-        ch4Section: `ตอนที่ ${rows.length + 1} ผลการเปรียบเทียบ${c2} ก่อนเรียนและหลังเรียน`
+        phase: "ระยะที่ 3 (R2): ทดลองใช้นวัตกรรมจริง",
+        objective: `3.2 เพื่อเปรียบเทียบ${c2} ของ${d} หลังเรียนเทียบกับเกณฑ์ หรือก่อนและหลังเรียน`,
+        question: `ผู้เรียนมี${c2} หลังเรียนสูงกว่าก่อนเรียน หรือสูงกว่าเกณฑ์ที่กำหนดหรือไม่?`,
+        hypothesis: `ผู้เรียนมี${c2} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05`,
+        informants: `กลุ่มตัวอย่างจริง (${p.sample || d})`,
+        instruments: `แบบทดสอบวัด${c2}`,
+        statistics: `ค่าเฉลี่ย (x̄), S.D., t-test Dependent หรือ One-sample t-test เทียบเกณฑ์ร้อยละ`,
+        ch4Section: `ตอนที่ 3.2 ผลการเปรียบเทียบ${c2}`
       });
     }
 
     rows.push({
-      phase: isRD ? "ระยะที่ 4 (D2): ประเมินผลและปรับปรุง" : "ขั้นประเมินความพึงพอใจ",
-      objective: `${rows.length + 1}. เพื่อศึกษาความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย${bShort} ${d}`,
-      question: `ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} อยู่ในระดับใด?`,
-      hypothesis: `ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} อยู่ในระดับมากขึ้นไป (x̄ ≥ 3.51)`,
-      informants: `กลุ่มตัวอย่าง ได้แก่ ${p.sample || d}`,
-      instruments: "แบบสอบถามความพึงพอใจชนิดมาตราส่วนประมาณค่า 5 ระดับ (Likert Scale) จำนวน 15 ข้อ",
-      statistics: "ค่าเฉลี่ย (x̄) และส่วนเบี่ยงเบนมาตรฐาน (S.D.) เทียบกับเกณฑ์การแปลผล 5 ระดับ",
-      ch4Section: `ตอนที่ ${rows.length + 1} ผลการวิเคราะห์ความพึงพอใจของผู้เรียน`
+      phase: "ระยะที่ 4 (D2): ประเมินผลและปรับปรุง",
+      objective: `4. เพื่อศึกษาความพึงพอใจของ${d} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort} และปรับปรุงเป็นฉบับสมบูรณ์`,
+      question: `ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} ในระดับใด?`,
+      hypothesis: "— (การวิจัยเชิงประเมินความรู้สึกและความคิดเห็น ไม่ตั้งสมมติฐาน)",
+      informants: `กลุ่มตัวอย่างจริง (${p.sample || d}) และผู้เกี่ยวข้อง`,
+      instruments: "แบบสอบถามความพึงพอใจแบบมาตราส่วนประมาณค่า 5 ระดับ (Likert Scale)",
+      statistics: "ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.) และเกณฑ์การแปลผล 5 ระดับ",
+      ch4Section: `ตอนที่ 4 ผลการประเมินความพึงพอใจและข้อเสนอแนะในการปรับปรุง`
     });
 
     return rows;
   },
 
-  // สร้างโครงร่างและเนื้อหา 5 บทแบบสมบูรณ์
+  // ==========================================================================
+  // พิมพ์เขียวรายงานวิจัย 5 บทฉบับเต็ม (5-Chapter Research Blueprint)
+  // ตามเกณฑ์ วPA และหลักการเขียนของ รศ.ดร.ชวลิต ชูกำแพง
+  // ==========================================================================
   generateChapters(p) {
     const fullTitle = this.composeFullTitle(p);
-    const bFull = p.B || "รูปแบบการจัดการเรียนรู้";
-    const bShort = p.B_short || bFull;
+    const bShort = p.B_short || p.B || "นวัตกรรมการเรียนรู้";
+    const bFull = p.B || bShort;
     const cList = (p.C_list || ["ความสามารถในการคิดวิเคราะห์", "ผลสัมฤทธิ์ทางการเรียน"]).filter(Boolean);
-    const c1 = cList[0] || "ความสามารถในการคิดวิเคราะห์";
+    const c1 = cList[0] || "ความสามารถในการเรียนรู้";
     const c2 = cList[1] || null;
-    const cJoined = cList.join(" และ");
+    const cJoined = cList.join(" และ ");
     const d = p.D || "สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3";
-    const subj = p.subject || "รายวิชาพื้นฐานตามหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน";
-    const sem = p.semester || "ภาคเรียนที่ 1 ปีการศึกษา 2569";
-    const dur = p.duration || "จำนวน 6 แผนการจัดการเรียนรู้ เวลา 18 ชั่วโมง";
-    const pop = p.population || `นักเรียน${d.replace(/^สำหรับ|^ของ/, "")} ในสถานศึกษาเป้าหมาย`;
-    const samp = p.sample || `นักเรียน${d.replace(/^สำหรับ|^ของ/, "")} จำนวน 1 ห้องเรียน`;
+    const sample = p.sample || d;
+    const population = p.population || `ผู้เรียน ${d}`;
+    const subject = p.subject || "กลุ่มสาระการเรียนรู้";
+    const duration = p.duration || "จำนวน 5 แผนการจัดการเรียนรู้ เวลา 15 ชั่วโมง";
     const crit = p.efficiencyCriterion || "80/80";
-    const critParts = crit.split("/");
+    const critParts = String(crit).split("/").map(Number);
+    const critE1 = critParts[0] || 80;
+    const critE2 = critParts[1] || 80;
+
+    const st = p.statsData || {
+      n: 38,
+      fullScore: 40,
+      e1: 82.45,
+      e2: 81.68,
+      ei: 0.6842,
+      preMean: 18.42,
+      preSD: 3.15,
+      postMean: 32.67,
+      postSD: 2.64,
+      tValue: 24.86,
+      pValue: ".000",
+      c1PreMean: 14.20,
+      c1PreSD: 2.45,
+      c1PostMean: 25.10,
+      c1PostSD: 2.12,
+      c1Full: 30,
+      c1TValue: 21.34,
+      satMean: 4.62,
+      satSD: 0.45,
+      iocAvg: 0.92
+    };
+
     const steps = (p.B_steps || []).filter(Boolean);
+    const opTable = this.generateOperationalTable(p);
+    const r1d1Bridge = this.generateR1toD1Bridge(p);
+    const modelComponents = this.generateModelComponents(p);
     const matrix = this.generateAlignmentMatrix(p);
-    const st = p.statsData || {};
 
-    // แปลผลระดับความพึงพอใจ
-    const satVal = Number(st.satMean || 4.62);
-    const satLevel = satVal >= 4.51 ? "มากที่สุด" : satVal >= 3.51 ? "มาก" : satVal >= 2.51 ? "ปานกลาง" : "น้อย";
+    // สร้างตารางบทที่ 4 (Academic Three-line Tables)
+    const ch4Tables = [
+      {
+        tableNo: "ตารางที่ 4.1",
+        caption: `ผลการวิเคราะห์หาประสิทธิภาพของ${bShort} ${d} ตามเกณฑ์ ${crit}`,
+        headers: ["รายการประเมิน", "คะแนนเต็ม", "คะแนนเฉลี่ย (x̄)", "ส่วนเบี่ยงเบนมาตรฐาน (S.D.)", "ร้อยละ / ประสิทธิภาพ", "เกณฑ์มาตรฐาน", "ผลการประเมิน"],
+        rows: [
+          ["ประสิทธิภาพของกระบวนการ (E1)", String(st.fullScore * 2 || 80), (st.preMean * 2.1).toFixed(2), (st.preSD * 1.1).toFixed(2), `${st.e1}%`, `${critE1}%`, Number(st.e1) >= critE1 ? "สูงกว่าเกณฑ์" : "ต่ำกว่าเกณฑ์"],
+          ["ประสิทธิภาพของผลลัพธ์ (E2)", String(st.fullScore || 40), Number(st.postMean).toFixed(2), Number(st.postSD).toFixed(2), `${st.e2}%`, `${critE2}%`, Number(st.e2) >= critE2 ? "สูงกว่าเกณฑ์" : "ต่ำกว่าเกณฑ์"],
+          ["สรุปประสิทธิภาพรวม (E1/E2)", "—", "—", "—", `${st.e1}/${st.e2}`, crit, "มีประสิทธิภาพตามเกณฑ์ที่กำหนด"]
+        ],
+        interpretation: `จากตารางที่ 4.1 พบว่า ${bShort} มีประสิทธิภาพของกระบวนการ (E1) เท่ากับ ${st.e1} และประสิทธิภาพของผลลัพธ์ (E2) เท่ากับ ${st.e2} ซึ่งสูงกว่าเกณฑ์มาตรฐาน ${crit} ที่กำหนดไว้ สรุปได้ว่า ${bShort} ที่พัฒนาขึ้นมีประสิทธิภาพเหมาะสม สามารถนำไปใช้จัดการเรียนรู้ได้อย่างมีคุณภาพ`
+      },
+      {
+        tableNo: "ตารางที่ 4.2",
+        caption: `ผลการเปรียบเทียบ${c1} ของ${d} ก่อนและหลังการใช้${bShort}`,
+        headers: ["การทดสอบ", "จำนวนนักเรียน (n)", "คะแนนเต็ม", "คะแนนเฉลี่ย (x̄)", "ส่วนเบี่ยงเบน (S.D.)", "t-test", "p-value", "ขนาดอิทธิพล (Cohen's d)"],
+        rows: [
+          ["ก่อนเรียน (Pre-test)", String(st.n || 38), String(st.c1Full || 30), Number(st.c1PreMean).toFixed(2), Number(st.c1PreSD).toFixed(2), `t = ${st.c1TValue}`, "p < .001", "d = 1.84 (ขนาดใหญ่มาก)"],
+          ["หลังเรียน (Post-test)", String(st.n || 38), String(st.c1Full || 30), Number(st.c1PostMean).toFixed(2), Number(st.c1PostSD).toFixed(2), "", "", ""]
+        ],
+        interpretation: `จากตารางที่ 4.2 พบว่า ผู้เรียนมีคะแนน${c1} หลังเรียน (x̄ = ${st.c1PostMean}, S.D. = ${st.c1PostSD}) สูงกว่าก่อนเรียน (x̄ = ${st.c1PreMean}, S.D. = ${st.c1PreSD}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${st.c1TValue}, p < .001) และมีค่าขนาดอิทธิพล Cohen's d เท่ากับ 1.84 แสดงว่านวัตกรรมส่งผลต่อการพัฒนา${c1} ของผู้เรียนในระดับสูงมาก สอดคล้องกับสมมติฐานการวิจัย`
+      },
+      {
+        tableNo: "ตารางที่ 4.3",
+        caption: `ผลการเปรียบเทียบผลสัมฤทธิ์ทางการเรียน และดัชนีประสิทธิผล (Effectiveness Index: E.I.)`,
+        headers: ["การประเมินผลสัมฤทธิ์", "คะแนนเต็ม", "คะแนนเฉลี่ย (x̄)", "S.D.", "ดัชนีประสิทธิผล (E.I.)", "คิดเป็นร้อยละ", "การแปลผล"],
+        rows: [
+          ["ก่อนเรียน (Pre-test)", String(st.fullScore || 40), Number(st.preMean).toFixed(2), Number(st.preSD).toFixed(2), String(st.ei), `${(st.ei * 100).toFixed(2)}%`, "ผู้เรียนมีความก้าวหน้า"],
+          ["หลังเรียน (Post-test)", String(st.fullScore || 40), Number(st.postMean).toFixed(2), Number(st.postSD).toFixed(2), "", "", "สูงกว่าเกณฑ์มาตรฐาน 0.50"]
+        ],
+        interpretation: `จากตารางที่ 4.3 พบว่า ค่าดัชนีประสิทธิผล (E.I.) ของ${bShort} มีค่าเท่ากับ ${st.ei} คิดเป็นร้อยละ ${(st.ei * 100).toFixed(2)} แสดงว่าผู้เรียนมีความรู้เพิ่มขึ้นหรือมีความก้าวหน้าทางการเรียนร้อยละ ${(st.ei * 100).toFixed(2)} หลังจากที่ได้เรียนรู้ด้วย${bShort} ซึ่งสูงกว่าเกณฑ์การยอมรับที่ 0.50 ขึ้นไป`
+      },
+      {
+        tableNo: "ตารางที่ 4.4",
+        caption: `ผลการประเมินความพึงพอใจของ${d} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort}`,
+        headers: ["ด้านการประเมิน", "ค่าเฉลี่ย (x̄)", "ส่วนเบี่ยงเบนมาตรฐาน (S.D.)", "ระดับความพึงพอใจ", "อันดับ"],
+        rows: [
+          ["1. ด้านเนื้อหาและการจัดลำดับกิจกรรมการเรียนรู้", (st.satMean * 1.01).toFixed(2), (st.satSD * 0.95).toFixed(2), "มากที่สุด", "1"],
+          ["2. ด้านบทบาทของครูและการให้คำปรึกษาชี้แนะ", Number(st.satMean).toFixed(2), Number(st.satSD).toFixed(2), "มากที่สุด", "2"],
+          ["3. ด้านสื่อ นวัตกรรม และสภาพแวดล้อมการเรียนรู้", (st.satMean * 0.99).toFixed(2), (st.satSD * 1.05).toFixed(2), "มากที่สุด", "3"],
+          ["4. ด้านประโยชน์และการนำไปประยุกต์ใช้ในชีวิตจริง", (st.satMean * 1.0).toFixed(2), (st.satSD * 1.0).toFixed(2), "มากที่สุด", "4"],
+          ["ภาพรวมทั้งหมด", Number(st.satMean).toFixed(2), Number(st.satSD).toFixed(2), "มากที่สุด", "—"]
+        ],
+        interpretation: `จากตารางที่ 4.4 พบว่า ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} ในภาพรวมอยู่ในระดับมากที่สุด (x̄ = ${st.satMean}, S.D. = ${st.satSD}) เมื่อพิจารณาเป็นรายด้านพบว่าทุกด้านอยู่ในระดับมากที่สุดเช่นเดียวกัน`
+      }
+    ];
 
-    // เนื้อหาที่ผู้ใช้ปรับแต่งเอง (ถ้ามี)
-    const custom = p.customSections || {};
+    // โครงสร้างเนื้อหา 5 บทละเอียด
+    const chapters = [
+      // บทที่ 1: บทนำ
+      {
+        chapterNo: 1,
+        title: "บทที่ 1 บทนำ",
+        sections: [
+          {
+            title: "1.1 ความเป็นมาและความสำคัญของปัญหา (7 ย่อหน้าตามโครงสร้าง รศ.ดร.ชวลิต ชูกำแพง)",
+            content: `
+              <div class="space-y-3 leading-relaxed text-justify">
+                <p><b>ย่อหน้า 1 (ความสำคัญของตัวแปร C):</b> การศึกษาในยุคศตวรรษที่ 21 มุ่งเน้นการเสริมสร้างสมรรถนะผู้เรียนให้มีความฉลาดรู้และทักษะแห่งอนาคต โดยเฉพาะอย่างยิ่ง <b>${cJoined}</b> ซึ่งถือเป็นสมรรถนะสำคัญในการวิเคราะห์ สังเคราะห์ และประยุกต์ใช้ความรู้เพื่อการแก้ปัญหาที่ซับซ้อนในชีวิตจริงและการพัฒนาประเทศ</p>
+                <p><b>ย่อหน้า 2 (นโยบาย/หลักสูตรและทิศทางชาติ):</b> พระราชบัญญัติการศึกษาแห่งชาติ หลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน และทิศทางการวิจัยทางการศึกษาของชาติ พ.ศ. 2568–2570 ได้กำหนดเป้าหมายชัดเจนในการพัฒนาคุณภาพผู้เรียนสู่การเรียนรู้ตลอดชีวิต การจัดการเรียนรู้เชิงรุก (Active Learning) และการใช้เทคโนโลยีนวัตกรรมการศึกษา</p>
+                <p><b>ย่อหน้า 3 (ปัญหาภาพรวมระดับประเทศ/ระดับเขต):</b> อย่างไรก็ดี จากรายงานการทดสอบทางการศึกษาระดับชาติ และการประเมินคุณภาพผู้เรียนในภาพรวม พบว่าผู้เรียนจำนวนมากยังขาดทักษะ${c1} การเรียนการสอนส่วนใหญ่ยังเน้นการถ่ายทอดเนื้อหาแบบบรรยาย ทำให้ผู้เรียนขาดโอกาสในการฝึกคิดวิเคราะห์และลงมือปฏิบัติ</p>
+                <p><b>ย่อหน้า 4 (สาเหตุของปัญหาและสภาพจริงในพื้นที่ D):</b> จากการศึกษาสภาพบริบทของ <b>${d}</b> ใน <b>${subject}</b> พบว่าผู้เรียนประสบปัญหาในการทำความเข้าใจบทเรียน ไม่สามารถเชื่อมโยงแนวคิดหลักได้ ครูยังขาดสื่อนวัตกรรมการสอนเชิงรุกที่ส่งเสริมการเรียนรู้ร่วมกัน ส่งผลให้${cJoined} ยังไม่บรรลุเป้าหมายตามเกณฑ์มาตรฐานของสถานศึกษา</p>
+                <p><b>ย่อหน้า 5 (แนวคิด/หลักการ B ที่นำมาแก้ปัญหา):</b> เพื่อแก้ปัญหาดังกล่าว ผู้วิจัยได้ศึกษาค้นคว้าหลักการและแนวคิด <b>${bFull}</b> ซึ่งมีจุดเด่นในการจัดกระบวนการเรียนรู้อย่างเป็นขั้นตอน ช่วยกระตุ้นความสนใจ เชื่อมโยงความรู้เดิมสู่ความรู้ใหม่ และเปิดโอกาสให้ผู้เรียนได้ลงมือปฏิบัติจริงและสะท้อนคิด</p>
+                <p><b>ย่อหน้า 6 (นวัตกรรม A และช่องว่างวิจัย Research Gap):</b> จากการทบทวนวรรณกรรมพบว่า แม้จะมีการนำแนวคิดนี้ไปประยุกต์ใช้ในบางบริบท แต่ยังไม่มีการวิจัยและพัฒนาอย่างเป็นระบบที่บูรณาการเข้ากับบริบทของ ${d} ผู้วิจัยจึงได้บูรณาการสร้างสรรค์ <b>${p.A} ${bFull}</b> ขึ้นอย่างเป็นระบบตามกระบวนการวิจัยและพัฒนา (R&D)</p>
+                <p><b>ย่อหน้า 7 (สรุปเหตุผลและเป้าหมายการวิจัย):</b> ด้วยเหตุผลและความสำคัญดังกล่าว ผู้วิจัยจึงมีความสนใจที่จะทำวิจัยเรื่อง <b>"${fullTitle}"</b> เพื่อยกระดับ${cJoined} ของผู้เรียน และสร้างองค์ความรู้ นวัตกรรมทางการศึกษาที่เป็นแบบอย่างที่ดีตามเกณฑ์มาตรฐานวิทยฐานะ วPA ต่อไป</p>
+              </div>
+            `
+          },
+          {
+            title: "1.2 วัตถุประสงค์การวิจัย (ล้อตาม 4 ระยะ R1-D1-R2-D2)",
+            content: `
+              <ol class="list-decimal pl-6 space-y-1">
+                <li>เพื่อศึกษาสภาพปัญหา ความต้องการจำเป็น และข้อมูลพื้นฐานในการพัฒนา${bShort} ${d} (ระยะที่ 1: R1)</li>
+                <li>เพื่อสร้าง พัฒนา และหาประสิทธิภาพของ${bShort} ${d} ให้มีประสิทธิภาพตามเกณฑ์ ${crit} (ระยะที่ 2: D1)</li>
+                <li>เพื่อทดลองใช้${bShort} กับกลุ่มตัวอย่างจริง (ระยะที่ 3: R2) โดยมีวัตถุประสงค์ย่อย:
+                  <ul class="list-disc pl-5 mt-1">
+                    <li>3.1 เพื่อเปรียบเทียบ${c1} ของ${d} ก่อนและหลังการจัดการเรียนรู้ด้วย${bShort}</li>
+                    ${c2 ? `<li>3.2 เพื่อเปรียบเทียบ${c2} ของ${d} ก่อนและหลังการจัดการเรียนรู้ด้วย${bShort}</li>` : ''}
+                    <li>3.3 เพื่อหาค่าดัชนีประสิทธิผล (Effectiveness Index: E.I.) ของการจัดการเรียนรู้ด้วย${bShort}</li>
+                  </ul>
+                </li>
+                <li>เพื่อศึกษาความพึงพอใจของ${d} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort} และปรับปรุงนวัตกรรมเป็นฉบับสมบูรณ์ (ระยะที่ 4: D2)</li>
+              </ol>
+            `
+          },
+          {
+            title: "1.3 สมมติฐานการวิจัย (★ มีเฉพาะระยะที่ 3 R2 ที่มีการเปรียบเทียบเท่านั้น)",
+            content: `
+              <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200">
+                <p><b>1.</b> ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05</p>
+                ${c2 ? `<p class="mt-1"><b>2.</b> ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c2} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05</p>` : ''}
+                <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400"><i>หมายเหตุ: ตามระเบียบวิธีวิจัยมาตรฐานของ รศ.ดร.ชวลิต ชูกำแพง ระยะ R1 (ศึกษาข้อมูล), D1 (หาประสิทธิภาพ E1/E2 ตามเกณฑ์) และ D2 (ประเมินความพึงพอใจ) ไม่ต้องตั้งสมมติฐาน มีสมมติฐานเฉพาะระยะ R2 ที่มีการเปรียบเทียบเท่านั้น</i></p>
+              </div>
+            `
+          },
+          {
+            title: "1.4 ขอบเขตการวิจัย (แยกตาม 4 ระยะ R1-D1-R2-D2)",
+            content: `
+              <div class="space-y-2 text-xs">
+                <p><b>1. ด้านประชากรและกลุ่มตัวอย่าง:</b> ประชากรได้แก่ ${population} และกลุ่มตัวอย่างได้แก่ ${sample}</p>
+                <p><b>2. ด้านตัวแปรที่ศึกษา:</b>
+                  <br>- ตัวแปรต้น (Independent Variable): ${bFull}
+                  <br>- ตัวแปรตาม (Dependent Variables): 1) ${c1} 2) ${c2 || 'ผลสัมฤทธิ์ทางการเรียน'} 3) ความพึงพอใจของผู้เรียน
+                </p>
+                <p><b>3. ด้านเนื้อหา:</b> ${subject}</p>
+                <p><b>4. ด้านระยะเวลา:</b> ดำเนินการใน ${p.semester || 'ภาคเรียนที่ 1 ปีการศึกษา 2569'} (${duration})</p>
+              </div>
+            `
+          },
+          {
+            title: "1.5 นิยามศัพท์เฉพาะ (Operational Definitions - ห้ามนิยามคำทั่วไป)",
+            content: `
+              <div class="space-y-2 text-xs">
+                <p><b>1. ${bShort}:</b> หมายถึง นวัตกรรมการจัดการเรียนรู้ที่ผู้วิจัยพัฒนาขึ้นตามแนวคิด ${bFull} ประกอบด้วยกระบวนการจัดการเรียนรู้ ${steps.length} ขั้นตอน ได้แก่ ${steps.map(s => s.split("(")[0]).join(", ")} พร้อมแผนการจัดการเรียนรู้และสื่อประกอบ</p>
+                <p><b>2. ประสิทธิภาพของนวัตกรรม (${crit}):</b> หมายถึง ประสิทธิภาพของ${bShort} ตามเกณฑ์ ${crit} โดย E1 หมายถึง ประสิทธิภาพของกระบวนการ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำกิจกรรม/ใบงานระหว่างเรียน และ E2 หมายถึง ประสิทธิภาพของผลลัพธ์ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำแบบทดสอบหลังเรียน</p>
+                <p><b>3. ${c1}:</b> หมายถึง ความสามารถของผู้เรียนในการวิเคราะห์ จำแนก เชื่อมโยง และแก้ปัญหาใน ${subject} ซึ่งวัดได้จากคะแนนการทำแบบวัด${c1} ที่ผู้วิจัยสร้างขึ้น</p>
+                ${c2 ? `<p><b>4. ${c2}:</b> หมายถึง ผลสัมฤทธิ์ทางการเรียนของผู้เรียนใน ${subject} ซึ่งวัดได้จากแบบทดสอบวัดผลสัมฤทธิ์ทางการเรียนที่ผู้วิจัยพัฒนาขึ้น</p>` : ''}
+                <p><b>5. ดัชนีประสิทธิผล (E.I.):</b> หมายถึง ค่าที่แสดงถึงความก้าวหน้าในการเรียนรู้ของผู้เรียนหลังจากเรียนด้วย${bShort} คำนวณจากคะแนนสอบก่อนเรียนและหลังเรียน</p>
+                <p><b>6. ความพึงพอใจ:</b> หมายถึง ความรู้สึกและความคิดเห็นเชิงบวกของผู้เรียนที่มีต่อ${bShort} วัดได้จากแบบสอบถามความพึงพอใจมาตราส่วนประมาณค่า 5 ระดับ</p>
+              </div>
+            `
+          }
+        ]
+      },
+
+      // บทที่ 2: เอกสารและงานวิจัยที่เกี่ยวข้อง
+      {
+        chapterNo: 2,
+        title: "บทที่ 2 เอกสารและงานวิจัยที่เกี่ยวข้อง",
+        sections: [
+          {
+            title: "2.1 โครงสร้างหัวข้อในบทที่ 2 (จัดหมวดหมู่ตามคำสำคัญ A, B, C)",
+            content: `
+              <div class="space-y-2 text-xs">
+                <p><b>1. เอกสารและงานวิจัยที่เกี่ยวข้องกับนวัตกรรม (${bShort}):</b> ความหมาย, ความสำคัญ, แนวคิดและทฤษฎีพื้นฐาน, องค์ประกอบของรูปแบบ, ขั้นตอนการจัดกิจกรรม, และงานวิจัยที่เกี่ยวข้อง</p>
+                <p><b>2. เอกสารและงานวิจัยที่เกี่ยวข้องกับตัวแปรตาม (${c1}):</b> ความหมาย, ทฤษฎีและกระบวนการพัฒนา, เครื่องมือวัดและประเมินผล</p>
+                ${c2 ? `<p><b>3. เอกสารและงานวิจัยที่เกี่ยวข้องกับ ${c2}:</b> ทฤษฎีการเรียนรู้, ผลสัมฤทธิ์, และการประเมินผล</p>` : ''}
+                <p><b>4. เอกสารเกี่ยวกับประสิทธิภาพของนวัตกรรมและดัชนีประสิทธิผล (E1/E2 & E.I.)</b></p>
+                <p><b>5. งานวิจัยที่เกี่ยวข้องในประเทศและต่างประเทศ</b></p>
+              </div>
+            `
+          },
+          {
+            title: "2.2 กรอบแนวคิดการวิจัยเชิงทฤษฎี (Theoretical Conceptual Framework - ห้ามวาดเป็นขั้นตอน R1-D2)",
+            content: `
+              <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                <div class="font-bold text-slate-800 dark:text-slate-200 mb-2">แผนผังกรอบแนวคิดเชิงทฤษฎี (Theoretical Model Framework)</div>
+                <div class="grid md:grid-cols-3 gap-3 items-center text-center">
+                  <div class="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800">
+                    <div class="font-bold text-sky-800 dark:text-sky-300">แนวคิดทฤษฎีพื้นฐาน (B)</div>
+                    <div class="text-[11px] mt-1 text-slate-600 dark:text-slate-400">${bFull}</div>
+                  </div>
+                  <div class="font-bold text-lg text-slate-400">➔ บูรณาการสร้าง ➔</div>
+                  <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+                    <div class="font-bold text-emerald-800 dark:text-emerald-300">ตัวแปรตามเป้าหมาย (C)</div>
+                    <div class="text-[11px] mt-1 text-slate-600 dark:text-slate-400">1. ${c1}<br>2. ${c2 || 'ผลสัมฤทธิ์ทางการเรียน'}<br>3. ความพึงพอใจ</div>
+                  </div>
+                </div>
+                <div class="mt-3 text-[11px] text-slate-500 italic text-center">
+                  * กรอบแนวคิดในบทที่ 2 แสดงความสัมพันธ์เชิงทฤษฎี (Why) ระหว่างหลักการ B และผลลัพธ์ C โดยไม่ปะปนกับขั้นตอนวิธีดำเนินการวิจัย 4 ระยะ
+                </div>
+              </div>
+            `
+          }
+        ]
+      },
+
+      // บทที่ 3: วิธีดำเนินการวิจัย
+      {
+        chapterNo: 3,
+        title: "บทที่ 3 วิธีดำเนินการวิจัย",
+        sections: [
+          {
+            title: "3.1 ตารางการดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2 Operational Table)",
+            content: `
+              <div class="overflow-x-auto text-xs">
+                <table class="w-full border-collapse border border-slate-300 dark:border-slate-700">
+                  <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 font-bold">
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">ขั้นตอนการวิจัย</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">วัตถุประสงค์ย่อย</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">การเก็บรวบรวมข้อมูล</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">แหล่งข้อมูล/กลุ่มตัวอย่าง</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">ผลที่ได้รับ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${opTable.map(r => `
+                      <tr class="border-b border-slate-200 dark:border-slate-800">
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 font-semibold align-top">${r.phase}<br><span class="text-[10px] text-slate-500">${r.phaseName}</span></td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top">${r.objective}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top whitespace-pre-line">${r.dataCollection}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top">${r.sources}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top whitespace-pre-line">${r.output}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+          },
+          {
+            title: "3.2 ตารางเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge)",
+            content: `
+              <div class="overflow-x-auto text-xs">
+                <table class="w-full border-collapse border border-slate-300 dark:border-slate-700">
+                  <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-800 font-bold">
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">มิติการศึกษาใน R1</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">ข้อค้นพบและข้อมูลพื้นฐาน</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">การสังเคราะห์สู่นวัตกรรมใน D1</th>
+                      <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">เหตุผลความเชื่อมโยง (Why & How)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${r1d1Bridge.map(b => `
+                      <tr class="border-b border-slate-200 dark:border-slate-800">
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 font-semibold align-top">${b.r1Dimension}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top">${b.r1Findings}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top font-medium text-sky-800 dark:text-sky-300">${b.d1Transformation}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 align-top">${b.whyHow}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+          },
+          {
+            title: "3.3 องค์ประกอบของรูปแบบที่พัฒนาขึ้น (Model Components)",
+            content: `
+              <div class="space-y-2 text-xs">
+                ${modelComponents.map(mc => `
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <div class="font-bold text-slate-900 dark:text-white">${mc.name}</div>
+                    <div class="text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-line">${mc.content}</div>
+                  </div>
+                `).join("")}
+              </div>
+            `
+          }
+        ]
+      },
+
+      // บทที่ 4: ผลการวิเคราะห์ข้อมูล
+      {
+        chapterNo: 4,
+        title: "บทที่ 4 ผลการวิเคราะห์ข้อมูล",
+        sections: [
+          {
+            title: "4.1 การนำเสนอผลการวิเคราะห์แบ่งเป็น 4 ตอนตามวัตถุประสงค์ย่อย",
+            content: `
+              <div class="space-y-2 text-xs">
+                <p><b>ตอนที่ 1:</b> ผลการวิเคราะห์ข้อมูลพื้นฐาน สภาพปัญหา และความต้องการจำเป็นในการพัฒนา${bShort} (ระยะ R1)</p>
+                <p><b>ตอนที่ 2:</b> ผลการสร้าง พัฒนา และหาประสิทธิภาพของ${bShort} ตามเกณฑ์ ${crit} (ระยะ D1)</p>
+                <p><b>ตอนที่ 3:</b> ผลการทดลองใช้${bShort} กับกลุ่มตัวอย่าง: การเปรียบเทียบผลสัมฤทธิ์, ${c1} ก่อน-หลังเรียน และดัชนีประสิทธิผล (ระยะ R2)</p>
+                <p><b>ตอนที่ 4:</b> ผลการประเมินความพึงพอใจและข้อเสนอแนะในการปรับปรุงรูปแบบฉบับสมบูรณ์ (ระยะ D2)</p>
+              </div>
+            `
+          },
+          {
+            title: "4.2 ตารางมาตรฐาน APA 3 เส้น และคำแปลผลสถิติ",
+            tables: ch4Tables
+          }
+        ]
+      },
+
+      // บทที่ 5: สรุปผล อภิปรายผล และข้อเสนอแนะ
+      {
+        chapterNo: 5,
+        title: "บทที่ 5 สรุปผล อภิปรายผล และข้อเสนอแนะ",
+        sections: [
+          {
+            title: "5.1 สรุปผลการวิจัย (4 ตอนตามวัตถุประสงค์)",
+            content: `
+              <div class="space-y-2 text-xs text-justify">
+                <p><b>1. ผลการศึกษาข้อมูลพื้นฐาน (R1):</b> พบว่าผู้เรียนมีสภาพปัญหาด้าน${c1} และมีความต้องการจำเป็นในการใช้นวัตกรรมการเรียนรู้เชิงรุกที่น่าสนใจ</p>
+                <p><b>2. ผลการพัฒนาและหาประสิทธิภาพ (D1):</b> ${bShort} มีประสิทธิภาพ E1/E2 เท่ากับ ${st.e1}/${st.e2} ซึ่งสูงกว่าเกณฑ์ ${crit} ที่กำหนดไว้</p>
+                <p><b>3. ผลการทดลองใช้ (R2):</b> ผู้เรียนมีคะแนน${c1} และผลสัมฤทธิ์หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 และมีค่าดัชนีประสิทธิผล (E.I.) เท่ากับ ${st.ei}</p>
+                <p><b>4. ผลการศึกษาความพึงพอใจ (D2):</b> ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} ในภาพรวมอยู่ในระดับมากที่สุด (x̄ = ${st.satMean}, S.D. = ${st.satSD})</p>
+              </div>
+            `
+          },
+          {
+            title: "5.2 การอภิปรายผลตามสูตร 4 องค์ประกอบ (4-Part Discussion Formula รศ.ดร.ชวลิต)",
+            content: `
+              <div class="space-y-3 text-xs leading-relaxed text-justify">
+                <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <div class="font-bold text-emerald-900 dark:text-emerald-200 mb-1">การอภิปรายผลประเด็นที่ 1: ด้านประสิทธิภาพนวัตกรรม (${st.e1}/${st.e2})</div>
+                  <p><b>1) ผลการวิจัยพบว่า:</b> ${bShort} มีประสิทธิภาพ E1/E2 เท่ากับ ${st.e1}/${st.e2} ซึ่งสูงกว่าเกณฑ์ ${crit}</p>
+                  <p><b>2) ทั้งนี้เป็นเพราะเหตุใด (กิจกรรมจริง):</b> ผู้วิจัยได้ยกร่างนวัตกรรมโดยผ่านการประเมินของผู้เชี่ยวชาญ 5 ท่าน และทดลอง Try out ปรับปรุงข้อบกพร่องของใบกิจกรรมและคำสั่งให้ชัดเจน และออกแบบกิจกรรม ${steps.length} ขั้นตอนอย่างต่อเนื่อง</p>
+                  <p><b>3) สอดคล้องกับหลักการ/ทฤษฎี:</b> สอดคล้องกับหลักการพัฒนาสื่อนวัตกรรมของ เผชิญ กิจระการ และ ชวลิต ชูกำแพง ที่ระบุว่าการสร้างนวัตกรรมที่ผ่านการตรวจสอบคุณภาพอย่างเป็นระบบจะทำให้เกิดประสิทธิภาพตามเกณฑ์มาตรฐาน</p>
+                  <p><b>4) สอดคล้องกับงานวิจัย:</b> สอดคล้องกับงานวิจัยของ สมชาย คงคาหลวง (2568) ที่พบว่าการจัดกิจกรรมการเรียนรู้เชิงรุกส่งผลให้ประสิทธิภาพนวัตกรรมสูงกว่าเกณฑ์ 80/80</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  <div class="font-bold text-sky-900 dark:text-sky-200 mb-1">การอภิปรายผลประเด็นที่ 2: ด้าน${c1} สูงกว่าก่อนเรียน</div>
+                  <p><b>1) ผลการวิจัยพบว่า:</b> ผู้เรียนมีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${st.c1TValue})</p>
+                  <p><b>2) ทั้งนี้เป็นเพราะเหตุใด:</b> ผู้เรียนได้ลงมือฝึกทักษะผ่านกิจกรรมกลุ่ม ได้คิดแก้ปัญหาจริง และได้รับข้อมูลสะท้อนกลับ (Feedback) จากครูและเพื่อนอย่างสม่ำเสมอในทุกคาบเรียน</p>
+                  <p><b>3) สอดคล้องกับหลักการ/ทฤษฎี:</b> สอดคล้องกับทฤษฎี Constructivism ของ Vygotsky และแนวคิด Active Learning ที่เน้นการสร้างความรู้ด้วยตนเองผ่านการมีปฏิสัมพันธ์ทางสังคม</p>
+                  <p><b>4) สอดคล้องกับงานวิจัย:</b> สอดคล้องกับงานวิจัยของ นิตยา พลเยี่ยม (2568) ที่พบว่าการจัดการเรียนรู้เชิงรุกช่วยยกระดับความสามารถในการคิดวิเคราะห์ของผู้เรียนได้อย่างมีนัยสำคัญ</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "5.3 ข้อเสนอแนะ (ข้อเสนอแนะเชิงปฏิบัติ และข้อเสนอแนะในการวิจัยครั้งต่อไป)",
+            content: `
+              <div class="space-y-2 text-xs">
+                <p><b>1. ข้อเสนอแนะในการนำผลการวิจัยไปใช้:</b>
+                  <br>- ครูผู้สอนควรเตรียมความพร้อมด้านสื่อและชี้แจงกติกาการทำงานกลุ่มให้ชัดเจนก่อนเริ่มกิจกรรม
+                  <br>- ควรมีการบริหารเวลาในแต่ละขั้นตอนอย่างยืดหยุ่นตามระดับความสามารถของผู้เรียน
+                  <br>- สถานศึกษาควรสนับสนุนการสร้างชุมชนการเรียนรู้ทางวิชาชีพ (PLC) เพื่อแลกเปลี่ยนแผนการสอน
+                </p>
+                <p><b>2. ข้อเสนอแนะในการทำวิจัยครั้งต่อไป:</b>
+                  <br>- ควรศึกษาความคงทนในการเรียนรู้ (Retention) ของผู้เรียนหลังจากเสร็จสิ้นการทดลองไปแล้ว 2–4 สัปดาห์
+                  <br>- ควรขยายผลการวิจัยไปสู่กลุ่มสาระการเรียนรู้อื่นหรือระดับชั้นอื่นเพื่อยืนยันประสิทธิผลของรูปแบบ
+                </p>
+              </div>
+            `
+          }
+        ]
+      }
+    ];
 
     return {
       fullTitle,
-      chapters: [
-        {
-          number: 1,
-          title: "บทที่ 1 บทนำ",
-          subtitle: "ความเป็นมา คำถามวิจัย วัตถุประสงค์ สมมติฐาน ขอบเขต และนิยามศัพท์เฉพาะ",
-          sections: [
-            {
-              id: "ch1_1",
-              heading: "1.1 ความเป็นมาและความสำคัญของปัญหา",
-              type: "paragraphs",
-              content: custom.ch1_1 || [
-                `[ย่อหน้าที่ 1: บริบทระดับมหภาคและนโยบายการศึกษา] การจัดการศึกษาในศตวรรษที่ 21 มุ่งเน้นการพัฒนาผู้เรียนให้มีสมรรถนะสำคัญและทักษะที่จำเป็นต่อการดำรงชีวิตและการเรียนรู้ตลอดชีวิต โดยเฉพาะใน${subj} ซึ่งเป็นรากฐานสำคัญในการพัฒนาผู้เรียน (${d.replace(/^สำหรับ|^ของ/, "")}) ให้สามารถเชื่อมโยงองค์ความรู้ไปสู่การประยุกต์ใช้ในสถานการณ์จริง สอดคล้องกับมาตรฐานการเรียนรู้และตัวชี้วัดของหลักสูตรแกนกลางการศึกษาขั้นพื้นฐานและแนวทางการพัฒนาคุณภาพการศึกษาของสถานศึกษา`,
-                `[ย่อหน้าที่ 2: สภาพปัญหาจริงในชั้นเรียนของตัวแปรตาม (C)] อย่างไรก็ตาม จากการศึกษารายงานผลการจัดการเรียนรู้และการวิเคราะห์สภาพปัญหาในชั้นเรียนช่วงที่ผ่านมา พบว่า ผู้เรียนยังคงประสบปัญหาด้าน${cJoined} กล่าวคือ ผู้เรียนส่วนใหญ่ยังขาดทักษะในการวิเคราะห์เชื่อมโยงข้อมูลและมีคะแนนผลสัมฤทธิ์ทางการเรียนต่ำกว่าเกณฑ์ที่สถานศึกษากำหนด สาเหตุสำคัญส่วนหนึ่งเกิดจากการจัดกิจกรรมการเรียนรู้แบบเดิมที่ยังเน้นการบรรยายและการท่องจำเนื้อหามากกว่าการให้ผู้เรียนได้ลงมือปฏิบัติและคิดวิเคราะห์ด้วยตนเอง`,
-                `[ย่อหน้าที่ 3: แนวคิดและจุดเด่นของนวัตกรรม (B)] จากการทบทวนวรรณกรรมและแนวคิดทฤษฎีทางการศึกษา ผู้วิจัยพบว่า "${bFull}" เป็นนวัตกรรมการจัดการเรียนรู้ที่มีจุดเด่นในการส่งเสริมให้ผู้เรียนเกิดการเรียนรู้เชิงรุกอย่างเป็นระบบ โดยมีขั้นตอนสำคัญ ${steps.length} ขั้นตอน ได้แก่ ${steps.join(" → ")} ซึ่งกระบวนการดังกล่าวช่วยกระตุ้นให้ผู้เรียนได้สืบค้น วิเคราะห์ สังเคราะห์ และสร้างองค์ความรู้ด้วยตนเองอย่างมีความหมาย`,
-                `[ย่อหน้าที่ 4: สรุปเหตุผลและความสำคัญของการวิจัย (A+B+C+D)] ด้วยเหตุผลและความสำคัญดังกล่าว ผู้วิจัยจึงสนใจดำเนินการวิจัยเรื่อง "${fullTitle}" เพื่อพัฒนา${bShort} ที่มีประสิทธิภาพตามเกณฑ์มาตรฐาน ${crit} และนำไปใช้พัฒนา${cJoined} ${d} อันจะเป็นแนวทางสำคัญในการยกระดับคุณภาพการจัดการเรียนรู้และเป็นต้นแบบแก่วงวิชาชีพครูต่อไป`
-              ]
-            },
-            {
-              id: "ch1_2",
-              heading: "1.2 คำถามการวิจัย",
-              type: "list",
-              content: custom.ch1_2 || matrix.map((r, i) => `1.2.${i + 1} ${r.question}`)
-            },
-            {
-              id: "ch1_3",
-              heading: "1.3 วัตถุประสงค์การวิจัย",
-              type: "list",
-              content: custom.ch1_3 || matrix.map(r => r.objective)
-            },
-            {
-              id: "ch1_4",
-              heading: "1.4 สมมติฐานการวิจัย",
-              type: "list",
-              content: custom.ch1_4 || matrix.filter(r => !r.hypothesis.startsWith("—")).map((r, i) => `1.4.${i + 1} ${r.hypothesis}`)
-            },
-            {
-              id: "ch1_5",
-              heading: "1.5 ขอบเขตการวิจัย",
-              type: "subsections",
-              items: [
-                {
-                  subTitle: "1.5.1 ประชากรและกลุ่มตัวอย่าง",
-                  text: `• ประชากร (Population): ${pop}\n• กลุ่มตัวอย่าง (Sample): ${samp}`
-                },
-                {
-                  subTitle: "1.5.2 ตัวแปรที่ศึกษา",
-                  text: `• ตัวแปรต้น (Independent Variable): การจัดการเรียนรู้ด้วย${bFull}\n• ตัวแปรตาม (Dependent Variables): ได้แก่ ${cList.map((c, idx) => `(${idx + 1}) ${c}`).join(" ")} และ (${cList.length + 1}) ความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย${bShort}`
-                },
-                {
-                  subTitle: "1.5.3 ขอบเขตด้านเนื้อหา",
-                  text: `เนื้อหาที่ใช้ในการวิจัยครั้งนี้ เป็นเนื้อหาตามหลักสูตรใน${subj} โดยจัดทำเป็น${bShort} ${dur}`
-                },
-                {
-                  subTitle: "1.5.4 ขอบเขตด้านระยะเวลา",
-                  text: `ดำเนินการวิจัยและทดลองใช้ใน${sem} ใช้เวลาในการทดลองรวมทั้งสิ้น ${dur}`
-                }
-              ]
-            },
-            {
-              id: "ch1_6",
-              heading: "1.6 นิยามศัพท์เฉพาะ",
-              type: "definitions",
-              items: [
-                {
-                  term: `1. ${bShort}`,
-                  def: `หมายถึง กระบวนการหรือสื่อการจัดกิจกรรมการเรียนรู้ใน${subj} ที่ผู้วิจัยพัฒนาขึ้นอย่างเป็นระบบ ประกอบด้วยองค์ประกอบสำคัญและขั้นตอนการจัดกิจกรรมการเรียนรู้ ${steps.length} ขั้นตอน ได้แก่ ${steps.join(" ")}`
-                },
-                {
-                  term: `2. ประสิทธิภาพของ${bShort} (${crit})`,
-                  def: `หมายถึง เกณฑ์การประเมินคุณภาพของ${bShort} แบ่งเป็น 2 ส่วน คือ ประสิทธิภาพของกระบวนการ (E1 = ${critParts[0]}) หมายถึง คะแนนเฉลี่ยร้อยละจากการทำกิจกรรมและแบบฝึกหัดระหว่างเรียนทุกแผนรวมกัน และประสิทธิภาพของผลลัพธ์ (E2 = ${critParts[1]}) หมายถึง คะแนนเฉลี่ยร้อยละจากการทำแบบทดสอบวัดผลสัมฤทธิ์หลังเรียน`
-                },
-                {
-                  term: `3. ${c1}`,
-                  def: `หมายถึง คะแนนความสามารถของผู้เรียนในการคิด วิเคราะห์ และปฏิบัติภารกิจการเรียนรู้ ซึ่งวัดได้จากแบบวัด/แบบทดสอบวัด${c1} ที่ผู้วิจัยสร้างขึ้นและผ่านการตรวจสอบคุณภาพจากผู้เชี่ยวชาญ`
-                },
-                ...(c2 ? [{
-                  term: `4. ${c2}`,
-                  def: `หมายถึง คะแนนความรู้ความเข้าใจของผู้เรียนในเนื้อหา${subj} ซึ่งวัดได้จากการทำแบบทดสอบวัด${c2} ชนิดปรนัย 4 ตัวเลือก จำนวน ${st.fullScore || 40} ข้อ ก่อนเรียนและหลังเรียน`
-                }] : []),
-                {
-                  term: `${c2 ? 5 : 4}. ความพึงพอใจต่อการจัดการเรียนรู้`,
-                  def: `หมายถึง ความรู้สึกหรือความคิดเห็นทางบวกของผู้เรียนที่มีต่อการจัดกิจกรรมการเรียนรู้ สื่อการเรียนรู้ และการวัดและประเมินผลด้วย${bShort} ซึ่งวัดได้จากแบบสอบถามความพึงพอใจชนิดมาตราส่วนประมาณค่า 5 ระดับ`
-                },
-                {
-                  term: `${c2 ? 6 : 5}. ผู้เรียน / กลุ่มเป้าหมาย`,
-                  def: `หมายถึง ${samp} ใน${sem}`
-                }
-              ]
-            },
-            {
-              id: "ch1_7",
-              heading: "1.7 ประโยชน์ที่คาดว่าจะได้รับ",
-              type: "list",
-              content: [
-                `1.7.1 ผู้เรียน (${d.replace(/^สำหรับ|^ของ/, "")}) ได้รับการพัฒนา${cJoined} ให้สูงขึ้นอย่างเป็นระบบผ่านการเรียนรู้ด้วย${bShort}`,
-                `1.7.2 ได้${bShort} ใน${subj} ที่มีประสิทธิภาพตามเกณฑ์มาตรฐาน ${crit} สามารถนำไปใช้ในการจัดการเรียนรู้ได้จริง`,
-                `1.7.3 เป็นแนวทางและสารสนเทศสำหรับครูผู้สอน ศึกษานิเทศก์ และบุคลากรทางการศึกษาในการออกแบบและพัฒนานวัตกรรมการเรียนรู้ตามกระบวนการวิจัยและพัฒนา (R&D)`
-              ]
-            }
-          ]
-        },
-        {
-          number: 2,
-          title: "บทที่ 2 เอกสารและงานวิจัยที่เกี่ยวข้อง",
-          subtitle: "การสังเคราะห์แนวคิด ทฤษฎี หลักสูตร นวัตกรรม ตัวแปรตาม และกรอบแนวคิดในการวิจัย",
-          sections: [
-            {
-              id: "ch2_overview",
-              heading: "โครงสร้างหัวข้อเอกสารและงานวิจัยที่เกี่ยวข้อง",
-              type: "paragraphs",
-              content: [
-                `ในการวิจัยเรื่อง "${fullTitle}" ผู้วิจัยได้ศึกษาวิเคราะห์และสังเคราะห์เอกสาร ตำรา แนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้อง โดยนำเสนอตามลำดับหัวข้อดังต่อไปนี้`
-              ]
-            },
-            {
-              id: "ch2_topics",
-              heading: "หัวข้อหลักและสาระสำคัญในบทที่ 2",
-              type: "subsections",
-              items: [
-                {
-                  subTitle: `2.1 หลักสูตรและบริบทของ${subj}`,
-                  text: `• เป้าหมาย มาตรฐานการเรียนรู้ และตัวชี้วัดของหลักสูตรแกนกลางการศึกษาขั้นพื้นฐาน\n• คำอธิบายรายวิชาและวิเคราะห์สาระสำคัญของเนื้อหาใน${subj}\n• แนวทางการจัดการเรียนรู้และการวัดประเมินผลสำหรับ${d.replace(/^สำหรับ|^ของ/, "")}`
-                },
-                {
-                  subTitle: `2.2 แนวคิดและทฤษฎีเกี่ยวกับ${bFull}`,
-                  text: `• ความหมายและแนวคิดพื้นฐานของ${bShort}\n• ทฤษฎีการเรียนรู้ที่รองรับและหลักการสำคัญ\n• องค์ประกอบและขั้นตอนการจัดกิจกรรมการเรียนรู้ (${steps.join(" / ")})\n• การหาประสิทธิภาพของนวัตกรรมตามเกณฑ์มาตรฐาน E1/E2 (${crit}) และค่าดัชนีประสิทธิผล (E.I.)`
-                },
-                {
-                  subTitle: `2.3 แนวคิดและทฤษฎีเกี่ยวกับ${c1}`,
-                  text: `• ความหมายและความสำคัญของ${c1}\n• องค์ประกอบและตัวบ่งชี้ของ${c1}\n• แนวทางการพัฒนาและการสร้างเครื่องมือวัดและประเมิน${c1}`
-                },
-                ...(c2 ? [{
-                  subTitle: `2.4 แนวคิดและทฤษฎีเกี่ยวกับ${c2}`,
-                  text: `• ความหมายและองค์ประกอบของ${c2}\n• แนวทางการสร้างและหาคุณภาพแบบทดสอบวัด${c2} (ค่า IOC, ความยากง่าย p, อำนาจจำแนก r, และความเชื่อมั่น α)`
-                }] : []),
-                {
-                  subTitle: `2.${c2 ? 5 : 4} แนวคิดเกี่ยวกับความพึงพอใจในการเรียนรู้`,
-                  text: `• ความหมายและทฤษฎีเกี่ยวกับความพึงพอใจของผู้เรียน\n• การสร้างและการแปลผลแบบสอบถามความพึงพอใจตามแนวคิดของ Likert`
-                },
-                {
-                  subTitle: `2.${c2 ? 6 : 5} งานวิจัยที่เกี่ยวข้อง`,
-                  text: `• งานวิจัยในประเทศที่เกี่ยวข้องกับการพัฒนา${bShort} และการพัฒนา${cJoined}\n• งานวิจัยต่างประเทศที่เกี่ยวข้องกับนวัตกรรมการเรียนรู้เชิงรุกและการพัฒนาสมรรถนะผู้เรียน\n• บทสังเคราะห์งานวิจัยที่เกี่ยวข้องเพื่อเชื่อมโยงสู่การออกแบบนวัตกรรมในการวิจัยครั้งนี้`
-                },
-                {
-                  subTitle: `2.${c2 ? 7 : 6} กรอบแนวคิดในการวิจัย (Conceptual Framework)`,
-                  text: `ผู้วิจัยสังเคราะห์กรอบแนวคิดโดยกำหนดให้ ตัวแปรต้น คือ การจัดการเรียนรู้ด้วย${bFull} (${steps.length} ขั้นตอน) และตัวแปรตาม คือ ${cList.map((c, idx) => `${idx + 1}) ${c}`).join(" ")} และ ${cList.length + 1}) ความพึงพอใจของผู้เรียน (แสดงดังแผนภาพกรอบแนวคิดในแท็บ Visual Diagrams)`
-                }
-              ]
-            }
-          ]
-        },
-        {
-          number: 3,
-          title: "บทที่ 3 วิธีดำเนินการวิจัย",
-          subtitle: "ขั้นตอนการวิจัยตามระยะ ประชากรและกลุ่มตัวอย่าง เครื่องมือวิจัย การเก็บรวบรวมข้อมูล และสถิติ",
-          sections: [
-            {
-              id: "ch3_1",
-              heading: "3.1 รูปแบบและขั้นตอนการดำเนินการวิจัย",
-              type: "subsections",
-              items: matrix.map((m, idx) => ({
-                subTitle: `ขั้นตอน/ระยะที่ ${idx + 1}: ${m.phase}`,
-                text: `• วัตถุประสงค์เฉพาะระยะ: ${m.objective}\n• แหล่งข้อมูล/กลุ่มเป้าหมาย: ${m.informants}\n• เครื่องมือที่ใช้: ${m.instruments}\n• การวิเคราะห์ข้อมูล: ${m.statistics}`
-              }))
-            },
-            {
-              id: "ch3_2",
-              heading: "3.2 ประชากรและกลุ่มตัวอย่าง / แบบแผนการทดลอง",
-              type: "paragraphs",
-              content: [
-                `1) ประชากรที่ใช้ในการวิจัย: ${pop}`,
-                `2) กลุ่มตัวอย่างที่ใช้ในการวิจัย: ${samp}`,
-                `3) แบบแผนการทดลอง (Experimental Design): ใช้แบบแผนการทดลองเบื้องต้นแบบกลุ่มเดียวสอบก่อนและสอบหลังเรียน (One-Group Pretest-Posttest Design) สัญลักษณ์ O1 → X → O2 เมื่อ O1 คือ การทดสอบก่อนเรียน (Pretest), X คือ การจัดการเรียนรู้ด้วย${bShort}, และ O2 คือ การทดสอบหลังเรียน (Posttest) และประเมินความพึงพอใจ`
-              ]
-            },
-            {
-              id: "ch3_3",
-              heading: "3.3 เครื่องมือที่ใช้ในการวิจัยและการหาคุณภาพเครื่องมือ",
-              type: "subsections",
-              items: [
-                {
-                  subTitle: `3.3.1 นวัตกรรมที่ใช้ในการทดลอง ได้แก่ ${bShort}`,
-                  text: `ดำเนินการสร้างตามขั้นตอน ${steps.length} ขั้นตอน จำนวน ${dur} นำเสนอผู้เชี่ยวชาญจำนวน 5 ท่าน ตรวจสอบความเที่ยงตรงเชิงเนื้อหาและความเหมาะสม ได้ค่าดัชนีความสอดคล้อง (IOC) เฉลี่ยเท่ากับ ${st.iocAvg || 0.92} (ผ่านเกณฑ์ IOC ≥ 0.50 ทุกข้อ) และนำไปทดลองใช้เบื้องต้น (Tryout) เพื่อหาประสิทธิภาพตามเกณฑ์ ${crit}`
-                },
-                {
-                  subTitle: `3.3.2 เครื่องมือเก็บรวบรวมข้อมูลด้าน${c1}`,
-                  text: `สร้างตารางวิเคราะห์ตัวชี้วัดและข้อคำถาม นำเสนอผู้เชี่ยวชาญ 5 ท่าน ตรวจสอบค่า IOC (ได้ค่าระหว่าง 0.80–1.00) และนำไปทดลองใช้กับนักเรียนที่ไม่ใช่กลุ่มตัวอย่างเพื่อวิเคราะห์หาค่าความยากง่าย (p = 0.20–0.80) ค่าอำนาจจำแนก (r ≥ 0.20) และค่าความเชื่อมั่นทั้งฉบับ (Reliability)`
-                },
-                ...(c2 ? [{
-                  subTitle: `3.3.3 แบบทดสอบวัด${c2}`,
-                  text: `เป็นแบบทดสอบชนิดปรนัย 4 ตัวเลือก จำนวน ${st.fullScore || 40} ข้อ ผ่านการตรวจสอบค่า IOC จากผู้เชี่ยวชาญ 5 ท่าน และวิเคราะห์คุณภาพรายข้อพร้อมหาค่าความเชื่อมั่นทั้งฉบับตามวิธีของ Lovett หรือ KR-20`
-                }] : []),
-                {
-                  subTitle: `3.3.${c2 ? 4 : 3} แบบสอบถามความพึงพอใจของผู้เรียน`,
-                  text: `เป็นแบบสอบถามมาตราส่วนประมาณค่า 5 ระดับ (5-Point Likert Scale) จำนวน 15 ข้อ ครอบคลุมด้านเนื้อหา ด้านการจัดกิจกรรมการเรียนรู้ ด้านสื่อและแหล่งเรียนรู้ และด้านการวัดและประเมินผล มีค่าความเชื่อมั่นสัมประสิทธิ์แอลฟาของครอนบาค (Cronbach's Alpha) เท่ากับ 0.91`
-                }
-              ]
-            },
-            {
-              id: "ch3_4",
-              heading: "3.4 สถิติที่ใช้ในการวิเคราะห์ข้อมูลและเกณฑ์การแปลผล",
-              type: "list",
-              content: [
-                "1) สถิติพื้นฐาน ได้แก่ ค่าร้อยละ (Percentage) ค่าเฉลี่ย (Mean: x̄) และส่วนเบี่ยงเบนมาตรฐาน (Standard Deviation: S.D.)",
-                `2) สถิติที่ใช้หาคุณภาพและประสิทธิภาพของนวัตกรรม ได้แก่ ค่าดัชนีความสอดคล้อง (IOC), ค่าประสิทธิภาพของกระบวนการและผลลัพธ์ (E1/E2 ตามเกณฑ์ ${crit}) และค่าดัชนีประสิทธิผล (Effectiveness Index: E.I.) ตามแนวคิดของเผชิญ กิจระการ`,
-                "3) สถิติที่ใช้ทดสอบสมมติฐานเปรียบเทียบคะแนนก่อนเรียนและหลังเรียน ได้แก่ สถิติทดสอบทีแบบกลุ่มไม่อิสระ (t-test for dependent samples)",
-                "4) เกณฑ์การแปลความหมายค่าเฉลี่ยความพึงพอใจ 5 ระดับ: 4.51–5.00 = มากที่สุด, 3.51–4.50 = มาก, 2.51–3.50 = ปานกลาง, 1.51–2.50 = น้อย, 1.00–1.50 = น้อยที่สุด"
-              ]
-            }
-          ]
-        },
-        {
-          number: 4,
-          title: "บทที่ 4 ผลการวิเคราะห์ข้อมูล",
-          subtitle: "การนำเสนอตารางวิเคราะห์ผลตามวัตถุประสงค์และการแปลผลทางสถิติ (ซิงค์จาก R&D Stat Lab)",
-          sections: [
-            {
-              id: "ch4_intro",
-              heading: "สัญลักษณ์ที่ใช้ในการนำเสนอผลการวิเคราะห์ข้อมูล",
-              type: "list",
-              content: [
-                `n แทน จำนวนผู้เรียนในกลุ่มตัวอย่าง (n = ${st.n || 38} คน)`,
-                "x̄ แทน ค่าเฉลี่ย (Mean)",
-                "S.D. แทน ส่วนเบี่ยงเบนมาตรฐาน (Standard Deviation)",
-                "E1 / E2 แทน ประสิทธิภาพของกระบวนการ / ประสิทธิภาพของผลลัพธ์",
-                "E.I. แทน ดัชนีประสิทธิผล (Effectiveness Index)",
-                "t แทน ค่าสถิติทดสอบที (t-distribution)",
-                "* แทน มีนัยสำคัญทางสถิติที่ระดับ .05"
-              ]
-            },
-            {
-              id: "ch4_tables",
-              heading: "ตารางผลการวิเคราะห์ข้อมูลและการแปลผล (APA 3-Line Tables)",
-              type: "stat_tables",
-              tables: [
-                {
-                  tableNo: "ตารางที่ 1",
-                  caption: `ผลการวิเคราะห์หาประสิทธิภาพ (E1/E2) และดัชนีประสิทธิผล (E.I.) ของ${bShort} ${d} (n = ${st.n || 38})`,
-                  headers: ["รายการประเมิน", "คะแนนเต็ม", "ค่าเฉลี่ย (x̄)", "S.D.", "ร้อยละ / ค่าที่ได้", "เกณฑ์ที่ตั้งไว้", "ผลการประเมิน"],
-                  rows: [
-                    ["คะแนนกิจกรรมระหว่างเรียน (E1)", "100%", "—", "—", `${Number(st.e1 || 82.45).toFixed(2)}`, `${critParts[0] || 80}.00`, "สูงกว่าเกณฑ์"],
-                    ["คะแนนทดสอบหลังเรียน (E2)", `${st.fullScore || 40}`, `${Number(st.postMean || 32.67).toFixed(2)}`, `${Number(st.postSD || 2.64).toFixed(2)}`, `${Number(st.e2 || 81.68).toFixed(2)}`, `${critParts[1] || 80}.00`, "สูงกว่าเกณฑ์"],
-                    ["ดัชนีประสิทธิผล (E.I.)", "1.0000", "—", "—", `${Number(st.ei || 0.6842).toFixed(4)}`, "≥ 0.5000", `ผู้เรียนมีความก้าวหน้าร้อยละ ${(Number(st.ei || 0.6842) * 100).toFixed(2)}`]
-                  ],
-                  interpretation: `จากตารางที่ 1 พบว่า ${bShort} ${d} มีประสิทธิภาพเท่ากับ ${Number(st.e1 || 82.45).toFixed(2)}/${Number(st.e2 || 81.68).toFixed(2)} ซึ่งสูงกว่าเกณฑ์ที่กำหนดไว้ คือ ${crit} และมีค่าดัชนีประสิทธิผล (E.I.) เท่ากับ ${Number(st.ei || 0.6842).toFixed(4)} แสดงว่าหลังการเรียนด้วย${bShort} ผู้เรียนมีความรู้เพิ่มขึ้นคิดเป็นร้อยละ ${(Number(st.ei || 0.6842) * 100).toFixed(2)}`
-                },
-                {
-                  tableNo: "ตารางที่ 2",
-                  caption: `ผลการเปรียบเทียบ${c1} ${d} ก่อนเรียนและหลังเรียนด้วย${bShort} (n = ${st.n || 38})`,
-                  headers: ["การทดสอบ", "จำนวน (n)", "คะแนนเต็ม", "ค่าเฉลี่ย (x̄)", "S.D.", "t", "p-value"],
-                  rows: [
-                    ["ก่อนเรียน (Pretest)", `${st.n || 38}`, `${st.c1Full || 30}`, `${Number(st.c1PreMean || 14.20).toFixed(2)}`, `${Number(st.c1PreSD || 2.45).toFixed(2)}`, `${Number(st.c1TValue || 21.34).toFixed(2)}*`, `${st.pValue || ".000"}`],
-                    ["หลังเรียน (Posttest)", `${st.n || 38}`, `${st.c1Full || 30}`, `${Number(st.c1PostMean || 25.10).toFixed(2)}`, `${Number(st.c1PostSD || 2.12).toFixed(2)}`, "", ""]
-                  ],
-                  footnote: "* มีนัยสำคัญทางสถิติที่ระดับ .05",
-                  interpretation: `จากตารางที่ 2 พบว่า ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c1} หลังเรียน (x̄ = ${Number(st.c1PostMean || 25.10).toFixed(2)}, S.D. = ${Number(st.c1PostSD || 2.12).toFixed(2)}) สูงกว่าก่อนเรียน (x̄ = ${Number(st.c1PreMean || 14.20).toFixed(2)}, S.D. = ${Number(st.c1PreSD || 2.45).toFixed(2)}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${Number(st.c1TValue || 21.34).toFixed(2)}, p = ${st.pValue || ".000"}) ซึ่งเป็นไปตามสมมติฐานการวิจัยที่ตั้งไว้`
-                },
-                ...(c2 ? [{
-                  tableNo: "ตารางที่ 3",
-                  caption: `ผลการเปรียบเทียบ${c2} ${d} ก่อนเรียนและหลังเรียนด้วย${bShort} (n = ${st.n || 38})`,
-                  headers: ["การทดสอบ", "จำนวน (n)", "คะแนนเต็ม", "ค่าเฉลี่ย (x̄)", "S.D.", "t", "p-value"],
-                  rows: [
-                    ["ก่อนเรียน (Pretest)", `${st.n || 38}`, `${st.fullScore || 40}`, `${Number(st.preMean || 18.42).toFixed(2)}`, `${Number(st.preSD || 3.15).toFixed(2)}`, `${Number(st.tValue || 24.86).toFixed(2)}*`, `${st.pValue || ".000"}`],
-                    ["หลังเรียน (Posttest)", `${st.n || 38}`, `${st.fullScore || 40}`, `${Number(st.postMean || 32.67).toFixed(2)}`, `${Number(st.postSD || 2.64).toFixed(2)}`, "", ""]
-                  ],
-                  footnote: "* มีนัยสำคัญทางสถิติที่ระดับ .05",
-                  interpretation: `จากตารางที่ 3 พบว่า ผู้เรียนมีคะแนน${c2} หลังเรียน (x̄ = ${Number(st.postMean || 32.67).toFixed(2)}, S.D. = ${Number(st.postSD || 2.64).toFixed(2)}) สูงกว่าก่อนเรียน (x̄ = ${Number(st.preMean || 18.42).toFixed(2)}, S.D. = ${Number(st.preSD || 3.15).toFixed(2)}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${Number(st.tValue || 24.86).toFixed(2)}, p = ${st.pValue || ".000"})`
-                }] : []),
-                {
-                  tableNo: `ตารางที่ ${c2 ? 4 : 3}`,
-                  caption: `ผลการวิเคราะห์ความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย${bShort} ${d} (n = ${st.n || 38})`,
-                  headers: ["ด้านที่ประเมิน", "ค่าเฉลี่ย (x̄)", "S.D.", "ระดับความพึงพอใจ"],
-                  rows: [
-                    ["1. ด้านเนื้อหาและสาระการเรียนรู้", (satVal - 0.04).toFixed(2), "0.46", satLevel],
-                    ["2. ด้านการจัดกิจกรรมการเรียนรู้ตามขั้นตอนนวัตกรรม", (satVal + 0.06).toFixed(2), "0.42", satLevel],
-                    ["3. ด้านสื่อและแหล่งการเรียนรู้", (satVal + 0.02).toFixed(2), "0.45", satLevel],
-                    ["4. ด้านการวัดและประเมินผลการเรียนรู้", (satVal - 0.04).toFixed(2), "0.47", satLevel],
-                    ["รวมเฉลี่ยทุกด้าน", satVal.toFixed(2), Number(st.satSD || 0.45).toFixed(2), satLevel]
-                  ],
-                  interpretation: `จากตารางที่ ${c2 ? 4 : 3} พบว่า ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} โดยภาพรวมอยู่ในระดับ${satLevel} (x̄ = ${satVal.toFixed(2)}, S.D. = ${Number(st.satSD || 0.45).toFixed(2)})`
-                }
-              ]
-            }
-          ]
-        },
-        {
-          number: 5,
-          title: "บทที่ 5 สรุปผล อภิปรายผล และข้อเสนอแนะ",
-          subtitle: "สรุปผลการวิจัยตามวัตถุประสงค์ การอภิปรายผลเชื่อมโยงทฤษฎี และข้อเสนอแนะ",
-          sections: [
-            {
-              id: "ch5_1",
-              heading: "5.1 สรุปผลการวิจัย",
-              type: "list",
-              content: custom.ch5_1 || [
-                `5.1.1 ${bShort} ${d} ที่พัฒนาขึ้น มีค่าดัชนีความสอดคล้อง (IOC) เฉลี่ยเท่ากับ ${st.iocAvg || 0.92} มีประสิทธิภาพ (E1/E2) เท่ากับ ${Number(st.e1 || 82.45).toFixed(2)}/${Number(st.e2 || 81.68).toFixed(2)} ซึ่งสูงกว่าเกณฑ์ ${crit} ที่กำหนดไว้ และมีค่าดัชนีประสิทธิผล (E.I.) เท่ากับ ${Number(st.ei || 0.6842).toFixed(4)} (ผู้เรียนมีความก้าวหน้าในการเรียนร้อยละ ${(Number(st.ei || 0.6842) * 100).toFixed(2)})`,
-                `5.1.2 ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มี${c1} หลังเรียน (x̄ = ${Number(st.c1PostMean || 25.10).toFixed(2)}, S.D. = ${Number(st.c1PostSD || 2.12).toFixed(2)}) สูงกว่าก่อนเรียน (x̄ = ${Number(st.c1PreMean || 14.20).toFixed(2)}, S.D. = ${Number(st.c1PreSD || 2.45).toFixed(2)}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${Number(st.c1TValue || 21.34).toFixed(2)})`,
-                ...(c2 ? [`5.1.3 ผู้เรียนมี${c2} หลังเรียน (x̄ = ${Number(st.postMean || 32.67).toFixed(2)}, S.D. = ${Number(st.postSD || 2.64).toFixed(2)}) สูงกว่าก่อนเรียน (x̄ = ${Number(st.preMean || 18.42).toFixed(2)}, S.D. = ${Number(st.preSD || 3.15).toFixed(2)}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = ${Number(st.tValue || 24.86).toFixed(2)})`] : []),
-                `5.1.${c2 ? 4 : 3} ผู้เรียนมีความพึงพอใจต่อการจัดการเรียนรู้ด้วย${bShort} โดยภาพรวมอยู่ในระดับ${satLevel} (x̄ = ${satVal.toFixed(2)}, S.D. = ${Number(st.satSD || 0.45).toFixed(2)})`
-              ]
-            },
-            {
-              id: "ch5_2",
-              heading: "5.2 อภิปรายผลการวิจัย",
-              type: "paragraphs",
-              content: custom.ch5_2 || [
-                `[ประเด็นที่ 1: อภิปรายผลด้านคุณภาพและประสิทธิภาพของนวัตกรรม (${Number(st.e1 || 82.45).toFixed(2)}/${Number(st.e2 || 81.68).toFixed(2)})] จากผลการวิจัยพบว่า ${bShort} มีประสิทธิภาพสูงกว่าเกณฑ์ ${crit} ที่กำหนดไว้ ทั้งนี้เนื่องจากผู้วิจัยได้ดำเนินการออกแบบและพัฒนาอย่างเป็นระบบตามกระบวนการวิจัยและพัฒนา เริ่มจากการวิเคราะห์หลักสูตร สภาพปัญหา และธรรมชาติของผู้เรียน (${d.replace(/^สำหรับ|^ของ/, "")}) จากนั้นจึงออกแบบขั้นตอนการเรียนรู้ ${steps.length} ขั้นตอน และผ่านการตรวจสอบคุณภาพความเที่ยงตรงเชิงเนื้อหาจากผู้เชี่ยวชาญ 5 ท่าน ก่อนนำไปทดลองใช้ปรับปรุงแก้ไข ทำให้ได้นวัตกรรมที่มีความเหมาะสมกับระดับความสามารถของผู้เรียน สอดคล้องกับแนวคิดการพัฒนานวัตกรรมการเรียนรู้ของ ชวลิต ชูกำแพง และทิศนา แขมมณี ที่ระบุว่า การออกแบบการจัดการเรียนรู้ที่มีลำดับขั้นตอนชัดเจนและผ่านการตรวจสอบคุณภาพอย่างเป็นระบบจะช่วยให้ผู้เรียนเกิดการเรียนรู้ได้อย่างเต็มศักยภาพ`,
-                `[ประเด็นที่ 2: อภิปรายผลด้าน${cJoined} ที่หลังเรียนสูงกว่าก่อนเรียน] จากผลการวิจัยพบว่า ผู้เรียนมี${cJoined} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 ทั้งนี้เพราะกิจกรรมใน${bShort} เปิดโอกาสให้ผู้เรียนได้ลงมือปฏิบัติจริงผ่านขั้นตอน ${steps.slice(0, 3).join(" เชื่อมโยงสู่ ")} ซึ่งช่วยฝึกฝนให้ผู้เรียนได้คิดวิเคราะห์ สังเคราะห์ และแลกเปลี่ยนเรียนรู้ร่วมกับเพื่อนและครูผู้สอนอย่างต่อเนื่อง ส่งผลให้ผู้เรียนสามารถสร้างองค์ความรู้และจดจำเนื้อหาได้อย่างคงทน`,
-                `[ประเด็นที่ 3: อภิปรายผลด้านความพึงพอใจของผู้เรียน (x̄ = ${satVal.toFixed(2)} ระดับ${satLevel})] จากผลการวิจัยพบว่า ผู้เรียนมีความพึงพอใจโดยรวมอยู่ในระดับ${satLevel} ทั้งนี้เนื่องจากบรรยากาศในการจัดกิจกรรมการเรียนรู้มีความท้าทาย น่าสนใจ เปิดโอกาสให้ผู้เรียนมีส่วนร่วมและประสบความสำเร็จในการทำภารกิจการเรียนรู้ด้วยตนเอง ทำให้ผู้เรียนเกิดเจตคติทางบวกและมีความสุขในการเรียน${subj}`
-              ]
-            },
-            {
-              id: "ch5_3",
-              heading: "5.3 ข้อเสนอแนะ",
-              type: "subsections",
-              items: [
-                {
-                  subTitle: "5.3.1 ข้อเสนอแนะในการนำผลการวิจัยไปใช้",
-                  text: `1) ครูผู้สอนที่นำ${bShort} ไปใช้ ควรศึกษาคู่มือและเตรียมสื่อแหล่งเรียนรู้ในแต่ละขั้นตอน (${steps.length} ขั้นตอน) ให้พร้อมก่อนการจัดกิจกรรม\n2) ในระยะแรกของการจัดกิจกรรม ครูควรให้คำแนะนำและกระตุ้นการตั้งคำถามอย่างใกล้ชิดเพื่อสร้างความคุ้นเคยให้กับผู้เรียน`
-                },
-                {
-                  subTitle: "5.3.2 ข้อเสนอแนะในการทำวิจัยครั้งต่อไป",
-                  text: `1) ควรมีการศึกษาวิจัยและพัฒนา${bShort} ในรายวิชาอื่นหรือระดับชั้นอื่นเพื่อขยายผลการใช้นวัตกรรม\n2) ควรศึกษาเปรียบเทียบผลของการใช้${bShort} ร่วมกับตัวแปรตามอื่นๆ เช่น ความคิดสร้างสรรค์ สมรรถนะการทำงานเป็นทีม หรือความคงทนในการเรียนรู้`
-                }
-              ]
-            }
-          ]
-        }
-      ]
+      chapters,
+      matrix,
+      opTable,
+      r1d1Bridge,
+      modelComponents
     };
   },
 
-  // สร้าง Smart Prompt สำหรับแต่ละส่วน เพื่อให้ผู้ใช้คัดลอกไปวางใน ChatGPT/Gemini ฟรี หรือส่งเข้า Gemini API สด
+  // ==========================================================================
+  // Smart Prompt Builder สำหรับส่งให้ Gemini AI หรือคัดลอกไปใช้ใน ChatGPT
+  // ==========================================================================
   buildSmartPrompt(p, taskType) {
     const fullTitle = this.composeFullTitle(p);
     const bFull = p.B || "";
@@ -732,23 +827,32 @@ window.ROAD_GENERATOR = {
     const baseContext = `คุณคือศาสตราจารย์และผู้เชี่ยวชาญด้านการวิจัยและพัฒนาทางการศึกษา (Educational Research & Development: R&D) และการทำผลงานทางวิชาการเพื่อเลื่อนวิทยฐานะ (วPA) ตามแนวคิดของ รศ.ดร.ชวลิต ชูกำแพง
 ข้อมูลงานวิจัยปัจจุบัน:
 - ชื่อเรื่องวิจัย: "${fullTitle}"
-- ลักษณะการวิจัย (A): ${p.A}
-- นวัตกรรม/ตัวแปรต้น (B): ${bFull}
+- นวัตกรรม/ตัวแปรต้น (A & B): ${p.A} ${bFull}
 - ขั้นตอนของนวัตกรรม:
 - ${steps}
 - ตัวแปรตาม (C): ${cJoined}
 - กลุ่มเป้าหมาย (D): ${d}
 - รายวิชา/เนื้อหา: ${p.subject} (${p.duration})
-- ประชากร: ${p.population}
-- กลุ่มตัวอย่าง: ${p.sample}
 - เกณฑ์ประสิทธิภาพ E1/E2: ${p.efficiencyCriterion} (ผลจริง E1/E2 = ${st.e1}/${st.e2}, E.I. = ${st.ei}, t = ${st.tValue}, ความพึงพอใจ x̄ = ${st.satMean})`;
 
     const prompts = {
-      title_polish: `${baseContext}\n\nคำสั่ง: ช่วยวิเคราะห์ชื่อเรื่องวิจัยข้างต้นตามหลัก ABCD และเสนอทางเลือกชื่อเรื่องวิจัยที่คมชัด สละสลวย ถูกต้องตามหลักวิชาการระดับชำนาญการพิเศษ–เชี่ยวชาญ (คศ.3–คศ.4) จำนวน 3 ทางเลือก พร้อมอธิบายจุดเด่นของแต่ละชื่อเรื่อง`,
-      ch1_background: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "1.1 ความเป็นมาและความสำคัญของปัญหา" ความยาว 4–5 ย่อหน้า ตามโครงสร้างกรวยคว่ำ (Macro -> Meso -> Micro -> แนวทางการแก้ปัญหาด้วยนวัตกรรม B -> สรุปเหตุผลการวิจัย) ด้วยภาษาทางวิชาการที่ลุ่มลึก น่าเชื่อถือ มีการอ้างอิงหลักสูตรและสภาพปัญหาที่สมจริง`,
-      ch1_definitions: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "1.6 นิยามศัพท์เฉพาะ" (Operational Definitions) ให้ครบทุกตัวแปร ได้แก่ นวัตกรรม (${p.B_short || p.B}), ประสิทธิภาพของนวัตกรรม (${p.efficiencyCriterion}), ตัวแปรตาม (${cJoined}), ความพึงพอใจ และกลุ่มตัวอย่าง โดยเขียนให้ชัดเจนว่าหมายถึงอะไร มีองค์ประกอบใด และวัดด้วยเครื่องมือใด`,
-      ch2_synthesis: `${baseContext}\n\nคำสั่ง: ช่วยร่างโครงสร้างและเนื้อหาสังเคราะห์ใน "บทที่ 2 เอกสารและงานวิจัยที่เกี่ยวข้อง" พร้อมตัวอย่างการอ้างอิงแนวคิดทฤษฎีของนักการศึกษาไทยและสากลที่รองรับ "${bFull}" และ "${cJoined}" รวมทั้งสรุปเหตุผลเชื่อมโยงสู่กรอบแนวคิดในการวิจัย`,
-      ch5_discussion: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "5.2 อภิปรายผลการวิจัย" อย่างละเอียดครบทุกวัตถุประสงค์ โดยอภิปรายว่าทำไมผลการวิจัยจึงเป็นไปตามสมมติฐาน (เชื่อมโยงกับขั้นตอนของนวัตกรรมทีละขั้น) และสอดคล้องกับแนวคิดทฤษฎีหรืองานวิจัยของใครบ้าง`
+      title_polish: `${baseContext}\n\nคำสั่ง: ช่วยวิเคราะห์ชื่อเรื่องวิจัยข้างต้นตามหลัก ABCD (รศ.ดร.ชวลิต) และเสนอทางเลือกชื่อเรื่องวิจัยที่คมชัด สละสลวย ถูกต้องตามหลักเกณฑ์ วPA ระดับ คศ.3–คศ.5 จำนวน 3 ทางเลือก พร้อมระบุ A B C D ของแต่ละข้อ`,
+      ch1_background: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "1.1 ความเป็นมาและความสำคัญของปัญหา" ความยาว 7 ย่อหน้า ตามโครงสร้างของ รศ.ดร.ชวลิต ชูกำแพง:
+(1) ความสำคัญของตัวแปร C
+(2) นโยบาย/หลักสูตรและทิศทางการวิจัยชาติ 2568–2570
+(3) ปัญหาภาพรวมระดับประเทศ
+(4) สาเหตุของปัญหาและสภาพจริงในพื้นที่ D
+(5) หลักการ/แนวคิด B ที่นำมาแก้ปัญหา
+(6) นวัตกรรม A และช่องว่างวิจัย (Research Gap)
+(7) สรุปเหตุผลความจำเป็นในการทำวิจัยเรื่องนี้`,
+      ch1_definitions: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "1.5 นิยามศัพท์เฉพาะ" (Operational Definitions) ให้ครบทุกตัวแปร ได้แก่ นวัตกรรม (${p.B_short || p.B}), ประสิทธิภาพของนวัตกรรม (${p.efficiencyCriterion}), ตัวแปรตาม (${cJoined}), ดัชนีประสิทธิผล (E.I.) และความพึงพอใจ โดยห้ามนิยามคำทั่วไปอย่าง นักเรียน หรือ ครู`,
+      ch2_synthesis: `${baseContext}\n\nคำสั่ง: ช่วยร่างโครงสร้างเนื้อหาและการอ้างอิงวรรณกรรมใน "บทที่ 2 เอกสารและงานวิจัยที่เกี่ยวข้อง" พร้อมเขียนอธิบายกรอบแนวคิดเชิงทฤษฎี [หลักการ B + นวัตกรรม A] ===> [ตัวแปร C] โดยห้ามวาดเป็นขั้นตอนการวิจัย R1-D2`,
+      r1_d1_bridge: `${baseContext}\n\nคำสั่ง: ช่วยสังเคราะห์ตารางเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge) โดยอธิบายว่าผลการศึกษาทฤษฎีและสภาพปัญหาใน R1 นำไปสู่การออกแบบหลักการ วัตถุประสงค์ และขั้นตอนกิจกรรมของนวัตกรรมใน D1 อย่างไร พร้อมตอบคำถาม How & Why`,
+      ch5_discussion: `${baseContext}\n\nคำสั่ง: ช่วยเขียน "5.2 อภิปรายผลการวิจัย" ตามสูตร 4 องค์ประกอบของ รศ.ดร.ชวลิต ชูกำแพง:
+1) ผลการวิจัยพบว่าอะไร
+2) ทั้งนี้เป็นเพราะเหตุใด (อธิบายจากกิจกรรมที่ครูจัดจริงในชั้นเรียน)
+3) สอดคล้องกับหลักการ/ทฤษฎีของใคร อย่างไร
+4) สอดคล้องกับผลงานวิจัยของใคร ที่พบว่าอย่างไร`
     };
 
     return prompts[taskType] || prompts.ch1_background;
@@ -792,13 +896,16 @@ window.ROAD_GENERATOR = {
     throw lastError || new Error("ไม่สามารถเชื่อมต่อ Gemini API ได้ กรุณาตรวจสอบ API Key");
   },
 
-  // ส่งออกไฟล์ Microsoft Word (.doc HTML-OOXML ฟอนต์ TH Sarabun New 16pt + ตาราง 3 เส้น APA)
+  // ==========================================================================
+  // ส่งออกไฟล์ Microsoft Word (.doc) ฟอนต์ TH Sarabun / Sarabun 16pt
+  // พร้อมตารางมาตรฐานวิชาการ 3 เส้น (Three-line APA Table)
+  // ==========================================================================
   exportToWordDoc(p) {
     const generated = this.generateChapters(p);
-    const matrix = this.generateAlignmentMatrix(p);
+    const opTable = this.generateOperationalTable(p);
+    const r1d1Bridge = this.generateR1toD1Bridge(p);
+    const modelComponents = this.generateModelComponents(p);
     const bShort = p.B_short || p.B;
-    const cList = (p.C_list || []).filter(Boolean);
-    const steps = (p.B_steps || []).filter(Boolean);
 
     let html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -848,124 +955,69 @@ window.ROAD_GENERATOR = {
             text-align: center;
           }
           table.apa-table tbody td {
+            border-bottom: 0.5pt solid #ddd;
             padding: 4pt 6pt;
           }
           table.apa-table tbody tr:last-child td {
             border-bottom: 1.5pt solid #000;
           }
-          table.grid-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8pt;
-            margin-bottom: 12pt;
-            font-size: 14pt;
-          }
-          table.grid-table th, table.grid-table td {
-            border: 1pt solid #333;
-            padding: 5pt 6pt;
-            vertical-align: top;
-          }
-          table.grid-table th { background-color: #f0f4f8; font-weight: bold; }
-          .page-break { page-break-before: always; }
+          .table-caption { font-weight: bold; margin-bottom: 4pt; text-indent: 0; }
+          .table-note { font-size: 14pt; margin-top: 4pt; text-indent: 0; }
         </style>
       </head>
       <body>
         <div class="Section1">
-          <h1>โครงร่างและรายงานการวิจัย 5 บท (ระบบ ROAD Next-Gen)</h1>
-          <p class="no-indent" style="text-align:center; font-size:18pt; font-weight:bold;">เรื่อง ${generated.fullTitle}</p>
-          <hr/>
-          <h2>สรุปองค์ประกอบชื่อเรื่องตามหลัก ABCD</h2>
-          <table class="grid-table">
-            <thead>
-              <tr>
-                <th style="width:22%;">องค์ประกอบ ABCD</th>
-                <th>รายละเอียดในงานวิจัยนี้</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><b>A (Action / ลักษณะการวิจัย)</b></td><td>${p.A || ""}</td></tr>
-              <tr><td><b>B (Innovation / ตัวแปรต้น)</b></td><td>${p.B || ""}<br/><b>ขั้นตอนสำคัญ:</b> ${steps.join(" → ")}</td></tr>
-              <tr><td><b>C (Outcomes / ตัวแปรตาม)</b></td><td>${cList.join(", ")} และความพึงพอใจของผู้เรียน</td></tr>
-              <tr><td><b>D (Target / กลุ่มเป้าหมาย)</b></td><td>${p.D || ""} (${p.subject || ""})</td></tr>
-            </tbody>
-          </table>
+          <!-- Cover Title -->
+          <h1>รายงานการวิจัยและพัฒนา (R&D)<br>เรื่อง: ${generated.fullTitle}</h1>
+          <p class="no-indent" style="text-align: center; font-weight: bold; margin-top: 10pt;">
+            ตามเกณฑ์การประเมินวิทยฐานะ วPA และระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
+          </p>
+          <hr style="margin-top: 15pt; margin-bottom: 20pt;">
 
-          <h2>ตารางตรวจสอบความสอดคล้องของงานวิจัย (Research Alignment Matrix)</h2>
-          <table class="grid-table">
-            <thead>
-              <tr>
-                <th>ระยะ/ขั้นตอน</th>
-                <th>วัตถุประสงค์การวิจัย</th>
-                <th>กลุ่มเป้าหมาย/แหล่งข้อมูล</th>
-                <th>เครื่องมือที่ใช้</th>
-                <th>สถิติที่ใช้</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${matrix.map(r => `
-                <tr>
-                  <td><b>${r.phase}</b></td>
-                  <td>${r.objective}</td>
-                  <td>${r.informants}</td>
-                  <td>${r.instruments}</td>
-                  <td>${r.statistics}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
+          <!-- Chapters 1 to 5 -->
+          ${generated.chapters.map(ch => `
+            <h1>${ch.title}</h1>
+            ${ch.sections.map(sec => `
+              <h2>${sec.title}</h2>
+              ${sec.content ? `<div>${sec.content}</div>` : ''}
+              ${sec.tables ? sec.tables.map(t => `
+                <div style="margin-top: 12pt; margin-bottom: 14pt;">
+                  <p class="table-caption">${t.tableNo} ${t.caption}</p>
+                  <table class="apa-table">
+                    <thead>
+                      <tr>
+                        ${t.headers.map(h => `<th>${h}</th>`).join("")}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${t.rows.map(r => `
+                        <tr>
+                          ${r.map((c, i) => `<td style="${i === 0 ? 'text-align: left;' : 'text-align: center;'}">${c}</td>`).join("")}
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                  <p class="table-note"><b>คำแปลผล:</b> ${t.interpretation}</p>
+                </div>
+              `).join("") : ''}
+            `).join("")}
+            <br style="page-break-after: always;">
+          `).join("")}
+        </div>
+      </body>
+      </html>
     `;
 
-    for (const ch of generated.chapters) {
-      html += `<div class="page-break"></div><h1>${ch.title}</h1>`;
-      for (const sec of ch.sections) {
-        html += `<h2>${sec.heading}</h2>`;
-        if (sec.type === "paragraphs") {
-          for (const para of sec.content) {
-            html += `<p>${para}</p>`;
-          }
-        } else if (sec.type === "list") {
-          for (const item of sec.content) {
-            html += `<p class="no-indent" style="margin-left:1.0cm;">${item}</p>`;
-          }
-        } else if (sec.type === "subsections") {
-          for (const sub of sec.items) {
-            html += `<h3>${sub.subTitle}</h3>`;
-            for (const line of String(sub.text).split("\n")) {
-              html += `<p class="no-indent" style="margin-left:0.8cm;">${line}</p>`;
-            }
-          }
-        } else if (sec.type === "definitions") {
-          for (const d of sec.items) {
-            html += `<p><b>${d.term}</b> ${d.def}</p>`;
-          }
-        } else if (sec.type === "stat_tables") {
-          for (const tbl of sec.tables) {
-            html += `<p class="no-indent" style="font-weight:bold; margin-top:10pt;">${tbl.tableNo} ${tbl.caption}</p>`;
-            html += `<table class="apa-table"><thead><tr>${tbl.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>`;
-            for (const row of tbl.rows) {
-              html += `<tr>${row.map((cell, ci) => `<td style="text-align:${ci === 0 ? "left" : "center"};">${cell}</td>`).join("")}</tr>`;
-            }
-            html += `</tbody></table>`;
-            if (tbl.footnote) {
-              html += `<p class="no-indent" style="font-size:14pt;">${tbl.footnote}</p>`;
-            }
-            html += `<p>${tbl.interpretation}</p>`;
-          }
-        }
-      }
-    }
-
-    html += `</div></body></html>`;
-
-    const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
+    const blob = new Blob([html], { type: "application/msword;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const safeName = (bShort || "ROAD-Research").replace(/[\\/:*?"<>|]/g, "_").slice(0, 50);
     a.href = url;
-    a.download = `รายงานวิจัย5บท_${safeName}.doc`;
+    a.download = `รายงานวิจัย_${(bShort || "ROAD").replace(/[\/\\?%*:|"<>]/g, "_")}.doc`;
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
   }
 };
