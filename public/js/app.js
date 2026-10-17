@@ -2320,7 +2320,7 @@
                 id="login-identifier"
                 type="text"
                 autoComplete="username"
-                value="somchai.k@gmail.com"
+                value="gorthailand1617@gmail.com"
                 placeholder="Username or Email (เช่น RD69A1-01)"
                 class="w-full bg-transparent outline-none text-[15px] font-medium text-[#0d1838] dark:text-white placeholder-[#6b7da6]"
                 required

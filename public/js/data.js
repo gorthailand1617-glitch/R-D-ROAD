@@ -501,7 +501,7 @@ window.ROAD_DATA = {
     {
       id: "USR-002",
       username: "RD69A1-01",
-      email: "somchai.k@gmail.com",
+      email: "gorthailand1617@gmail.com",
       phone: "0812345678",
       password: "somchai.k5678",
       role: "member",
