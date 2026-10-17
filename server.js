@@ -19,7 +19,7 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
   let pathname = decodeURIComponent(parsedUrl.pathname);
 
-  if (["/", "/app", "/login", "/signup", "/admin"].includes(pathname)) {
+  if (["/", "/app", "/studio", "/login", "/signup", "/forgot", "/admin", "/slides"].includes(pathname)) {
     pathname = "/index.html";
   }
 

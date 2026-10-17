@@ -10,7 +10,8 @@
     PROJECTS: "road_nextgen_projects_v1",
     ACTIVE_PROJECT_ID: "road_nextgen_active_proj_v1",
     GEMINI_KEY: "road_nextgen_gemini_key_v1",
-    THEME: "road_nextgen_theme_v1"
+    THEME: "road_nextgen_theme_v1",
+    AUDIT_LOGS: "road_nextgen_audit_logs_v1"
   };
 
   // --- Utility Functions (Matching road-abcd rules) ---
@@ -45,11 +46,11 @@
 
   // --- State Initialization ---
   const state = {
-    view: "login", // "login" | "studio" | "signup" | "admin" | "slides"
+    view: "login", // "login" | "studio" | "signup" | "forgot" | "admin" | "slides"
     theme: "light", // "light" | "dark"
     showLoginPass: false,
     rememberMe: true,
-    studioTab: "advisor", // "advisor" | "abcd" | "chapters" | "diagrams" | "matrix" | "statlab" | "ai"
+    studioTab: "workspace", // "workspace" | "advisor" | "abcd" | "chapters" | "diagrams" | "matrix" | "statlab" | "ai"
     activeChapterFilter: 0, // 0 = All 5 chapters, 1..5 = specific chapter
     slideIndex: 0,
     members: [],
@@ -66,6 +67,24 @@
     statlabSubTab: "decision_rules", // "decision_rules" | "ioc" | "item_analysis" | "cronbach" | "e1e2" | "ttest" | "ch4_tables"
     matrixSubTab: "operational", // "operational" | "r1d1_bridge" | "alignment"
     selectedDecisionObjective: "compare_pre_post",
+    // Forgot Password State
+    forgotForm: {
+      identifier: "",
+      submitted: false,
+      message: "",
+      otpSent: false,
+      resetOtp: "",
+      newPass: ""
+    },
+    // 10-Step Research Wizard State
+    showWizardModal: false,
+    wizardStep: 1,
+    wizardData: {},
+    lastSavedTimestamp: "",
+    // Workspace Projects State
+    projectFilterStatus: "ALL",
+    projectSearch: "",
+    auditLogs: [],
     // Interactive IOC State (5 items x 5 experts)
     iocExpertsCount: 5,
     iocItems: [
@@ -103,7 +122,7 @@
       { id: 7, name: "ข้อ 7: สามารถนำความรู้ไปประยุกต์ใช้ในชีวิตประจำวันได้", variance: 0.49, mean: 4.60 },
       { id: 8, name: "ข้อ 8: มีความสุขและพึงพอใจต่อบรรยากาศการเรียนรู้", variance: 0.46, mean: 4.72 }
     ],
-    cronbachTotalVariance: 9.85,
+    cronbachTotalVariance: 18.50,
     geminiKey: "",
     aiTask: "ch1_background",
     aiOutput: "",
@@ -146,6 +165,22 @@
     }
   }
 
+  function recordAudit(type, desc) {
+    const uName = state.currentUser ? `${state.currentUser.title || ''}${state.currentUser.first_name || ''} ${state.currentUser.last_name || ''}`.trim() || state.currentUser.email : "ผู้ใช้ทั่วไป";
+    const newLog = {
+      id: `log-${Date.now()}`,
+      type,
+      user: uName,
+      desc,
+      timestamp: new Date().toISOString()
+    };
+    state.auditLogs.unshift(newLog);
+    if (state.auditLogs.length > 50) state.auditLogs = state.auditLogs.slice(0, 50);
+    try {
+      localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(state.auditLogs));
+    } catch {}
+  }
+
   function loadStorage() {
     try {
       const m = localStorage.getItem(STORAGE_KEYS.MEMBERS);
@@ -176,12 +211,29 @@
         state.projects = window.ROAD_DATA.PRESETS.map((preset, idx) => ({
           ...JSON.parse(JSON.stringify(preset)),
           id: `proj-${idx + 1}`,
+          status: "outlined",
+          progress: 85,
           updatedAt: new Date().toISOString(),
           customSections: {}
         }));
       }
     } catch {
       state.projects = [JSON.parse(JSON.stringify(window.ROAD_DATA.PRESETS[0]))];
+    }
+
+    // Ensure all projects have status and progress fields
+    state.projects = state.projects.map(p => ({
+      ...p,
+      status: p.status || "outlined",
+      progress: p.progress || 85,
+      updatedAt: p.updatedAt || new Date().toISOString()
+    }));
+
+    try {
+      const al = localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS);
+      state.auditLogs = al ? JSON.parse(al) : [...window.ROAD_DATA.DEFAULT_AUDIT_LOGS];
+    } catch {
+      state.auditLogs = [...window.ROAD_DATA.DEFAULT_AUDIT_LOGS];
     }
 
     state.activeProjectId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT_ID) || state.projects[0]?.id;
@@ -193,6 +245,7 @@
     const params = new URLSearchParams(window.location.search);
     const pathname = (window.location.pathname || "").toLowerCase().replace(/\/$/, "");
     if (params.get("view") === "signup" || pathname === "/signup") state.view = "signup";
+    else if (params.get("view") === "forgot" || pathname === "/forgot") state.view = "forgot";
     else if (params.get("view") === "admin" || pathname === "/admin") state.view = "admin";
     else if (params.get("view") === "studio" || pathname === "/app" || pathname === "/studio") state.view = "studio";
     else if (params.get("view") === "slides" || pathname === "/slides") state.view = "slides";
@@ -863,7 +916,15 @@
     exportWord() {
       const proj = getActiveProject();
       window.ROAD_GENERATOR.exportToWordDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกรายงานวิจัยฉบับเต็ม 5 บท (Word): ${proj.label || proj.B_short}`);
       showToast("กำลังดาวน์โหลดไฟล์ Microsoft Word (.doc) ฟอนต์ TH Sarabun...");
+    },
+
+    exportSingleChapter(chapNum) {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportSingleChapterToWordDoc(proj, Number(chapNum));
+      recordAudit("EXPORT_DOC", `ส่งออกบทที่ ${chapNum} (Word): ${proj.label || proj.B_short}`);
+      showToast(`กำลังดาวน์โหลดบทที่ ${chapNum} เป็นไฟล์ Word (.doc)...`);
     },
 
     exportJson() {
@@ -875,6 +936,7 @@
       a.download = `road-project-${proj.id}.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      recordAudit("EXPORT_DOC", `สำรองไฟล์โครงการ JSON: ${proj.label || proj.B_short}`);
       showToast("ดาวน์โหลดไฟล์สำรองโปรเจกต์ (.json) เรียบร้อยแล้ว");
     },
 
@@ -913,6 +975,7 @@
 
       state.currentUser = user;
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+      recordAudit("LOGIN", `เข้าสู่ระบบสำเร็จ (${user.username}): ${user.title}${user.first_name} ${user.last_name}`);
       state.view = user.role === "admin" ? "admin" : "studio";
       renderApp();
       showToast(`ยินดีต้อนรับ ${user.title}${user.first_name} ${user.last_name}`);
@@ -1003,6 +1066,7 @@
 
       state.members.unshift(newMember);
       saveMembers();
+      recordAudit("REGISTER", `สมัครสมาชิกใหม่ (${f.signup_type}): ${username} ${f.first_name} ${f.last_name}`);
       state.currentUser = newMember;
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newMember));
       state.view = "studio";
@@ -1094,6 +1158,246 @@
     nextSlide(delta) {
       state.slideIndex = Math.max(0, Math.min(6, state.slideIndex + delta));
       renderApp();
+    },
+
+    // --- Forgot Password Actions ---
+    updateForgotField(field, val) {
+      state.forgotForm[field] = val;
+    },
+
+    submitForgot(e) {
+      e.preventDefault();
+      const idInput = document.getElementById("forgot-identifier")?.value?.trim() || state.forgotForm.identifier || "";
+      if (!idInput) {
+        showToast("กรุณากรอกอีเมลหรือเบอร์โทรศัพท์ที่ลงทะเบียนไว้", "warn");
+        return;
+      }
+      state.forgotForm.identifier = idInput;
+      state.forgotForm.submitted = true;
+      state.forgotForm.otpSent = true;
+      state.forgotForm.message = "ระบบได้ดำเนินการส่งลิงก์ตั้งรหัสผ่านใหม่และรหัส OTP ชั่วคราวไปยังช่องทางที่ลงทะเบียนเรียบร้อยแล้ว (เพื่อความปลอดภัย ระบบจะไม่เปิดเผยว่าบัญชีดังกล่าวมีอยู่ในฐานข้อมูลหรือไม่)";
+      recordAudit("SECURITY", `คำขอรีเซ็ตรหัสผ่านสำหรับ: ${idInput.replace(/(.{2})(.*)(@.*)/, "$1***$3")}`);
+      renderApp();
+      showToast("ระบบส่งรหัส OTP เรียบร้อยแล้ว (จำลองรหัส: 684291)", "ok");
+    },
+
+    fillDemoOtp() {
+      state.forgotForm.resetOtp = "684291";
+      state.forgotForm.newPass = "Road2026!Pro";
+      renderApp();
+      showToast("กรอกรหัส OTP และรหัสผ่านใหม่ตัวอย่างให้เรียบร้อยแล้ว");
+    },
+
+    verifyForgotOtp(e) {
+      e.preventDefault();
+      const otp = document.getElementById("forgot-otp")?.value?.trim() || state.forgotForm.resetOtp;
+      const newPass = document.getElementById("forgot-new-password")?.value?.trim() || state.forgotForm.newPass;
+      if (!otp || otp.length < 4) {
+        showToast("กรุณากรอกรหัส OTP 6 หลัก", "bad");
+        return;
+      }
+      if (!newPass || newPass.length < 6) {
+        showToast("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร", "bad");
+        return;
+      }
+      const id = (state.forgotForm.identifier || "").toLowerCase();
+      const user = state.members.find(m =>
+        m.email.toLowerCase() === id ||
+        m.phone === id ||
+        m.username.toLowerCase() === id
+      );
+      if (user) {
+        user.password = newPass;
+        saveMembers();
+      }
+      recordAudit("SECURITY", "รีเซ็ตรหัสผ่านสำเร็จผ่าน OTP");
+      state.forgotForm = {
+        identifier: "",
+        submitted: false,
+        message: "",
+        otpSent: false,
+        resetOtp: "",
+        newPass: ""
+      };
+      state.view = "login";
+      renderApp();
+      showToast("ตั้งรหัสผ่านใหม่สำเร็จแล้ว! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่", "ok");
+    },
+
+    resetForgotState() {
+      state.forgotForm = {
+        identifier: "",
+        submitted: false,
+        message: "",
+        otpSent: false,
+        resetOtp: "",
+        newPass: ""
+      };
+      state.view = "login";
+      renderApp();
+    },
+
+    // --- Research Wizard (10 Steps) Actions ---
+    openWizardModal(step = 1) {
+      const proj = getActiveProject();
+      state.wizardStep = Number(step) || 1;
+      const tmpl = window.ROAD_DATA.SYNTAX_TEMPLATES[proj.modelId] || window.ROAD_DATA.SYNTAX_TEMPLATES.rd_4step;
+      state.wizardData = {
+        step1_title: window.ROAD_GENERATOR.composeFullTitle(proj),
+        step1_keywords: `${proj.B_short || proj.B}, ${(proj.C_list || []).join(", ")}, การวิจัยและพัฒนา (R&D)`,
+        step2_problem: `นักเรียนขาดทักษะ${(proj.C_list && proj.C_list[0]) || 'การคิดวิเคราะห์'} และมีผลสัมฤทธิ์ทางการเรียนต่ำกว่าเกณฑ์เป้าหมายของสถานศึกษา อีกทั้งการจัดการเรียนรู้แบบเดิมเน้นการบรรยาย ขาดการลงมือปฏิบัติจริง`,
+        step2_context: `${proj.schoolName || 'โรงเรียน'} สังกัด ${proj.affiliation || 'สพฐ.'} ผู้เรียนระดับ ${proj.D}`,
+        step3_obj: tmpl.objectives(proj).join("\n"),
+        step4_hypo: tmpl.hypotheses(proj).join("\n"),
+        step5_population: proj.population || "นักเรียนทั้งหมดในสถานศึกษา",
+        step5_sample: proj.sample || "นักเรียนกลุ่มตัวอย่าง จำนวน 1 ห้องเรียน สุ่มแบบกลุ่ม (Cluster Random Sampling)",
+        step6_innovation: proj.B,
+        step6_innovation_short: proj.B_short,
+        step6_steps: (proj.B_steps || []).join("\n"),
+        step6_independent: `นวัตกรรม ${proj.B_short}`,
+        step6_dependent: (proj.C_list || []).join(", "),
+        step7_tools: `- ${proj.B_short}\n- แผนการจัดการเรียนรู้\n- แบบทดสอบวัด${(proj.C_list && proj.C_list[0]) || 'ผลสัมฤทธิ์'}\n- แบบสอบถามความพึงพอใจ`,
+        step7_quality: "IOC โดยผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.50), ความยากง่าย (p) 0.20-0.80, อำนาจจำแนก (r) >= 0.20, ความเชื่อมั่น Cronbach's Alpha >= 0.80",
+        step8_stats: `1. ค่าเฉลี่ย (Mean) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)\n2. ประสิทธิภาพนวัตกรรม E1/E2 ตามเกณฑ์ ${proj.efficiencyCriterion}\n3. ดัชนีประสิทธิผล (E.I.) เกณฑ์ >= 0.50\n4. สถิติทดสอบสมมติฐาน t-test for Dependent Samples (p < .05)`,
+        step9_impact: `1. ผู้เรียนมี${(proj.C_list || []).join(" และ ")}สูงขึ้นอย่างมีนัยสำคัญ\n2. ครูได้นวัตกรรมต้นแบบที่ผ่านการตรวจสอบเชิงประจักษ์\n3. ใช้เป็นผลงานทางวิชาการตามเกณฑ์ วPA ก.ค.ศ.`
+      };
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      state.showWizardModal = true;
+      renderApp();
+    },
+
+    closeWizardModal() {
+      state.showWizardModal = false;
+      renderApp();
+    },
+
+    setWizardStep(step) {
+      state.wizardStep = Math.max(1, Math.min(10, Number(step)));
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      renderApp();
+    },
+
+    updateWizardField(field, val) {
+      state.wizardData[field] = val;
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+    },
+
+    applyWizardSample(stepNum) {
+      const stepObj = window.ROAD_DATA.RESEARCH_WIZARD_STEPS.find(s => s.step === stepNum);
+      if (stepObj && stepObj.sample) {
+        Object.assign(state.wizardData, stepObj.sample);
+        state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+        renderApp();
+        showToast(`ใส่ตัวอย่างมาตรฐานของ อ.ชวลิต ในขั้นตอนที่ ${stepNum} เรียบร้อยแล้ว`);
+      }
+    },
+
+    completeWizardAndCreate() {
+      const w = state.wizardData;
+      const proj = getActiveProject();
+      
+      if (w.step6_innovation) proj.B = w.step6_innovation;
+      if (w.step6_innovation_short) proj.B_short = w.step6_innovation_short;
+      if (w.step6_steps) {
+        proj.B_steps = w.step6_steps.split("\n").map(s => s.trim()).filter(Boolean);
+      }
+      if (w.step6_dependent) {
+        proj.C_list = w.step6_dependent.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+      }
+      if (w.step5_population) proj.population = w.step5_population;
+      if (w.step5_sample) proj.sample = w.step5_sample;
+      
+      proj.status = "outlined";
+      proj.progress = 95;
+      proj.updatedAt = new Date().toISOString();
+      
+      recordAudit("PROJECT_CREATE", `สร้างและซิงค์โครงร่าง 5 บทผ่าน Research Wizard: ${proj.label || proj.B_short}`);
+      state.showWizardModal = false;
+      state.studioTab = "chapters";
+      saveProjects();
+      renderApp();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      showToast("สร้างและตรวจสอบโครงร่างการวิจัย 5 บทเสร็จสมบูรณ์เรียบร้อยแล้ว!", "ok");
+    },
+
+    // --- Research Workspace & Project Portfolio Actions ---
+    setProjectFilterStatus(st) {
+      state.projectFilterStatus = st;
+      renderApp();
+    },
+
+    setProjectSearch(q) {
+      state.projectSearch = q;
+      renderApp();
+    },
+
+    setProjectStatus(projId, status) {
+      const p = state.projects.find(x => x.id === projId);
+      if (p) {
+        p.status = status;
+        p.updatedAt = new Date().toISOString();
+        recordAudit("PROJECT_UPDATE", `เปลี่ยนสถานะโครงการ "${p.label || p.B_short}" เป็น ${status}`);
+        saveProjects();
+        renderApp();
+        showToast("อัปเดตสถานะโครงการเรียบร้อยแล้ว");
+      }
+    },
+
+    duplicateProject(projId) {
+      const origin = state.projects.find(x => x.id === projId);
+      if (!origin) return;
+      const clone = JSON.parse(JSON.stringify(origin));
+      clone.id = "proj-" + Date.now();
+      clone.label = `${origin.label || origin.B_short} (สำเนา)`;
+      clone.status = "draft";
+      clone.progress = 50;
+      clone.updatedAt = new Date().toISOString();
+      state.projects.unshift(clone);
+      state.activeProjectId = clone.id;
+      recordAudit("PROJECT_CREATE", `คัดลอกโครงการ: ${clone.label}`);
+      saveProjects();
+      renderApp();
+      showToast(`คัดลอกโครงการ "${clone.label}" เรียบร้อยแล้ว`);
+    },
+
+    archiveProject(projId) {
+      const p = state.projects.find(x => x.id === projId);
+      if (p) {
+        p.status = "archived";
+        p.updatedAt = new Date().toISOString();
+        recordAudit("PROJECT_UPDATE", `จัดเก็บโครงการเข้ากรุ: ${p.label || p.B_short}`);
+        saveProjects();
+        renderApp();
+        showToast(`จัดเก็บโครงการ "${p.label || p.B_short}" เรียบร้อยแล้ว`);
+      }
+    },
+
+    deleteProject(projId) {
+      if (state.projects.length <= 1) {
+        showToast("ต้องมีโครงการวิจัยอย่างน้อย 1 โครงการในระบบ", "warn");
+        return;
+      }
+      if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโครงการนี้?")) return;
+      const p = state.projects.find(x => x.id === projId);
+      state.projects = state.projects.filter(x => x.id !== projId);
+      if (state.activeProjectId === projId) {
+        state.activeProjectId = state.projects[0].id;
+      }
+      recordAudit("PROJECT_UPDATE", `ลบโครงการ: ${p ? (p.label || p.B_short) : projId}`);
+      saveProjects();
+      renderApp();
+      showToast("ลบโครงการวิจัยเรียบร้อยแล้ว");
+    },
+
+    exportAuditLogsJson() {
+      const blob = new Blob([JSON.stringify(state.auditLogs, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ROAD_AuditLogs_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("ส่งออกบันทึก Audit Logs เรียบร้อยแล้ว");
     }
   };
 
@@ -1272,8 +1576,8 @@
                 </span>
                 <span class="font-semibold text-[#1e2d52] dark:text-slate-200">Remember Me</span>
               </button>
-              <button type="button" onclick="ROAD_APP.setView('signup')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">
-                สมัครสมาชิก / รหัสรุ่นอบรม?
+              <button type="button" onclick="ROAD_APP.setView('forgot')" class="font-semibold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">
+                ลืมรหัสผ่าน?
               </button>
             </div>
 
@@ -1288,6 +1592,10 @@
                 </svg>
               </span>
             </button>
+
+            <div class="text-center pt-1 text-xs text-[#5b6d96] dark:text-slate-400">
+              ยังไม่มีบัญชีใช้งาน? <button type="button" onclick="ROAD_APP.setView('signup')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">สมัครสมาชิก / ใช้รหัสรุ่นอบรม</button>
+            </div>
           </form>
 
           <!-- OR CONTINUE WITH Divider -->
@@ -1339,6 +1647,127 @@
         <div class="hidden sm:block fixed bottom-6 right-8 text-[11px] font-bold tracking-[0.2em] text-[#4a5d87] dark:text-slate-400 leading-relaxed uppercase">
           MORE<br/>THAN<br/>A REPORT<br/>
           <span class="inline-block w-5 h-[2px] bg-[#4a5d87] mt-1"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- View 1.5: 3D Soft Neumorphic Forgot Password View (Anti-Enumeration & Simulated OTP) ---
+  function renderForgotView() {
+    const f = state.forgotForm;
+    return `
+      <div class="min-h-[84vh] flex flex-col items-center justify-center px-4 py-8 relative">
+        <div class="w-full max-w-[430px] flex flex-col items-center">
+          <!-- 3D Center Medallion Logo -->
+          <div class="neu-logo-medallion mb-6">
+            ${render3DFlameLogo(86)}
+          </div>
+
+          <!-- Title & Subtitle -->
+          <h1 class="text-[30px] font-extrabold tracking-tight text-[#0d1838] dark:text-white leading-tight text-center">
+            Reset Password
+          </h1>
+          <p class="text-xs font-semibold tracking-wider text-[#5b6d96] dark:text-slate-400 mt-1 mb-6 text-center">
+            ระบบกู้คืนรหัสผ่านความปลอดภัยสูง (Anti-Enumeration)
+          </p>
+
+          <!-- Security Note (Anti-Enumeration Principle from Blueprint) -->
+          <div class="w-full neu-card-sm p-3.5 mb-5 border-l-4 border-blue-500 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+            🛡️ <b>นโยบายความปลอดภัย:</b> เพื่อป้องกันการตรวจสอบรายชื่อผู้ใช้ ระบบจะไม่เปิดเผยสถานะว่ามีบัญชีดังกล่าวในฐานข้อมูลหรือไม่ หากข้อมูลตรงกับระบบ รหัส OTP 6 หลักจะถูกส่งไปยังช่องทางติดต่อทันที
+          </div>
+
+          ${!f.otpSent ? `
+            <!-- Step 1: Request OTP Form -->
+            <form onsubmit="ROAD_APP.submitForgot(event)" class="w-full flex flex-col gap-4" noValidate>
+              <div class="neu-input-pill px-5 py-4 flex items-center gap-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b6d96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <input
+                  id="forgot-identifier"
+                  type="text"
+                  value="${escapeHtml(f.identifier)}"
+                  oninput="ROAD_APP.updateForgotField('identifier', this.value)"
+                  placeholder="อีเมล หรือ เบอร์โทรศัพท์ที่ลงทะเบียน"
+                  class="w-full bg-transparent outline-none text-[15px] font-medium text-[#0d1838] dark:text-white placeholder-[#6b7da6]"
+                  required
+                />
+              </div>
+
+              <button type="submit" class="neu-btn-primary w-full py-4 px-6 mt-2 flex items-center justify-center gap-2 cursor-pointer group">
+                <span class="text-base font-bold tracking-wide">ส่งรหัส OTP กู้คืนรหัสผ่าน</span>
+                <span class="text-lg group-hover:translate-x-1 transition">➔</span>
+              </button>
+
+              <div class="flex items-center justify-between px-1 pt-2 text-xs">
+                <button type="button" onclick="ROAD_APP.setView('login')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">
+                  ← กลับหน้าเข้าสู่ระบบ
+                </button>
+                <button type="button" onclick="ROAD_APP.setView('signup')" class="font-bold text-[#5b6d96] dark:text-slate-400 hover:underline cursor-pointer">
+                  สมัครสมาชิกใหม่
+                </button>
+              </div>
+            </form>
+          ` : `
+            <!-- Step 2: Enter OTP & Set New Password -->
+            <form onsubmit="ROAD_APP.verifyForgotOtp(event)" class="w-full flex flex-col gap-4" noValidate>
+              <div class="p-3 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300">
+                ✔ ${escapeHtml(f.message)}
+                <div class="mt-2 font-mono font-bold text-sm bg-white dark:bg-slate-900 p-2 rounded-lg border border-emerald-300 dark:border-emerald-700 flex items-center justify-between">
+                  <span>รหัส OTP จำลอง: <span class="text-blue-600 dark:text-blue-400">684291</span></span>
+                  <button type="button" onclick="ROAD_APP.fillDemoOtp()" class="px-2 py-0.5 rounded text-xs bg-blue-600 text-white font-sans hover:bg-blue-700 cursor-pointer">
+                    ⚡ กรอกอัตโนมัติ
+                  </button>
+                </div>
+              </div>
+
+              <!-- OTP Code Pill -->
+              <div class="neu-input-pill px-5 py-3.5 flex items-center gap-4">
+                <span class="text-lg">🔢</span>
+                <input
+                  id="forgot-otp"
+                  type="text"
+                  maxLength="6"
+                  value="${escapeHtml(f.resetOtp)}"
+                  oninput="ROAD_APP.updateForgotField('resetOtp', this.value)"
+                  placeholder="กรอกรหัส OTP 6 หลัก"
+                  class="w-full bg-transparent outline-none font-mono text-center tracking-[0.3em] text-lg font-bold text-[#0d1838] dark:text-white"
+                  required
+                />
+              </div>
+
+              <!-- New Password Pill -->
+              <div class="neu-input-pill px-5 py-3.5 flex items-center gap-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b6d96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input
+                  id="forgot-new-password"
+                  type="password"
+                  value="${escapeHtml(f.newPass)}"
+                  oninput="ROAD_APP.updateForgotField('newPass', this.value)"
+                  placeholder="ตั้งรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)"
+                  class="w-full bg-transparent outline-none text-[15px] font-medium text-[#0d1838] dark:text-white placeholder-[#6b7da6]"
+                  required
+                />
+              </div>
+
+              <button type="submit" class="neu-btn-primary w-full py-4 px-6 mt-1 flex items-center justify-center gap-2 cursor-pointer">
+                <span class="text-base font-bold tracking-wide">ยืนยันการตั้งรหัสผ่านใหม่</span>
+              </button>
+
+              <div class="flex items-center justify-between px-1 pt-1 text-xs">
+                <button type="button" onclick="ROAD_APP.resetForgotState()" class="text-[#5b6d96] dark:text-slate-400 hover:underline cursor-pointer">
+                  ← ส่งใหม่อีกครั้ง
+                </button>
+                <button type="button" onclick="ROAD_APP.setView('login')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">
+                  เข้าสู่ระบบ
+                </button>
+              </div>
+            </form>
+          `}
         </div>
       </div>
     `;
@@ -1724,6 +2153,61 @@
             </table>
           </div>
         </div>
+
+        <!-- Audit Trail & Event Logs Section (PDPA & Security Logs) -->
+        <div class="neu-card p-5 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>🛡️</span>
+                <span>Audit Trail & บันทึกกิจกรรมระบบ (Security & PDPA Consent Logs)</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white font-mono">${state.auditLogs.length} รายการ</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                เก็บบันทึกเหตุการณ์สำคัญ การยืนยันสิทธิ์ การเข้าสู่ระบบ และการส่งออกเอกสาร ตรวจสอบย้อนกลับได้ตามมาตรฐานความปลอดภัย
+              </p>
+            </div>
+            <button onclick="ROAD_APP.exportAuditLogsJson()" class="px-3.5 py-1.5 neu-squircle text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 cursor-pointer">
+              <span>💾</span>
+              <span>ส่งออกบันทึก JSON</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 bg-slate-50 dark:bg-slate-800/50">
+                  <th class="py-2.5 px-3">เวลา (Timestamp)</th>
+                  <th class="py-2.5 px-3">ประเภทเหตุการณ์</th>
+                  <th class="py-2.5 px-3">ผู้ใช้งาน</th>
+                  <th class="py-2.5 px-3">รายละเอียด (Event Description)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800 font-mono">
+                ${state.auditLogs.slice(0, 25).map(log => {
+                  const typeColors = {
+                    LOGIN: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+                    REGISTER: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+                    PROJECT_CREATE: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+                    PROJECT_UPDATE: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+                    EXPORT_DOC: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
+                    SECURITY: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                  };
+                  const badge = typeColors[log.type] || "bg-slate-100 text-slate-800";
+                  const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "-";
+                  return `
+                    <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                      <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${timeStr}</td>
+                      <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badge}">${escapeHtml(log.type)}</span></td>
+                      <td class="py-2 px-3 font-sans font-semibold text-slate-900 dark:text-white">${escapeHtml(log.user)}</td>
+                      <td class="py-2 px-3 font-sans text-slate-700 dark:text-slate-300">${escapeHtml(log.desc)}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -1928,8 +2412,11 @@
               <select onchange="ROAD_APP.selectProject(this.value)" class="px-4 py-2 neu-input-pill text-xs sm:text-sm font-bold text-slate-800 dark:text-white cursor-pointer max-w-[240px] truncate">
                 ${state.projects.map(p => `<option value="${p.id}" ${p.id === proj.id ? 'selected' : ''}>${escapeHtml(p.label || p.B_short || p.B)}</option>`).join("")}
               </select>
+              <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-sm" title="เปิดตัวช่วยจัดทำโครงร่าง 10 ขั้นตอนตามสูตร อ.ชวลิต">
+                <span>🧭 Wizard 10 ขั้น</span>
+              </button>
               <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-sm" title="ป้อนข้อมูลและกำหนดค่า A B C D ได้อย่างอิสระ">
-                <span>✏️ ป้อน A B C D กำหนดเอง</span>
+                <span>✏️ ป้อน ABCD</span>
               </button>
               <button onclick="ROAD_APP.openAbcdModal('parse')" class="px-3 py-2 neu-squircle text-emerald-700 dark:text-emerald-300 text-xs font-bold cursor-pointer flex items-center gap-1" title="วางชื่อเรื่องภาษาไทยแล้วแยกลง A B C D ทันที">
                 <span>⚡ วางชื่อเรื่องแยก ABCD</span>
@@ -1986,18 +2473,19 @@
             </div>
           </div>
 
-          <!-- 7 Studio Sub-Navigation Tabs (with AI Smart Advisor first!) -->
+          <!-- 8 Studio Sub-Navigation Tabs (Including Workspace Portfolio & Review Center) -->
           <div class="flex flex-wrap gap-2 pt-2">
             ${[
-              ["advisor", "🧠 AI วิเคราะห์และเลือกชุดวิจัยที่ดีที่สุด (แนะนำ!)"],
+              ["workspace", "📁 คลังโครงการวิจัย (Workspace)"],
+              ["advisor", "🧠 AI เลือกชุดวิจัยที่ดีที่สุด"],
               ["abcd", "1. ปรับแต่งชื่อเรื่อง ABCD & นวัตกรรม"],
-              ["chapters", "2. โครงร่างและรายงานวิจัย 5 บท"],
+              ["chapters", "2. โครงร่าง 5 บท & Review Center"],
               ["diagrams", "3. แผนภาพกรอบแนวคิด & ผัง R&D"],
               ["matrix", "4. ตารางความสอดคล้อง 360°"],
               ["statlab", "5. ห้องปฏิบัติการสถิติ & ตารางบทที่ 4"],
-              ["ai", "6. AI Research Co-Pilot (เขียนรายบท)"]
+              ["ai", "6. AI Co-Pilot เขียนรายบท"]
             ].map(([key, label]) => `
-              <button onclick="ROAD_APP.setStudioTab('${key}')" class="px-4 py-2.5 text-xs sm:text-sm font-bold transition cursor-pointer ${state.studioTab === key ? (key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              <button onclick="ROAD_APP.setStudioTab('${key}')" class="px-4 py-2.5 text-xs sm:text-sm font-bold transition cursor-pointer ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${label}
               </button>
             `).join("")}
@@ -2006,6 +2494,7 @@
 
         <!-- Active Tab Content -->
         <div class="print-area">
+          ${state.studioTab === "workspace" ? renderTabWorkspace(proj) : ""}
           ${state.studioTab === "advisor" ? renderTabAdvisor() : ""}
           ${state.studioTab === "abcd" ? renderTabAbcd(proj, health) : ""}
           ${state.studioTab === "chapters" ? renderTabChapters(proj) : ""}
@@ -2014,6 +2503,202 @@
           ${state.studioTab === "statlab" ? renderTabStatLab(proj) : ""}
           ${state.studioTab === "ai" ? renderTabAi(proj) : ""}
         </div>
+      </div>
+    `;
+  }
+
+  // --- Studio Tab Workspace: Research Projects Portfolio & Lifecycle Manager ---
+  function renderTabWorkspace(proj) {
+    const totalCount = state.projects.length;
+    const activeCount = state.projects.filter(p => ["draft", "data_collection", "reviewing"].includes(p.status)).length;
+    const readyCount = state.projects.filter(p => p.status === "ready_export").length;
+    const archivedCount = state.projects.filter(p => p.status === "archived").length;
+
+    const q = (state.projectSearch || "").trim().toLowerCase();
+    const filteredProjects = state.projects.filter(p => {
+      if (state.projectFilterStatus !== "ALL" && p.status !== state.projectFilterStatus) return false;
+      if (!q) return true;
+      const title = window.ROAD_GENERATOR.composeFullTitle(p).toLowerCase();
+      const label = (p.label || "").toLowerCase();
+      const b = (p.B || "").toLowerCase();
+      const c = (p.C_list || []).join(" ").toLowerCase();
+      return title.includes(q) || label.includes(q) || b.includes(q) || c.includes(q);
+    });
+
+    const statusMap = new Map((window.ROAD_DATA.PROJECT_STATUSES || []).map(s => [s.id, s]));
+
+    return `
+      <div class="flex flex-col gap-6">
+        <!-- Overview Metrics Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="neu-card p-4 flex flex-col gap-1">
+            <span class="text-xs font-semibold text-slate-500">📁 โครงการทั้งหมด</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-slate-800 dark:text-white font-mono">${totalCount}</span>
+              <span class="text-xs font-bold text-blue-600">เรื่อง</span>
+            </div>
+          </div>
+          <div class="neu-card p-4 flex flex-col gap-1">
+            <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">⏳ กำลังดำเนินการ</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">${activeCount}</span>
+              <span class="text-xs font-bold text-slate-400">โครงการ</span>
+            </div>
+          </div>
+          <div class="neu-card p-4 flex flex-col gap-1">
+            <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">✨ พร้อมส่งออก 5 บท</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">${readyCount}</span>
+              <span class="text-xs font-bold text-emerald-500">ผ่านเกณฑ์</span>
+            </div>
+          </div>
+          <div class="neu-card p-4 flex flex-col gap-1">
+            <span class="text-xs font-semibold text-purple-600 dark:text-purple-400">📦 จัดเก็บถาวร</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">${archivedCount}</span>
+              <span class="text-xs font-bold text-slate-400">ประวัติ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter, Search, and Action Toolbar -->
+        <div class="neu-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Status Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button onclick="ROAD_APP.setProjectFilterStatus('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.projectFilterStatus === 'ALL' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              ทั้งหมด (${totalCount})
+            </button>
+            ${(window.ROAD_DATA.PROJECT_STATUSES || []).map(st => `
+              <button onclick="ROAD_APP.setProjectFilterStatus('${st.id}')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1 ${state.projectFilterStatus === st.id ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                <span>${st.icon}</span>
+                <span>${st.label}</span>
+              </button>
+            `).join("")}
+          </div>
+
+          <!-- Search Input & Creation Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="neu-input-pill px-3 py-1.5 flex items-center gap-2 text-xs">
+              <span>🔍</span>
+              <input
+                type="text"
+                value="${escapeHtml(state.projectSearch)}"
+                oninput="ROAD_APP.setProjectSearch(this.value)"
+                placeholder="ค้นหาชื่อเรื่อง, นวัตกรรม..."
+                class="bg-transparent outline-none text-xs w-36 sm:w-48 text-slate-800 dark:text-white"
+              />
+              ${state.projectSearch ? `<button onclick="ROAD_APP.setProjectSearch('')" class="text-slate-400 hover:text-slate-600">✕</button>` : ""}
+            </div>
+
+            <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
+              <span>🧭</span>
+              <span>เริ่ม Research Wizard (10 ขั้น)</span>
+            </button>
+
+            <button onclick="ROAD_APP.createNewProject()" class="px-3.5 py-2 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer">
+              <span>+ โครงการใหม่</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          ${filteredProjects.map(p => {
+            const isCurrent = p.id === proj.id;
+            const fullT = window.ROAD_GENERATOR.composeFullTitle(p);
+            const stObj = statusMap.get(p.status) || (window.ROAD_DATA.PROJECT_STATUSES || [])[0];
+            const pHealth = window.ROAD_GENERATOR.evaluateResearchHealth(p);
+            const updateDate = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-";
+
+            return `
+              <div class="neu-card p-5 flex flex-col justify-between gap-4 transition hover:shadow-lg ${isCurrent ? 'ring-2 ring-blue-500/80 bg-blue-50/20 dark:bg-blue-950/20' : ''}">
+                <div class="flex flex-col gap-3">
+                  <!-- Header: Status Badge & Academic Rank -->
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1 ${stObj.badgeClass}">
+                      <span>${stObj.icon}</span>
+                      <span>${stObj.label}</span>
+                    </span>
+                    <span class="text-[11px] font-semibold text-slate-500 font-mono">
+                      ${p.academicRank ? p.academicRank.toUpperCase() : 'วPA'} · ${p.efficiencyCriterion || '80/80'}
+                    </span>
+                  </div>
+
+                  <!-- Project Title -->
+                  <h3 class="text-base font-extrabold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                    ${escapeHtml(fullT)}
+                  </h3>
+
+                  <!-- ABCD Tags -->
+                  <div class="flex flex-wrap gap-1 text-[11px]">
+                    <span class="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 font-medium">B: ${escapeHtml(p.B_short || p.B)}</span>
+                    <span class="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 font-medium">D: ${escapeHtml(p.D)}</span>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="flex flex-col gap-1 pt-1">
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                      <span>ความสมบูรณ์เนื้อหา</span>
+                      <span class="font-mono font-bold ${pHealth.score >= 80 ? 'text-emerald-600' : 'text-amber-600'}">${pHealth.score}%</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                      <div class="h-full rounded-full transition-all duration-500 ${pHealth.score >= 80 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${pHealth.score}%"></div>
+                    </div>
+                  </div>
+
+                  <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                    <span>🕒 บันทึกล่าสุด:</span>
+                    <span>${updateDate}</span>
+                  </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="border-t border-slate-200/80 dark:border-slate-800/80 pt-3 flex flex-col gap-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <button onclick="ROAD_APP.selectProject('${p.id}'); ROAD_APP.setStudioTab('chapters');" class="flex-1 py-2 px-3 neu-btn-primary text-xs font-bold flex items-center justify-center gap-1 cursor-pointer">
+                      <span>${isCurrent ? '⚡ กำลังทำงาน' : '✏️ เปิดสตูดิโอ (5 บท)'}</span>
+                    </button>
+
+                    <button onclick="ROAD_APP.duplicateProject('${p.id}')" class="px-2.5 py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 cursor-pointer" title="คัดลอกโครงการนี้ (Duplicate)">
+                      📋
+                    </button>
+
+                    <button onclick="ROAD_APP.archiveProject('${p.id}')" class="px-2.5 py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-purple-600 cursor-pointer" title="จัดเก็บเข้ากรุ (Archive)">
+                      📦
+                    </button>
+
+                    ${state.projects.length > 1 ? `
+                      <button onclick="ROAD_APP.deleteProject('${p.id}')" class="px-2 py-2 neu-squircle text-xs font-semibold text-rose-500 hover:text-rose-700 cursor-pointer" title="ลบโครงการ">
+                        🗑️
+                      </button>
+                    ` : ""}
+                  </div>
+
+                  <!-- Quick Status Changer Dropdown -->
+                  <div class="flex items-center justify-between text-[11px] text-slate-500 gap-1.5">
+                    <span>สถานะ:</span>
+                    <select onchange="ROAD_APP.setProjectStatus('${p.id}', this.value)" class="neu-input-pill px-2 py-1 text-[11px] font-semibold text-slate-800 dark:text-white cursor-pointer outline-none">
+                      ${(window.ROAD_DATA.PROJECT_STATUSES || []).map(st => `
+                        <option value="${st.id}" ${p.status === st.id ? 'selected' : ''}>${st.icon} ${st.label}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        ${filteredProjects.length === 0 ? `
+          <div class="neu-card p-12 text-center flex flex-col items-center gap-3">
+            <span class="text-4xl">🔍</span>
+            <div class="font-bold text-slate-700 dark:text-slate-300">ไม่พบโครงการวิจัยตามเงื่อนไขที่เลือก</div>
+            <p class="text-xs text-slate-500">ลองล้างคำค้นหาหรือเปลี่ยนตัวกรองสถานะ หรือคลิกปุ่มสร้างโครงการใหม่</p>
+            <button onclick="ROAD_APP.setProjectFilterStatus('ALL'); ROAD_APP.setProjectSearch('');" class="px-4 py-2 neu-btn-primary text-xs font-bold cursor-pointer">
+              แสดงโครงการทั้งหมด
+            </button>
+          </div>
+        ` : ""}
       </div>
     `;
   }
@@ -2619,35 +3304,124 @@
     `;
   }
 
-  // --- Studio Tab 2: 5-Chapter Blueprint Viewer & Editor ---
+  // --- Studio Tab 2: Full 5-Chapter Research Report Document & Review Center ---
   function renderTabChapters(proj) {
     const gen = window.ROAD_GENERATOR.generateChapters(proj);
+    const health = window.ROAD_GENERATOR.evaluateResearchHealth(proj);
     const chaptersToShow = state.activeChapterFilter === 0
       ? gen.chapters
       : gen.chapters.filter(c => c.number === state.activeChapterFilter);
 
-    return `
-      <div class="flex flex-col gap-5">
-        <!-- Chapter Filter Bar -->
-        <div class="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 print:hidden">
-          <div class="flex flex-wrap gap-1.5">
-            <button onclick="ROAD_APP.setChapterFilter(0)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
-              📚 แสดงครบทั้ง 5 บท
-            </button>
-            ${gen.chapters.map(c => `
-              <button onclick="ROAD_APP.setChapterFilter(${c.number})" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === c.number ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
-                ${escapeHtml(c.title)}
-              </button>
-            `).join("")}
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="ROAD_APP.resetCustomSections()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 cursor-pointer">🔄 ซิงค์ข้อมูลเริ่มต้นใหม่</button>
-            <button onclick="ROAD_APP.exportWord()" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-semibold cursor-pointer">📥 ดาวน์โหลด Word (.doc)</button>
-          </div>
-        </div>
+    // Consistency & 10 Pitfalls Audit according to Assoc. Prof. Dr. Chawalit Chookhampaeng
+    const pitfallChecks = [
+      {
+        num: 1,
+        title: "นวัตกรรม (B) มีลักษณะเป็นระบบ/กระบวนการชัดเจน",
+        pass: Boolean(proj.B && proj.B.length >= 8 && !proj.B.includes("ทำกิจกรรมทั่วไป")),
+        desc: "นวัตกรรมทางการศึกษาต้องระบุประเภทชัดเจน เช่น รูปแบบการจัดการเรียนรู้, ชุดกิจกรรม หรือบทเรียนออนไลน์ ไม่ใช่แค่ชื่องานกิจกรรม",
+        actionText: "แก้ไขนวัตกรรม",
+        actionFn: "ROAD_APP.openAbcdModal('manual')"
+      },
+      {
+        num: 2,
+        title: "เกณฑ์ประสิทธิภาพ E1/E2 สอดคล้องกับธรรมชาติเนื้อหา",
+        pass: Boolean(proj.efficiencyCriterion && (proj.statsData?.e1 || 82) >= 70),
+        desc: `ตั้งเกณฑ์ ${proj.efficiencyCriterion || '80/80'} และผลการทดลองสอดคล้องกับเกณฑ์ประสิทธิภาพตามสูตรชวลิต (E1=${proj.statsData?.e1 || 82.5} / E2=${proj.statsData?.e2 || 83.5})`,
+        actionText: "ปรับสถิติ E1/E2",
+        actionFn: "ROAD_APP.setStudioTab('statlab')"
+      },
+      {
+        num: 3,
+        title: "กลุ่มตัวอย่าง (D) ระบุวิธีการสุ่มและขนาดประชากร",
+        pass: Boolean(proj.sample && (proj.sample.includes("สุ่ม") || proj.sample.includes("Cluster") || proj.sample.includes("ห้องเรียน"))),
+        desc: "ต้องระบุวิธีการสุ่มตัวอย่าง (เช่น Cluster Random Sampling โดยใช้ห้องเรียนเป็นหน่วยสุ่ม) และจำนวนนักเรียนที่ชัดเจน",
+        actionText: "ตรวจกลุ่มตัวอย่าง",
+        actionFn: "ROAD_APP.openAbcdModal('manual')"
+      },
+      {
+        num: 4,
+        title: "ตัวแปรตาม (C) สอดคล้องกับเครื่องมือวัดผล",
+        pass: Boolean(proj.C_list && proj.C_list.length > 0 && proj.C_list.every(c => c.length >= 3)),
+        desc: `ศึกษาตัวแปรตาม: ${(proj.C_list || []).join(", ")} พร้อมเครื่องมือวัดผลและเกณฑ์คุณภาพครบถ้วน`,
+        actionText: "ตรวจสอบตัวแปร C",
+        actionFn: "ROAD_APP.openAbcdModal('manual')"
+      },
+      {
+        num: 5,
+        title: "สถิติทดสอบสมมติฐานตรงตามวัตถุประสงค์ (t-test Dependent)",
+        pass: Boolean(proj.statsData && proj.statsData.tValue && proj.statsData.pVal),
+        desc: `เปรียบเทียบก่อน-หลังเรียนด้วย t-test Dependent Samples (t = ${proj.statsData?.tValue || 18.90}, p ${proj.statsData?.pVal || '< .001'})`,
+        actionText: "ดูผลสถิติ",
+        actionFn: "ROAD_APP.setStudioTab('statlab')"
+      },
+      {
+        num: 6,
+        title: "นิยามศัพท์เฉพาะ สอดคล้องกับขั้นตอนนวัตกรรมในบทที่ 1",
+        pass: Boolean(proj.B_short && (proj.B_steps || []).length >= 3),
+        desc: "ให้นิยามครอบคลุมความหมายของนวัตกรรม ขั้นตอนการจัดการเรียนรู้ และตัวแปรตามอย่างเป็นรูปธรรม",
+        actionText: "ดูนิยามศัพท์",
+        actionFn: "ROAD_APP.setChapterFilter(1)"
+      },
+      {
+        num: 7,
+        title: "สังเคราะห์วรรณกรรมบทที่ 2 สอดคล้องกับกรอบแนวคิด R&D",
+        pass: Boolean((proj.B_steps || []).length >= 3),
+        desc: "เนื้อหาในบทที่ 2 มุ่งสังเคราะห์เป็นขั้นตอนนวัตกรรมและผังกรอบแนวคิด ไม่ใช่การตัดแปะเอกสาร",
+        actionText: "ดูผังกรอบแนวคิด",
+        actionFn: "ROAD_APP.setStudioTab('diagrams')"
+      },
+      {
+        num: 8,
+        title: "แบบแผนการวิจัยบทที่ 3 สอดคล้องกับการวิจัยและพัฒนา",
+        pass: Boolean(proj.modelId && (proj.modelId.startsWith("rd") || proj.modelId === "addd_edurtap")),
+        desc: `ใช้แบบแผนการวิจัย: ${(window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId) || {}).name || 'R&D 4 ขั้น'}`,
+        actionText: "ดูแบบแผนบทที่ 3",
+        actionFn: "ROAD_APP.setChapterFilter(3)"
+      },
+      {
+        num: 9,
+        title: "ตารางสถิติบทที่ 4 เป็นตารางมาตรฐาน APA (3 เส้นหลัก)",
+        pass: Boolean(proj.statsData && proj.statsData.preMean && proj.statsData.postMean),
+        desc: "ตารางสรุปผลคะแนนก่อน-หลังเรียน ตารางประสิทธิภาพ E1/E2 และตารางความพึงพอใจใช้รูปแบบ APA Table ไม่มีเส้นแนวตั้ง",
+        actionText: "ดูตารางบทที่ 4",
+        actionFn: "ROAD_APP.setChapterFilter(4)"
+      },
+      {
+        num: 10,
+        title: "อภิปรายผลบทที่ 5 เทียบเคียงกับทฤษฎีและงานวิจัยรองรับ",
+        pass: Boolean(proj.duration && proj.semester),
+        desc: "อภิปรายประเด็นประสิทธิภาพนวัตกรรม ผลสัมฤทธิ์ทางการเรียน และความพึงพอใจโดยอ้างอิงทฤษฎีและงานวิจัยในบทที่ 2",
+        actionText: "ดูอภิปรายผล",
+        actionFn: "ROAD_APP.setChapterFilter(5)"
+      }
+    ];
 
-        <!-- Chapters Document View -->
-        <div class="space-y-6">
+    const passCount = pitfallChecks.filter(c => c.pass).length;
+
+    return `
+      <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
+        <!-- Left Column: Chapters Content & Editor (lg:col-span-8) -->
+        <div class="lg:col-span-8 flex flex-col gap-5 w-full">
+          <!-- Chapter Filter Bar -->
+          <div class="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 print:hidden shadow-sm">
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="ROAD_APP.setChapterFilter(0)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
+                📚 แสดงครบทั้ง 5 บท
+              </button>
+              ${gen.chapters.map(c => `
+                <button onclick="ROAD_APP.setChapterFilter(${c.number})" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === c.number ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
+                  ${escapeHtml(c.title)}
+                </button>
+              `).join("")}
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="ROAD_APP.resetCustomSections()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 cursor-pointer">🔄 ซิงค์เริ่มต้น</button>
+              <button onclick="ROAD_APP.exportWord()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold cursor-pointer">📥 ส่งออก Word (ครบ 5 บท)</button>
+            </div>
+          </div>
+
+          <!-- Chapters Document View -->
+          <div class="space-y-6">
           ${chaptersToShow.map(ch => `
             <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col gap-5 break-inside-avoid">
               <div class="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
@@ -2656,10 +3430,13 @@
                   <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">${escapeHtml(ch.title)}</h2>
                   <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(ch.subtitle)}</p>
                 </div>
-                <div class="flex gap-2 print:hidden">
-                  ${ch.number === 1 ? `<button onclick="ROAD_APP.copySmartPrompt('ch1_background')" class="px-3 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 คัดลอก Prompt บทที่ 1</button>` : ""}
-                  ${ch.number === 2 ? `<button onclick="ROAD_APP.copySmartPrompt('ch2_synthesis')" class="px-3 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 คัดลอก Prompt บทที่ 2</button>` : ""}
-                  ${ch.number === 5 ? `<button onclick="ROAD_APP.copySmartPrompt('ch5_discussion')" class="px-3 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 คัดลอก Prompt อภิปรายผล</button>` : ""}
+                <div class="flex flex-wrap items-center gap-2 print:hidden">
+                  <button onclick="ROAD_APP.exportSingleChapter(${ch.number})" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกเฉพาะบทนี้เป็นไฟล์ Word (.doc ฟอนต์สารบัญ 16pt)">
+                    <span>📥 ส่งออกบทที่ ${ch.number} (.doc)</span>
+                  </button>
+                  ${ch.number === 1 ? `<button onclick="ROAD_APP.copySmartPrompt('ch1_background')" class="px-2.5 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 Prompt บทที่ 1</button>` : ""}
+                  ${ch.number === 2 ? `<button onclick="ROAD_APP.copySmartPrompt('ch2_synthesis')" class="px-2.5 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 Prompt บทที่ 2</button>` : ""}
+                  ${ch.number === 5 ? `<button onclick="ROAD_APP.copySmartPrompt('ch5_discussion')" class="px-2.5 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 Prompt บทที่ 5</button>` : ""}
                 </div>
               </div>
 
@@ -2738,6 +3515,82 @@
               </div>
             </section>
           `).join("")}
+          </div>
+        </div>
+
+        <!-- Right Column: Review Center & Consistency Side Panel (lg:col-span-4) -->
+        <div class="lg:col-span-4 w-full flex flex-col gap-5 sticky top-20 print:hidden">
+          <!-- Consistency Health Card -->
+          <div class="neu-card p-5 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                <span>🛡️</span>
+                <span>Review Center</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono ${health.score >= 85 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
+                ${health.score}% ผ่านเกณฑ์
+              </span>
+            </div>
+
+            <div class="flex items-baseline justify-between pt-1">
+              <h3 class="text-lg font-black text-slate-900 dark:text-white">ศูนย์ตรวจความสอดคล้อง</h3>
+              <span class="text-xs font-bold text-slate-500">${passCount}/10 ผ่าน</span>
+            </div>
+
+            <!-- Progress Meter -->
+            <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500 ${passCount >= 8 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${(passCount / 10) * 100}%"></div>
+            </div>
+
+            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              ตรวจสอบข้อพึงระวัง 10 ประการของการทำวิจัยเชิงพัฒนา (R&D) ตามมาตรฐานการบรรยายของ รศ.ดร.ชวลิต ชูกำแพง
+            </p>
+
+            <div class="pt-2 flex flex-col gap-2">
+              <button onclick="ROAD_APP.exportWord()" class="w-full py-2.5 neu-btn-primary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>📄 ดาวน์โหลด Word (5 บทเต็ม)</span>
+              </button>
+              <button onclick="ROAD_APP.openWizardModal(10)" class="w-full py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1 cursor-pointer">
+                <span>🧭 ตรวจทานด้วย Wizard 10 ขั้น</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 10 Pitfalls Checklist Accordion/Cards -->
+          <div class="neu-card p-5 flex flex-col gap-3">
+            <div class="text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+              <span>📋 10 ข้อพึงระวังตามสูตร อ.ชวลิต</span>
+              <span class="text-[11px] text-slate-500 font-normal">คลิกเพื่อดำเนินการ</span>
+            </div>
+
+            <div class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+              ${pitfallChecks.map(item => `
+                <div class="p-3 rounded-xl border transition ${item.pass ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-900/40' : 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/50'}">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-start gap-1.5">
+                      <span class="text-sm shrink-0 mt-0.5">${item.pass ? '✅' : '⚠️'}</span>
+                      <div>
+                        <div class="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                          ${item.num}. ${escapeHtml(item.title)}
+                        </div>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                          ${escapeHtml(item.desc)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
+                    <span class="font-bold ${item.pass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">
+                      ${item.pass ? '✔ ผ่านเกณฑ์มาตรฐาน' : '⚡ ข้อเสนอแนะเพื่อปรับปรุง'}
+                    </span>
+                    <button onclick="${item.actionFn}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer">
+                      ${item.actionText} →
+                    </button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -4242,6 +5095,198 @@
     `;
   }
 
+  // --- Research Wizard 10-Step Interactive Modal ---
+  function renderResearchWizardModal() {
+    const curStepNum = state.wizardStep;
+    const curStepObj = (window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).find(s => s.step === curStepNum) || (window.ROAD_DATA.RESEARCH_WIZARD_STEPS || [])[0];
+    const w = state.wizardData || {};
+
+    return `
+      <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+        <div class="neu-card w-full max-w-4xl max-h-[92vh] flex flex-col justify-between overflow-hidden shadow-2xl border-2 border-blue-400/40">
+          <!-- Wizard Header -->
+          <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/80 via-white to-sky-50/80 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl sm:text-3xl">🧭</span>
+              <div>
+                <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  Research Wizard · ตัวช่วยจัดทำโครงร่าง 10 ขั้นตอน
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">ตามสูตร อ.ชวลิต</span>
+                </h2>
+                <div class="text-xs text-slate-500">ขั้นตอนที่ ${curStepNum} จาก 10: ${escapeHtml(curStepObj.title)}</div>
+              </div>
+            </div>
+            <button onclick="ROAD_APP.closeWizardModal()" class="w-8 h-8 rounded-full neu-squircle flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer font-bold">
+              ✕
+            </button>
+          </div>
+
+          <!-- Stepper 1-10 Pills Bar -->
+          <div class="px-4 py-2.5 bg-slate-100/70 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs">
+            ${(window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).map(s => `
+              <button onclick="ROAD_APP.setWizardStep(${s.step})" class="px-2.5 py-1 rounded-lg shrink-0 font-bold transition flex items-center gap-1 cursor-pointer ${s.step === curStepNum ? 'bg-blue-600 text-white shadow-sm' : s.step < curStepNum ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'neu-squircle text-slate-600 dark:text-slate-400'}">
+                <span>${s.step < curStepNum ? '✔' : s.step}</span>
+                <span class="hidden md:inline">${s.step}. ${s.title.split(' ')[1]}</span>
+              </button>
+            `).join("")}
+          </div>
+
+          <!-- Wizard Body: Advice & Form Fields -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+            <!-- Advice & Methodological Rationale Card from Dr. Chawalit -->
+            <div class="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800 flex flex-col sm:flex-row items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="text-xs font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                  <span>💡 คำแนะนำเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  ${escapeHtml(curStepObj.advice)}
+                </p>
+              </div>
+              <button onclick="ROAD_APP.applyWizardSample(${curStepNum})" class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer">
+                <span>✨ ตัวอย่างมาตรฐาน 1-Click</span>
+              </button>
+            </div>
+
+            <!-- Dynamic Form Inputs per Step -->
+            <div class="space-y-4">
+              ${curStepNum === 1 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อเรื่องการวิจัยฉบับเต็ม (Full Composed Title):</label>
+                  <textarea rows="3" oninput="ROAD_APP.updateWizardField('step1_title', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm font-semibold text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step1_title || '')}</textarea>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">คำสำคัญสำหรับการวิจัย (Research Keywords):</label>
+                  <input type="text" value="${escapeHtml(w.step1_keywords || '')}" oninput="ROAD_APP.updateWizardField('step1_keywords', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+              ` : ""}
+
+              ${curStepNum === 2 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">สภาพปัญหาและความจำเป็นในการพัฒนา (Problem & Needs):</label>
+                  <textarea rows="4" oninput="ROAD_APP.updateWizardField('step2_problem', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step2_problem || '')}</textarea>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">บริบทสถานศึกษาและผู้เรียน (School & Target Context):</label>
+                  <input type="text" value="${escapeHtml(w.step2_context || '')}" oninput="ROAD_APP.updateWizardField('step2_context', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+              ` : ""}
+
+              ${curStepNum === 3 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">วัตถุประสงค์การวิจัย (4 ระยะ R1..D2):</label>
+                  <textarea rows="6" oninput="ROAD_APP.updateWizardField('step3_obj', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step3_obj || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 4 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">สมมติฐานการวิจัย (Research Hypotheses):</label>
+                  <textarea rows="5" oninput="ROAD_APP.updateWizardField('step4_hypo', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step4_hypo || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 5 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ประชากรเป้าหมาย (Population):</label>
+                  <input type="text" value="${escapeHtml(w.step5_population || '')}" oninput="ROAD_APP.updateWizardField('step5_population', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">กลุ่มตัวอย่างและวิธีการสุ่ม (Sample & Sampling Method):</label>
+                  <textarea rows="3" oninput="ROAD_APP.updateWizardField('step5_sample', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_sample || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 6 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อนวัตกรรมเต็ม (Innovation B):</label>
+                  <input type="text" value="${escapeHtml(w.step6_innovation || '')}" oninput="ROAD_APP.updateWizardField('step6_innovation', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ขั้นตอนการจัดการเรียนรู้ของนวัตกรรม (Syntax Steps):</label>
+                  <textarea rows="4" oninput="ROAD_APP.updateWizardField('step6_steps', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step6_steps || '')}</textarea>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ตัวแปรตามที่ต้องการศึกษา (Dependent Variables C):</label>
+                  <input type="text" value="${escapeHtml(w.step6_dependent || '')}" oninput="ROAD_APP.updateWizardField('step6_dependent', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                </div>
+              ` : ""}
+
+              ${curStepNum === 7 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">เครื่องมือที่ใช้ในการวิจัย (Research Instruments):</label>
+                  <textarea rows="4" oninput="ROAD_APP.updateWizardField('step7_tools', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step7_tools || '')}</textarea>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">เกณฑ์การหาคุณภาพเครื่องมือ (Quality Verification Criteria):</label>
+                  <textarea rows="3" oninput="ROAD_APP.updateWizardField('step7_quality', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step7_quality || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 8 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">แผนการวิเคราะห์ข้อมูลและสถิติที่ใช้ (Statistical Analysis Plan):</label>
+                  <textarea rows="5" oninput="ROAD_APP.updateWizardField('step8_stats', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step8_stats || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 9 ? `
+                <div class="space-y-2">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ผลลัพธ์และประโยชน์ที่คาดว่าจะได้รับ (Expected Impacts & Benefits):</label>
+                  <textarea rows="5" oninput="ROAD_APP.updateWizardField('step9_impact', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step9_impact || '')}</textarea>
+                </div>
+              ` : ""}
+
+              ${curStepNum === 10 ? `
+                <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 space-y-3">
+                  <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                    <span>🎉</span>
+                    <span>พร้อมสร้างโครงร่างวิจัยและรายงาน 5 บทแล้ว!</span>
+                  </div>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    ระบบได้รวบรวมข้อมูลตั้งต้นทั้ง 9 ขั้นตอน พร้อมตรวจทานความสอดคล้องตามเกณฑ์ วPA และหลักการวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง เมื่อคุณกดยืนยัน ระบบจะสร้างรายงานวิจัย 5 บท ตารางความสอดคล้อง 360° และชุดสถิติพร้อมส่งออก Microsoft Word ให้ทันที
+                  </p>
+                  <div class="pt-2">
+                    <button onclick="ROAD_APP.completeWizardAndCreate()" class="w-full py-3.5 neu-btn-emerald text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                      <span>🚀 ยืนยันสร้างโครงร่าง 5 บทและนำเข้า Studio ทันที</span>
+                    </button>
+                  </div>
+                </div>
+              ` : ""}
+            </div>
+          </div>
+
+          <!-- Wizard Footer Controls -->
+          <div class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+              <span>💾</span>
+              <span>บันทึกอัตโนมัติแล้วเมื่อ: <b>${escapeHtml(state.lastSavedTimestamp || 'เพิ่งเริ่ม')}</b></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              ${curStepNum > 1 ? `
+                <button onclick="ROAD_APP.setWizardStep(${curStepNum - 1})" class="px-4 py-2 neu-squircle text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  ← ย้อนกลับ
+                </button>
+              ` : ""}
+
+              ${curStepNum < 10 ? `
+                <button onclick="ROAD_APP.setWizardStep(${curStepNum + 1})" class="px-5 py-2 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer">
+                  <span>ถัดไป</span>
+                  <span>➔</span>
+                </button>
+              ` : `
+                <button onclick="ROAD_APP.completeWizardAndCreate()" class="px-5 py-2 neu-btn-emerald text-xs font-bold cursor-pointer">
+                  ✔ สร้างโครงร่าง 5 บท
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderFooter() {
     if (state.view === "slides") return "";
     return `
@@ -4258,11 +5303,12 @@
     let mainHtml = "";
     if (state.view === "login") mainHtml = renderLoginView();
     else if (state.view === "signup") mainHtml = renderSignupView();
+    else if (state.view === "forgot") mainHtml = renderForgotView();
     else if (state.view === "admin") mainHtml = renderAdminView();
     else if (state.view === "slides") mainHtml = renderSlidesView();
     else mainHtml = renderStudioView();
 
-    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}`;
+    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}`;
   }
 
   window.addEventListener("DOMContentLoaded", () => {

@@ -1019,5 +1019,129 @@ window.ROAD_GENERATOR = {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, 200);
+  },
+
+  exportSingleChapterToWordDoc(p, chapterNumber) {
+    const generated = this.generateChapters(p);
+    const chNum = Number(chapterNumber) || 1;
+    const ch = generated.chapters.find(c => c.number === chNum) || generated.chapters[0];
+    const bShort = p.B_short || p.B;
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <title>${ch.title} - ${generated.fullTitle}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page Section1 {
+            size: 21.0cm 29.7cm;
+            margin: 3.81cm 2.54cm 2.54cm 2.54cm;
+            mso-header-margin: 35.4pt;
+            mso-footer-margin: 35.4pt;
+            mso-paper-source: 0;
+          }
+          div.Section1 { page: Section1; }
+          body {
+            font-family: 'TH Sarabun PSK', 'Sarabun', sans-serif;
+            font-size: 16pt;
+            line-height: 1.5;
+            color: #000000;
+          }
+          h1.doc-chapter {
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 6pt;
+          }
+          h2.doc-chapter-sub {
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24pt;
+          }
+          h3.doc-section {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-top: 14pt;
+            margin-bottom: 6pt;
+          }
+          p {
+            text-indent: 1.27cm;
+            text-align: justify;
+            margin-top: 0;
+            margin-bottom: 6pt;
+          }
+          table.apa-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12pt 0;
+            font-size: 14pt;
+          }
+          table.apa-table th {
+            border-top: 2pt solid black;
+            border-bottom: 1pt solid black;
+            padding: 5pt;
+            text-align: center;
+            font-weight: bold;
+          }
+          table.apa-table td {
+            padding: 4pt 5pt;
+            border-bottom: 0.5pt solid #ddd;
+          }
+          table.apa-table tr:last-child td {
+            border-bottom: 2pt solid black;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <p style="text-indent: 0; font-size: 14pt; color: #555; margin-bottom: 18pt;"><b>ชื่อเรื่องวิจัย:</b> ${generated.fullTitle}</p>
+          <h1 class="doc-chapter">${ch.title}</h1>
+          <h2 class="doc-chapter-sub">${ch.subtitle}</h2>
+          ${ch.sections.map(s => `
+            <h3 class="doc-section">${s.heading}</h3>
+            ${s.type === 'paragraphs' ? s.content.map(pText => `<p>${pText}</p>`).join("") : ''}
+            ${s.type === 'list' ? `<ul style="margin-left: 2cm;">${s.content.map(li => `<li>${li}</li>`).join("")}</ul>` : ''}
+            ${s.type === 'subsections' ? s.items.map(sub => `
+              <p style="text-indent: 0; font-weight: bold; margin-top: 8pt;">${sub.subTitle}</p>
+              <p>${sub.text.replace(/\\n/g, '<br/>')}</p>
+            `).join("") : ''}
+            ${s.type === 'definitions' ? s.items.map(d => `<p><b>${d.term}</b> ${d.def}</p>`).join("") : ''}
+            ${s.type === 'stat_tables' ? s.tables.map(t => `
+              <p style="text-indent: 0; font-weight: bold; margin-top: 12pt;">${t.tableNo} ${t.caption}</p>
+              <table class="apa-table">
+                <thead><tr>${t.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+                <tbody>${t.rows.map(r => `<tr>${r.map((c, i) => `<td style="${i === 0 ? 'text-align: left;' : 'text-align: center;'}">${c}</td>`).join("")}</tr>`).join("")}</tbody>
+              </table>
+              <p style="text-indent: 0; font-size: 14pt;"><b>คำแปลผล:</b> ${t.interpretation}</p>
+            `).join("") : ''}
+          `).join("")}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `รายงานวิจัย_บทที่${chNum}_${(bShort || "ROAD").replace(/[\/\\?%*:|"<>]/g, "_")}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
   }
 };
