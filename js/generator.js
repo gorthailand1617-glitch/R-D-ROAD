@@ -5,6 +5,14 @@
 // ============================================================================
 
 window.ROAD_GENERATOR = {
+  // ประเมินคะแนนความสมบูรณ์และตรวจ 10 กฎเหล็ก (Health Score & Validator)
+  evaluateResearchHealth(p) {
+    if (window.ROAD_ADVISOR && typeof window.ROAD_ADVISOR.validate10Pitfalls === "function") {
+      return window.ROAD_ADVISOR.validate10Pitfalls(p);
+    }
+    return { healthScore: 100, passedCount: 11, totalRules: 11, results: [] };
+  },
+
   // ประกอบชื่อเรื่องวิจัยเต็มจาก ABCD
   composeFullTitle(p) {
     const a = (p.A || "").trim();
@@ -471,11 +479,69 @@ window.ROAD_GENERATOR = {
       iocAvg: 0.92
     };
 
+    // V2.0 Sampling, Instruments, Blueprint & Rubric Data Sources
+    const samplingMeta = p.samplingMetadata || {
+      type: "cluster_random",
+      sampleSize: st.n || 38,
+      isNormalDistributed: true,
+      unit: "ห้องเรียน (Classroom Unit)",
+      populationSize: 380
+    };
+    const isNonRandom = samplingMeta.type === "purposive" || samplingMeta.type === "population";
+
+    const opDefs = (p.operationalDefinitions && p.operationalDefinitions.length > 0)
+      ? p.operationalDefinitions
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_OPERATIONAL_DEFINITIONS)
+      ? window.ROAD_DATA.DEFAULT_OPERATIONAL_DEFINITIONS
+      : [];
+
+    const expInsts = (p.experimentalInstruments && p.experimentalInstruments.length > 0)
+      ? p.experimentalInstruments
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_EXPERIMENTAL_INSTRUMENTS)
+      ? window.ROAD_DATA.DEFAULT_EXPERIMENTAL_INSTRUMENTS
+      : [];
+
+    const dcInsts = (p.dataCollectionInstruments && p.dataCollectionInstruments.length > 0)
+      ? p.dataCollectionInstruments
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_DATA_COLLECTION_INSTRUMENTS)
+      ? window.ROAD_DATA.DEFAULT_DATA_COLLECTION_INSTRUMENTS
+      : [];
+
+    const testBp = p.testBlueprint || (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT) || {
+      targetConstruct: c1,
+      totalItems: 40,
+      bufferPercent: 30,
+      units: []
+    };
+
+    const rubrics = (p.analyticRubrics && p.analyticRubrics.length > 0)
+      ? p.analyticRubrics
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS)
+      ? window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS
+      : [];
+
     const steps = (p.B_steps || []).filter(Boolean);
     const opTable = this.generateOperationalTable(p);
     const r1d1Bridge = this.generateR1toD1Bridge(p);
     const modelComponents = this.generateModelComponents(p);
     const matrix = this.generateAlignmentMatrix(p);
+
+    // คำนวณยอดรวมใน Test Blueprint Grid
+    const bpUnits = (testBp.units || []);
+    let bpColTotals = { remember: 0, understand: 0, apply: 0, analyze: 0, evaluate: 0, create: 0, totalItems: 0, hours: 0 };
+    bpUnits.forEach(u => {
+      bpColTotals.hours += Number(u.hours || 0);
+      bpColTotals.remember += Number(u.remember || 0);
+      bpColTotals.understand += Number(u.understand || 0);
+      bpColTotals.apply += Number(u.apply || 0);
+      bpColTotals.analyze += Number(u.analyze || 0);
+      bpColTotals.evaluate += Number(u.evaluate || 0);
+      bpColTotals.create += Number(u.create || 0);
+    });
+    bpColTotals.totalItems = bpColTotals.remember + bpColTotals.understand + bpColTotals.apply + bpColTotals.analyze + bpColTotals.evaluate + bpColTotals.create;
+    const bpGrandTotal = bpColTotals.totalItems || Number(testBp.totalItems || 40);
+    const bufferPct = Number(testBp.bufferPercent || 30);
+    const suggestedTryoutCount = Math.round(bpGrandTotal * (1 + bufferPct / 100));
 
     // สร้างตารางบทที่ 4 (Academic Three-line Tables)
     const ch4Tables = [
@@ -565,7 +631,13 @@ window.ROAD_GENERATOR = {
           },
           {
             title: "1.3 สมมติฐานการวิจัย (★ มีเฉพาะระยะที่ 3 R2 ที่มีการเปรียบเทียบเท่านั้น)",
-            content: `
+            content: isNonRandom ? `
+              <div class="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200">
+                <p class="font-bold">⚠️ ข้อมูลกลุ่มเป้าหมายระดับประชากร / การเลือกแบบเจาะจง (Non-Probability Sampling):</p>
+                <p class="mt-1">เนื่องจากการวิจัยนี้กำหนดกลุ่มเป้าหมายเป็นการศึกษาจาก<b>${samplingMeta.type === 'purposive' ? 'การเลือกแบบเจาะจง (Purposive Sampling)' : 'ประชากรทั้งหมด (Population / Census)'}</b> ซึ่งไม่มีความคลาดเคลื่อนจากการสุ่ม (No Sampling Error) และไม่เป็นไปตามข้อตกลงเบื้องต้นเรื่องการสุ่มตัวอย่างอย่างอิสระตามหลักความน่าจะเป็น จึง<b>ไม่ต้องตั้งสมมติฐานการวิจัยเชิงอนุมาน (Inferential Hypotheses)</b> และไม่ทดสอบด้วยสถิติ t-test</p>
+                <p class="mt-1.5">ทั้งนี้ การตัดสินผลการทดลองในระยะที่ 3 (R2) จะใช้<b>เกณฑ์การตัดสินด้วยสถิติบรรยาย (ค่าเฉลี่ย x̄, ส่วนเบี่ยงเบนมาตรฐาน S.D., ร้อยละ)</b> ร่วมกับการประเมินพัฒนาการความก้าวหน้าของผู้เรียนด้วย<b>ดัชนีประสิทธิผล (Effectiveness Index: E.I.) ไม่น้อยกว่าร้อยละ 50 (E.I. ≥ 0.50)</b></p>
+              </div>
+            ` : `
               <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200">
                 <p><b>1.</b> ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05</p>
                 ${c2 ? `<p class="mt-1"><b>2.</b> ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c2} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05</p>` : ''}
@@ -588,15 +660,38 @@ window.ROAD_GENERATOR = {
             `
           },
           {
-            title: "1.5 นิยามศัพท์เฉพาะ (Operational Definitions - ห้ามนิยามคำทั่วไป)",
+            title: "1.5 นิยามศัพท์เฉพาะเชิงปฏิบัติการ (Operational Definitions - ครบ 3 มิติตามระเบียบวิธีวิจัย)",
             content: `
-              <div class="space-y-2 text-xs">
-                <p><b>1. ${bShort}:</b> หมายถึง นวัตกรรมการจัดการเรียนรู้ที่ผู้วิจัยพัฒนาขึ้นตามแนวคิด ${bFull} ประกอบด้วยกระบวนการจัดการเรียนรู้ ${steps.length} ขั้นตอน ได้แก่ ${steps.map(s => s.split("(")[0]).join(", ")} พร้อมแผนการจัดการเรียนรู้และสื่อประกอบ</p>
-                <p><b>2. ประสิทธิภาพของนวัตกรรม (${crit}):</b> หมายถึง ประสิทธิภาพของ${bShort} ตามเกณฑ์ ${crit} โดย E1 หมายถึง ประสิทธิภาพของกระบวนการ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำกิจกรรม/ใบงานระหว่างเรียน และ E2 หมายถึง ประสิทธิภาพของผลลัพธ์ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำแบบทดสอบหลังเรียน</p>
-                <p><b>3. ${c1}:</b> หมายถึง ความสามารถของผู้เรียนในการวิเคราะห์ จำแนก เชื่อมโยง และแก้ปัญหาใน ${subject} ซึ่งวัดได้จากคะแนนการทำแบบวัด${c1} ที่ผู้วิจัยสร้างขึ้น</p>
-                ${c2 ? `<p><b>4. ${c2}:</b> หมายถึง ผลสัมฤทธิ์ทางการเรียนของผู้เรียนใน ${subject} ซึ่งวัดได้จากแบบทดสอบวัดผลสัมฤทธิ์ทางการเรียนที่ผู้วิจัยพัฒนาขึ้น</p>` : ''}
-                <p><b>5. ดัชนีประสิทธิผล (E.I.):</b> หมายถึง ค่าที่แสดงถึงความก้าวหน้าในการเรียนรู้ของผู้เรียนหลังจากเรียนด้วย${bShort} คำนวณจากคะแนนสอบก่อนเรียนและหลังเรียน</p>
-                <p><b>6. ความพึงพอใจ:</b> หมายถึง ความรู้สึกและความคิดเห็นเชิงบวกของผู้เรียนที่มีต่อ${bShort} วัดได้จากแบบสอบถามความพึงพอใจมาตราส่วนประมาณค่า 5 ระดับ</p>
+              <div class="space-y-3 text-xs leading-relaxed">
+                <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                  <p class="font-bold text-sky-800 dark:text-sky-300">1. ${bShort} (ตัวแปรต้น - นวัตกรรม):</p>
+                  <p class="mt-1 text-slate-700 dark:text-slate-300">หมายถึง นวัตกรรมการจัดการเรียนรู้ที่ผู้วิจัยพัฒนาขึ้นตามแนวคิด ${bFull} ประกอบด้วยกระบวนการจัดการเรียนรู้ ${steps.length} ขั้นตอน ได้แก่ ${steps.map(s => s.split("(")[0]).join(", ")} พร้อมแผนการจัดการเรียนรู้และสื่อประกอบการสอน</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                  <p class="font-bold text-sky-800 dark:text-sky-300">2. ประสิทธิภาพของนวัตกรรม (${crit}):</p>
+                  <p class="mt-1 text-slate-700 dark:text-slate-300">หมายถึง ประสิทธิภาพของ${bShort} ตามเกณฑ์ ${crit} โดย E1 หมายถึง ประสิทธิภาพของกระบวนการ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำกิจกรรม/ใบงานระหว่างเรียน และ E2 หมายถึง ประสิทธิภาพของผลลัพธ์ ประเมินจากร้อยละของคะแนนเฉลี่ยจากการทำแบบทดสอบหลังเรียน</p>
+                </div>
+                ${opDefs.map((od, idx) => `
+                  <div class="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-1">
+                    <p class="font-bold text-emerald-900 dark:text-emerald-200">${idx + 3}. ${od.construct} (ตัวแปรตาม):</p>
+                    <p class="text-slate-700 dark:text-slate-300 pl-2"><b>(1) นิยามเชิงโครงสร้าง/มโนทัศน์:</b> ${od.definition}</p>
+                    <div class="text-slate-700 dark:text-slate-300 pl-2">
+                      <b>(2) ตัวบ่งชี้พฤติกรรม/ขั้นตอนการแสดงออก:</b>
+                      <ul class="list-disc pl-5 mt-0.5 space-y-0.5">
+                        ${(od.indicators || []).map(ind => `<li>${ind}</li>`).join("")}
+                      </ul>
+                    </div>
+                    <p class="text-slate-700 dark:text-slate-300 pl-2"><b>(3) เครื่องมือวัดและเกณฑ์การประเมิน:</b> ${od.instrumentAndCriteria}</p>
+                  </div>
+                `).join("")}
+                <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                  <p class="font-bold text-sky-800 dark:text-sky-300">${opDefs.length + 3}. ดัชนีประสิทธิผล (Effectiveness Index: E.I.):</p>
+                  <p class="mt-1 text-slate-700 dark:text-slate-300">หมายถึง ค่าที่แสดงถึงความก้าวหน้าในการเรียนรู้ของผู้เรียนหลังจากเรียนด้วย${bShort} คำนวณจากคะแนนสอบก่อนเรียนและหลังเรียน</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                  <p class="font-bold text-sky-800 dark:text-sky-300">${opDefs.length + 4}. ความพึงพอใจ:</p>
+                  <p class="mt-1 text-slate-700 dark:text-slate-300">หมายถึง ความรู้สึกและความคิดเห็นเชิงบวกของผู้เรียนที่มีต่อ${bShort} วัดได้จากแบบสอบถามความพึงพอใจมาตราส่วนประมาณค่า 5 ระดับ</p>
+                </div>
               </div>
             `
           }
@@ -714,6 +809,153 @@ window.ROAD_GENERATOR = {
                   <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                     <div class="font-bold text-slate-900 dark:text-white">${mc.name}</div>
                     <div class="text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-line">${mc.content}</div>
+                  </div>
+                `).join("")}
+              </div>
+            `
+          },
+          {
+            title: "3.4 เครื่องมือที่ใช้ในการวิจัย (Research Instruments - แยกตาม 2 ประเภทเคร่งครัด)",
+            content: `
+              <div class="space-y-4 text-xs">
+                <!-- 1. Experimental Instruments -->
+                <div class="p-3 rounded-xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  <div class="font-bold text-sm text-sky-900 dark:text-sky-200 flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 rounded bg-sky-600 text-white text-[11px]">ประเภทที่ 1</span>
+                    <span>เครื่องมือที่ใช้ในการทดลอง / จัดกระทำ (Experimental Instruments)</span>
+                  </div>
+                  <p class="text-slate-600 dark:text-slate-400 mb-2">เป็นนวัตกรรมและสื่อที่ผู้วิจัยสร้างขึ้นเพื่อนำไปใช้จัดกิจกรรมการเรียนรู้กับกลุ่มตัวอย่าง:</p>
+                  <div class="space-y-2">
+                    ${expInsts.map((inst, idx) => `
+                      <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <div class="font-bold text-slate-800 dark:text-slate-200">1.${idx + 1} ${inst.name}</div>
+                        <div class="text-slate-600 dark:text-slate-400 mt-0.5">${inst.description || 'เครื่องมือนวัตกรรมสำหรับการจัดกระทำทางการทดลอง'}</div>
+                        <div class="mt-1 text-[11px] text-sky-700 dark:text-sky-400">จำนวนการใช้งาน: ${inst.targetSessions || '6'} แผน/คาบ | สถานะ: พร้อมใช้</div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+
+                <!-- 2. Data Collection Instruments -->
+                <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <div class="font-bold text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 rounded bg-emerald-600 text-white text-[11px]">ประเภทที่ 2</span>
+                    <span>เครื่องมือที่ใช้ในการเก็บรวบรวมข้อมูล (Data Collection Instruments)</span>
+                  </div>
+                  <p class="text-slate-600 dark:text-slate-400 mb-2">เป็นเครื่องมือวัดและประเมินผลเพื่อเก็บรวบรวมข้อมูลตัวแปรตาม:</p>
+                  <div class="space-y-2">
+                    ${dcInsts.map((inst, idx) => `
+                      <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <div class="font-bold text-slate-800 dark:text-slate-200">2.${idx + 1} ${inst.name}</div>
+                        <div class="text-slate-600 dark:text-slate-400 mt-0.5">วัดตัวแปรตาม: <b class="text-emerald-800 dark:text-emerald-300">${inst.targetConstruct || 'ตัวแปรตาม'}</b> | ลักษณะ: ${inst.format || 'แบบวัดมาตรฐาน'} (${inst.itemsCount || '40'} ข้อ/เกณฑ์)</div>
+                        <div class="mt-1 text-[11px] text-emerald-700 dark:text-emerald-400">เกณฑ์คุณภาพ: ${inst.qualityMetric || 'IOC ≥ 0.80, ความเชื่อมั่น KR-20 หรือ Alpha ≥ 0.80'}</div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "3.5 ผังการสร้างแบบทดสอบ (Test Blueprint Table - Revised Bloom's 6 Levels)",
+            content: `
+              <div class="space-y-3 text-xs">
+                <p>ตารางวิเคราะห์หลักสูตรและผังการสร้างแบบทดสอบจำแนกตามพฤติกรรมพุทธิพิสัย 6 ระดับ (Revised Bloom's Taxonomy):</p>
+                <div class="overflow-x-auto">
+                  <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-center">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-bold border-b border-slate-300 dark:border-slate-700">
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 text-left">หน่วยการเรียนรู้ / เนื้อหา</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">เวลา (ชม.)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">จำ</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">เข้าใจ</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">ประยุกต์</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">วิเคราะห์</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">ประเมินค่า</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">สร้างสรรค์</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 font-bold bg-sky-50 dark:bg-sky-950">รวมข้อ</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">ร้อยละ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${bpUnits.map(u => {
+                        const rowSum = (Number(u.remember) || 0) + (Number(u.understand) || 0) + (Number(u.apply) || 0) + (Number(u.analyze) || 0) + (Number(u.evaluate) || 0) + (Number(u.create) || 0);
+                        const rowPct = bpGrandTotal > 0 ? ((rowSum / bpGrandTotal) * 100).toFixed(1) : "0.0";
+                        return `
+                          <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="p-2 border border-slate-300 dark:border-slate-700 text-left font-medium">${u.name}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.hours || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.remember || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.understand || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.apply || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.analyze || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.evaluate || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${u.create || 0}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700 font-bold bg-sky-50 dark:bg-sky-950">${rowSum}</td>
+                            <td class="p-2 border border-slate-300 dark:border-slate-700">${rowPct}%</td>
+                          </tr>
+                        `;
+                      }).join("")}
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-bold border-t-2 border-slate-400">
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 text-left">รวมทั้งสิ้น</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.hours}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.remember}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.understand}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.apply}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.analyze}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.evaluate}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">${bpColTotals.create}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700 bg-sky-100 dark:bg-sky-900">${bpGrandTotal}</td>
+                        <td class="p-2 border border-slate-300 dark:border-slate-700">100.0%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div class="font-bold text-slate-800 dark:text-slate-200">เกณฑ์การสร้างและจำนวนข้อทดลองนำร่อง (Try-out Item Count):</div>
+                  <div class="text-slate-600 dark:text-slate-400">
+                    - จำนวนข้อสอบที่ต้องการใช้จริง: <b>${bpGrandTotal} ข้อ</b>
+                    <br>- อัตราข้อสอบสำรองเพื่อการทดลองใช้ (Buffer Rate): <b>+${bufferPct}%</b> (ตามหลักจิตวิทยาการวัดผลเพื่อคัดกรองค่าความยากง่าย p และอำนาจจำแนก r)
+                    <br>- จำนวนข้อสอบที่ต้องสร้างและนำไป Try-out: <b>${suggestedTryoutCount} ข้อ</b> (คัดเลือกไว้ ${bpGrandTotal} ข้อที่มีคุณภาพตามเกณฑ์)
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "3.6 เกณฑ์การประเมินรูบริกแบบวิเคราะห์ (Analytic Rubrics 4 ระดับคุณภาพ)",
+            content: `
+              <div class="space-y-3 text-xs">
+                ${rubrics.map(rub => `
+                  <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <div class="font-bold text-sm text-slate-800 dark:text-slate-200 mb-2">${rub.title}</div>
+                    <div class="overflow-x-auto">
+                      <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-left">
+                        <thead>
+                          <tr class="bg-slate-100 dark:bg-slate-800 font-bold border-b border-slate-300 dark:border-slate-700">
+                            <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/4">ประเด็นการประเมิน / น้ำหนัก</th>
+                            <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/5">ดีเยี่ยม (4 คะแนน)</th>
+                            <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/5">ดี (3 คะแนน)</th>
+                            <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/6">พอใช้ (2 คะแนน)</th>
+                            <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/6">ปรับปรุง (1 คะแนน)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${(rub.criteria || []).map(c => `
+                            <tr class="border-b border-slate-200 dark:border-slate-800 align-top">
+                              <td class="p-2 border border-slate-300 dark:border-slate-700 font-semibold bg-slate-50/50 dark:bg-slate-800/50">
+                                ${c.name}
+                                <div class="text-[11px] text-sky-700 dark:text-sky-400 font-normal mt-0.5">น้ำหนัก: ${c.weight || 25}%</div>
+                              </td>
+                              <td class="p-2 border border-slate-300 dark:border-slate-700">${c.level4}</td>
+                              <td class="p-2 border border-slate-300 dark:border-slate-700">${c.level3}</td>
+                              <td class="p-2 border border-slate-300 dark:border-slate-700">${c.level2}</td>
+                              <td class="p-2 border border-slate-300 dark:border-slate-700 text-slate-500">${c.level1}</td>
+                            </tr>
+                          `).join("")}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 `).join("")}
               </div>

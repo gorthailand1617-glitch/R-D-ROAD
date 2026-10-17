@@ -176,17 +176,25 @@ window.ROAD_ADVISOR = {
     });
     if (!rankMismatch) passedCount++;
 
-    // Rule 5: ห้ามตั้งสมมติฐานในระยะ R1, D1, D2
-    const hasHypoOnlyR2 = model === "rd_4step";
+    // Rule 5: ห้ามตั้งสมมติฐานในระยะ R1, D1, D2 (Rule 1: Hypotheses only in R2)
+    const hasHypoInOtherPhases = Boolean(
+      p.hasHypothesesInNonR2 ||
+      (p.hypothesesByPhase && (p.hypothesesByPhase.r1 || p.hypothesesByPhase.d1 || p.hypothesesByPhase.d2))
+    );
     results.push({
       ruleId: 5,
       ruleName: "สมมติฐานการวิจัยต้องมีเฉพาะระยะทดลอง (R2) ที่มีการเปรียบเทียบเท่านั้น",
-      level: "pass",
-      title: "ผ่านเกณฑ์: กำหนดสมมติฐานเฉพาะระยะที่ 3 (R2) ตามระเบียบวิธีวิจัยมาตรฐาน",
-      desc: "ระยะที่ 1 (R1), ระยะที่ 2 (D1) และระยะที่ 4 (D2) เป็นการวิจัยเชิงสำรวจและประเมินคุณภาพ จึงไม่ต้องตั้งสมมติฐาน มีสมมติฐานเฉพาะระยะที่ 3 (เปรียบเทียบผลก่อน-หลัง)",
-      recommendation: null
+      level: hasHypoInOtherPhases ? "error" : "pass",
+      title: hasHypoInOtherPhases
+        ? "พบข้อผิดพลาด: มีการตั้งสมมติฐานในระยะ R1, D1 หรือ D2"
+        : "ผ่านเกณฑ์: กำหนดสมมติฐานเฉพาะระยะที่ 3 (R2) ตามระเบียบวิธีวิจัยมาตรฐาน",
+      desc: hasHypoInOtherPhases
+        ? "ตามหลักการวิจัยและพัฒนา (R&D) ของ รศ.ดร.ชวลิต ชูกำแพง ระยะ R1 (สำรวจบริบท/ปัญหา), D1 (สร้างนวัตกรรม/หาประสิทธิภาพ E1/E2 เทียบเกณฑ์) และ D2 (ประเมินความพึงพอใจ) เป็นการวิจัยเชิงพรรณนา ห้ามตั้งสมมติฐานเด็ดขาด! สมมติฐานมีได้เฉพาะระยะทดลองจริง (R2) ที่มีการเปรียบเทียบผลเท่านั้น"
+        : "ระยะที่ 1 (R1), ระยะที่ 2 (D1) และระยะที่ 4 (D2) เป็นการวิจัยเชิงสำรวจและประเมินคุณภาพ จึงไม่ต้องตั้งสมมติฐาน มีสมมติฐานเฉพาะระยะที่ 3 (เปรียบเทียบผลก่อน-หลัง)",
+      recommendation: hasHypoInOtherPhases ? "คลิกปุ่ม 'ปรับแก้สมมติฐานเฉพาะระยะ R2 อัตโนมัติ' เพื่อตัดสมมติฐานในระยะ R1, D1, D2 ออกทันที" : null,
+      autoFixAction: hasHypoInOtherPhases ? "autoFixHypothesesToR2Only" : null
     });
-    passedCount++;
+    if (!hasHypoInOtherPhases) passedCount++;
 
     // Rule 6: ห้ามวาดกรอบแนวคิดการวิจัย (Conceptual Framework) เป็นขั้นตอน R1-D2
     results.push({
@@ -252,12 +260,44 @@ window.ROAD_ADVISOR = {
     });
     if (!trackConflict) passedCount++;
 
-    const healthScore = Math.round((passedCount / 10) * 100);
+    // Rule 11 (V2.0 Guardrail): ความสอดคล้องระหว่างวิธีการสุ่มตัวอย่างและสถิติอ้างอิง (Sampling & Inferential Statistics Guardrail)
+    const samplingMeta = p.samplingMetadata || {};
+    let samplingType = samplingMeta.type;
+    if (!samplingType) {
+      if (p.sample && (p.sample.includes("เจาะจง") || p.sample.includes("Purposive"))) samplingType = "purposive";
+      else if (p.sample && (p.sample.includes("ประชากรทั้งหมด") || p.sample.includes("ทุกคน") || p.sample.includes("Census"))) samplingType = "population";
+      else samplingType = "cluster_random";
+    }
+
+    const isNonRandomSampling = samplingType === "purposive" || samplingType === "population";
+    const usesTTest = p.selectedStats ? p.selectedStats.includes("ttest") : true;
+    const samplingConflict = isNonRandomSampling && usesTTest;
+
+    results.push({
+      ruleId: 11,
+      ruleName: "ข้อตกลงเบื้องต้นของการสุ่มตัวอย่างกับการใช้สถิติทดสอบสมมติฐาน (Sampling & Hypothesis Guardrail)",
+      level: samplingConflict ? "error" : "pass",
+      title: samplingConflict
+        ? `พบข้อบกพร่องวิกฤต: กลุ่มตัวอย่างแบบ "${samplingType === 'purposive' ? 'เลือกแบบเจาะจง (Purposive)' : 'ประชากรทั้งหมด (Population)'}" ขัดต่อการทดสอบ t-test`
+        : "ผ่านเกณฑ์: วิธีการสุ่มตัวอย่างสอดคล้องกับแผนการวิเคราะห์สถิติทดสอบสมมติฐาน",
+      desc: samplingConflict
+        ? `กลุ่มตัวอย่างระบุเป็น "${samplingType === 'purposive' ? 'การเลือกแบบเจาะจง (Purposive Sampling)' : 'ศึกษาจากประชากรทั้งหมด (Population - ไม่มีการสุ่ม)'}" ขัดต่อข้อตกลงเบื้องต้นเรื่อง Random Sampling และไม่มี Sampling Error ตามหลักสถิติศาสตร์ ห้ามใช้ t-test หรือสถิติอนุมานทดสอบสมมติฐาน ต้องเปลี่ยนเป็นสถิติบรรยาย (x̄, S.D., ร้อยละ) และดัชนีประสิทธิผล (E.I.) หรือปรับวิธีการสุ่มเป็น การสุ่มแบบกลุ่ม (Cluster Random Sampling)`
+        : `กลุ่มตัวอย่างใช้ ${samplingType === 'cluster_random' ? 'การสุ่มแบบกลุ่ม (Cluster Random Sampling)' : samplingType === 'simple_random' ? 'การสุ่มอย่างง่าย (Simple Random)' : 'สถิติบรรยายเหมาะสมกับกลุ่มเป้าหมาย'} ถูกต้องตามหลักสถิติวิจัย`,
+      recommendation: samplingConflict
+        ? "เลือกแก้ไข: 1) ปรับวิธีการสุ่มเป็น 'Cluster Random Sampling' เพื่อใช้ t-test ต่อได้ หรือ 2) ปรับแผนสถิติเป็น 'สถิติบรรยาย + ดัชนีประสิทธิผล E.I.'"
+        : null,
+      autoFixAction: samplingConflict ? "autoSwitchSamplingToClusterRandom" : null,
+      autoFixAction2: samplingConflict ? "autoSwitchStatsToDescriptiveOnly" : null
+    });
+    if (!samplingConflict) passedCount++;
+
+    const totalRules = results.length;
+    const healthScore = Math.round((passedCount / totalRules) * 100);
 
     return {
       healthScore,
       passedCount,
-      totalRules: 10,
+      totalRules,
       results
     };
   },

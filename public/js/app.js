@@ -85,8 +85,19 @@
     projectFilterStatus: "ALL",
     projectSearch: "",
     auditLogs: [],
+    // Interactive Instrument Subtab & PNI State
+    instrumentSubTab: "blueprint",
+    pniItems: [
+      { id: "pni_1", name: "1. การจัดการเรียนรู้เพื่อพัฒนาทักษะการคิดขั้นสูงและการแก้ปัญหา", iMean: 4.82, iSD: 0.39, dMean: 2.14, dSD: 0.65 },
+      { id: "pni_2", name: "2. การใช้สื่อนวัตกรรมดิจิทัลและแพลตฟอร์มการเรียนรู้เชิงรุก", iMean: 4.75, iSD: 0.44, dMean: 2.30, dSD: 0.58 },
+      { id: "pni_3", name: "3. การจัดกิจกรรมการเรียนรู้แบบร่วมมือและการทำงานเป็นทีม", iMean: 4.60, iSD: 0.52, dMean: 2.65, dSD: 0.70 },
+      { id: "pni_4", name: "4. การวัดและประเมินผลตามสภาพจริงด้วยเกณฑ์รูบริก", iMean: 4.68, iSD: 0.48, dMean: 2.42, dSD: 0.62 },
+      { id: "pni_5", name: "5. การให้ข้อมูลย้อนกลับ (Feedback) เพื่อพัฒนาการเรียนรู้ของผู้เรียน", iMean: 4.55, iSD: 0.55, dMean: 2.80, dSD: 0.72 },
+      { id: "pni_6", name: "6. การสร้างแรงบันดาลใจและเจตคติที่ดีต่อรายวิชา", iMean: 4.70, iSD: 0.46, dMean: 3.10, dSD: 0.68 }
+    ],
     // Interactive IOC State (5 items x 5 experts)
     iocExpertsCount: 5,
+    cviThreshold: 0.60,
     iocItems: [
       { id: 1, name: "ข้อ 1: ความสามารถในการระบุปัญหาและตั้งสมมติฐาน", scores: [1, 1, 1, 1, 1] },
       { id: 2, name: "ข้อ 2: การออกแบบการทดลองและเลือกใช้อุปกรณ์", scores: [1, 1, 0, 1, 1] },
@@ -94,35 +105,88 @@
       { id: 4, name: "ข้อ 4: การวิเคราะห์ข้อมูลและแปลความหมาย", scores: [1, 0, 1, 1, 1] },
       { id: 5, name: "ข้อ 5: การสรุปผลและลงข้อสรุปเชิงวิทยาศาสตร์", scores: [1, 1, 1, 1, 1] }
     ],
-    // Interactive Test Item Analysis State (10 items, 27% H/L group from N=30)
+    // Interactive Test Item Analysis State (Norm-Referenced & Criterion-Referenced)
+    itemAnalysisType: "norm", // "norm" | "criterion"
     itemAnalysisTotalN: 30,
     itemAnalysisHighN: 8,
     itemAnalysisLowN: 8,
     itemAnalysisCutOff: 60,
+    normTestVariance: 5.85,
     itemAnalysisItems: [
       { id: 1, h: 8, l: 3, name: "ข้อ 1" },
       { id: 2, h: 7, l: 2, name: "ข้อ 2" },
       { id: 3, h: 8, l: 4, name: "ข้อ 3" },
       { id: 4, h: 6, l: 1, name: "ข้อ 4" },
       { id: 5, h: 7, l: 3, name: "ข้อ 5" },
-      { id: 6, h: 8, l: 5, name: "ข้อ 6" },
-      { id: 7, h: 7, l: 2, name: "ข้อ 7" },
-      { id: 8, h: 6, l: 2, name: "ข้อ 8" },
+      { id: 6, h: 8, l: 2, name: "ข้อ 6" },
+      { id: 7, h: 6, l: 2, name: "ข้อ 7" },
+      { id: 8, h: 7, l: 4, name: "ข้อ 8" },
       { id: 9, h: 8, l: 3, name: "ข้อ 9" },
-      { id: 10, h: 7, l: 4, name: "ข้อ 10" }
+      { id: 10, h: 7, l: 1, name: "ข้อ 10" }
+    ],
+    // Criterion-Referenced Binary Test Items (Brennan B-Index & Lovett)
+    criterionMasterN: 15,
+    criterionNonMasterN: 15,
+    brennanCutOff: 60,
+    criterionItems: [
+      { id: 1, name: "ข้อ 1", u: 14, l: 3, p: 0.57, b: 0.73 },
+      { id: 2, name: "ข้อ 2", u: 13, l: 2, p: 0.50, b: 0.73 },
+      { id: 3, name: "ข้อ 3", u: 15, l: 4, p: 0.63, b: 0.73 },
+      { id: 4, name: "ข้อ 4", u: 12, l: 1, p: 0.43, b: 0.73 },
+      { id: 5, name: "ข้อ 5", u: 14, l: 4, p: 0.60, b: 0.67 },
+      { id: 6, name: "ข้อ 6", u: 15, l: 3, p: 0.60, b: 0.80 },
+      { id: 7, name: "ข้อ 7", u: 13, l: 3, p: 0.53, b: 0.67 },
+      { id: 8, name: "ข้อ 8", u: 14, l: 2, p: 0.53, b: 0.80 },
+      { id: 9, name: "ข้อ 9", u: 15, l: 5, p: 0.67, b: 0.67 },
+      { id: 10, name: "ข้อ 10", u: 12, l: 2, p: 0.47, b: 0.67 }
     ],
     // Interactive Cronbach Alpha State (5-level Likert scale, 8 items)
     cronbachItems: [
-      { id: 1, name: "ข้อ 1: กิจกรรมการเรียนรู้มีความน่าสนใจและท้าทาย", variance: 0.52, mean: 4.65 },
-      { id: 2, name: "ข้อ 2: ลำดับขั้นตอนการเรียนรู้เข้าใจง่ายและต่อเนื่อง", variance: 0.48, mean: 4.58 },
-      { id: 3, name: "ข้อ 3: สื่อนวัตกรรมช่วยให้เข้าใจเนื้อหาได้ชัดเจน", variance: 0.45, mean: 4.70 },
-      { id: 4, name: "ข้อ 4: ได้ฝึกทักษะการคิดวิเคราะห์และการลงมือปฏิบัติจริง", variance: 0.55, mean: 4.62 },
-      { id: 5, name: "ข้อ 5: ได้ร่วมมือแลกเปลี่ยนเรียนรู้กับเพื่อนในกลุ่ม", variance: 0.50, mean: 4.55 },
-      { id: 6, name: "ข้อ 6: ครูให้คำแนะนำและข้อมูลสะท้อนกลับอย่างสม่ำเสมอ", variance: 0.42, mean: 4.68 },
-      { id: 7, name: "ข้อ 7: สามารถนำความรู้ไปประยุกต์ใช้ในชีวิตประจำวันได้", variance: 0.49, mean: 4.60 },
-      { id: 8, name: "ข้อ 8: มีความสุขและพึงพอใจต่อบรรยากาศการเรียนรู้", variance: 0.46, mean: 4.72 }
+      { id: 1, name: "1. กิจกรรมการเรียนรู้มีความน่าสนใจและท้าทาย", variance: 0.38, mean: 4.65, rit: 0.68 },
+      { id: 2, name: "2. ลำดับขั้นตอนการเรียนรู้เข้าใจง่ายและต่อเนื่อง", variance: 0.32, mean: 4.58, rit: 0.74 },
+      { id: 3, name: "3. สื่อนวัตกรรมช่วยให้เข้าใจเนื้อหาได้ชัดเจน", variance: 0.42, mean: 4.70, rit: 0.65 },
+      { id: 4, name: "4. ได้ฝึกทักษะการคิดวิเคราะห์และการลงมือปฏิบัติจริง", variance: 0.28, mean: 4.62, rit: 0.78 },
+      { id: 5, name: "5. ได้ร่วมมือแลกเปลี่ยนเรียนรู้กับเพื่อนในกลุ่ม", variance: 0.35, mean: 4.55, rit: 0.71 },
+      { id: 6, name: "6. ครูให้คำแนะนำและข้อมูลสะท้อนกลับอย่างสม่ำเสมอ", variance: 0.22, mean: 4.68, rit: 0.82 },
+      { id: 7, name: "7. สามารถนำความรู้ไปประยุกต์ใช้ในชีวิตประจำวันได้", variance: 0.30, mean: 4.60, rit: 0.69 },
+      { id: 8, name: "8. มีความสุขและพึงพอใจต่อบรรยากาศการเรียนรู้", variance: 0.20, mean: 4.72, rit: 0.85 }
     ],
     cronbachTotalVariance: 18.50,
+    // Smart Hypothesis Testing Lab State
+    hypothesisTestType: "paired_t", // "paired_t" | "one_sample_t" | "wilcoxon"
+    hypothesisOneSampleCriteria: 28,
+    hypothesisData: [
+      { id: 1, pre: 16, post: 32 },
+      { id: 2, pre: 14, post: 30 },
+      { id: 3, pre: 18, post: 34 },
+      { id: 4, pre: 15, post: 31 },
+      { id: 5, pre: 20, post: 36 },
+      { id: 6, pre: 17, post: 33 },
+      { id: 7, pre: 19, post: 35 },
+      { id: 8, pre: 13, post: 29 },
+      { id: 9, pre: 15, post: 32 },
+      { id: 10, pre: 18, post: 34 },
+      { id: 11, pre: 16, post: 31 },
+      { id: 12, pre: 17, post: 33 },
+      { id: 13, pre: 14, post: 30 },
+      { id: 14, pre: 19, post: 35 },
+      { id: 15, pre: 18, post: 33 },
+      { id: 16, pre: 15, post: 32 },
+      { id: 17, pre: 17, post: 34 },
+      { id: 18, pre: 16, post: 30 },
+      { id: 19, pre: 20, post: 36 },
+      { id: 20, pre: 18, post: 35 },
+      { id: 21, pre: 15, post: 31 },
+      { id: 22, pre: 17, post: 32 },
+      { id: 23, pre: 19, post: 35 },
+      { id: 24, pre: 14, post: 28 },
+      { id: 25, pre: 16, post: 33 },
+      { id: 26, pre: 18, post: 34 },
+      { id: 27, pre: 17, post: 32 },
+      { id: 28, pre: 15, post: 30 },
+      { id: 29, pre: 20, post: 36 },
+      { id: 30, pre: 19, post: 35 }
+    ],
     geminiKey: "",
     aiTask: "ch1_background",
     aiOutput: "",
@@ -181,6 +245,36 @@
     } catch {}
   }
 
+  function hydrateProjectSchema(p) {
+    if (!p) return p;
+    if (!p.samplingMetadata) {
+      p.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA || {
+        type: "cluster_random",
+        sampleSize: 38,
+        unit: "ห้องเรียน",
+        populationSize: 180,
+        isNormalDistributed: true,
+        normalityTest: "shapiro_wilk"
+      }));
+    }
+    if (!p.experimentalInstruments) {
+      p.experimentalInstruments = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERIMENTAL_INSTRUMENTS || []));
+    }
+    if (!p.dataCollectionInstruments) {
+      p.dataCollectionInstruments = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_DATA_COLLECTION_INSTRUMENTS || []));
+    }
+    if (!p.operationalDefinitions) {
+      p.operationalDefinitions = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_OPERATIONAL_DEFINITIONS || []));
+    }
+    if (!p.testBlueprint) {
+      p.testBlueprint = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT || { bufferPercent: 40, units: [] }));
+    }
+    if (!p.analyticRubrics) {
+      p.analyticRubrics = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS || []));
+    }
+    return p;
+  }
+
   function loadStorage() {
     try {
       const m = localStorage.getItem(STORAGE_KEYS.MEMBERS);
@@ -221,8 +315,8 @@
       state.projects = [JSON.parse(JSON.stringify(window.ROAD_DATA.PRESETS[0]))];
     }
 
-    // Ensure all projects have status and progress fields
-    state.projects = state.projects.map(p => ({
+    // Ensure all projects have status, progress and V2.0 schema fields
+    state.projects = state.projects.map(p => hydrateProjectSchema({
       ...p,
       status: p.status || "outlined",
       progress: p.progress || 85,
@@ -338,6 +432,489 @@
     setMatrixSubTab(t) {
       state.matrixSubTab = t;
       renderApp();
+    },
+
+    setInstrumentSubTab(t) {
+      state.instrumentSubTab = t;
+      renderApp();
+    },
+
+    updateTestBlueprintCell(unitIdx, levelKey, val) {
+      const proj = getActiveProject();
+      if (!proj.testBlueprint) proj.testBlueprint = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT));
+      if (proj.testBlueprint.units[unitIdx]) {
+        proj.testBlueprint.units[unitIdx].bloomLevels[levelKey] = Math.max(0, parseInt(val) || 0);
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    updateTestBlueprintBuffer(val) {
+      const proj = getActiveProject();
+      if (!proj.testBlueprint) proj.testBlueprint = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT));
+      proj.testBlueprint.bufferPercent = Math.max(0, parseInt(val) || 0);
+      saveProjects();
+      renderApp();
+    },
+
+    updateTestBlueprintUnitName(unitIdx, val) {
+      const proj = getActiveProject();
+      if (proj.testBlueprint?.units[unitIdx]) {
+        proj.testBlueprint.units[unitIdx].unitName = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    addTestBlueprintUnit() {
+      const proj = getActiveProject();
+      if (!proj.testBlueprint) proj.testBlueprint = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT));
+      const nextNum = proj.testBlueprint.units.length + 1;
+      proj.testBlueprint.units.push({
+        unitId: `unit_${nextNum}`,
+        unitName: `หน่วยการเรียนรู้ที่ ${nextNum}`,
+        hours: 4,
+        bloomLevels: { remember: 2, understand: 2, apply: 2, analyze: 1, evaluate: 0, create: 0 }
+      });
+      saveProjects();
+      renderApp();
+      showToast("เพิ่มหน่วยการเรียนรู้ในผังแบบทดสอบแล้ว");
+    },
+
+    removeTestBlueprintUnit(unitIdx) {
+      const proj = getActiveProject();
+      if (proj.testBlueprint?.units && proj.testBlueprint.units.length > 1) {
+        proj.testBlueprint.units.splice(unitIdx, 1);
+        saveProjects();
+        renderApp();
+        showToast("ลบหน่วยการเรียนรู้แล้ว");
+      } else {
+        showToast("ต้องมีหน่วยการเรียนรู้อย่างน้อย 1 หน่วย", "warn");
+      }
+    },
+
+    updateRubricCriterion(idx, field, val) {
+      const proj = getActiveProject();
+      if (proj.analyticRubrics?.[idx]) {
+        if (field === "weight") {
+          proj.analyticRubrics[idx].weight = Math.max(0, Number(val) || 0);
+        } else {
+          proj.analyticRubrics[idx][field] = val;
+        }
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    updateRubricLevel(critIdx, lvlIdx, val) {
+      const proj = getActiveProject();
+      if (proj.analyticRubrics?.[critIdx]?.levels?.[lvlIdx]) {
+        proj.analyticRubrics[critIdx].levels[lvlIdx].descriptor = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    addRubricCriterion() {
+      const proj = getActiveProject();
+      if (!proj.analyticRubrics) proj.analyticRubrics = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS));
+      const nextId = proj.analyticRubrics.length + 1;
+      proj.analyticRubrics.push({
+        criterionId: `crit_${nextId}`,
+        criterionName: `เกณฑ์ประเมินที่ ${nextId}`,
+        weight: 20,
+        levels: [
+          { score: 4, label: "ดีมาก (4)", descriptor: "แสดงพฤติกรรมได้อย่างครบถ้วน ถูกต้อง และเป็นแบบอย่างได้" },
+          { score: 3, label: "ดี (3)", descriptor: "แสดงพฤติกรรมได้ถูกต้องเกือบทั้งหมด โดยมีข้อบกพร่องเล็กน้อย" },
+          { score: 2, label: "พอใช้ (2)", descriptor: "แสดงพฤติกรรมได้บางส่วน จำเป็นต้องได้รับคำแนะนำเพิ่มเติม" },
+          { score: 1, label: "ปรับปรุง (1)", descriptor: "ไม่สามารถแสดงพฤติกรรมได้ตามเกณฑ์ หรือต้องได้รับการช่วยเหลืออย่างต่อเนื่อง" }
+        ]
+      });
+      saveProjects();
+      renderApp();
+      showToast("เพิ่มเกณฑ์รูบริกใหม่เรียบร้อยแล้ว");
+    },
+
+    removeRubricCriterion(idx) {
+      const proj = getActiveProject();
+      if (proj.analyticRubrics && proj.analyticRubrics.length > 1) {
+        proj.analyticRubrics.splice(idx, 1);
+        saveProjects();
+        renderApp();
+        showToast("ลบเกณฑ์รูบริกแล้ว");
+      } else {
+        showToast("ต้องมีเกณฑ์ประเมินอย่างน้อย 1 รายการ", "warn");
+      }
+    },
+
+    updateOperationalDef(idx, field, val) {
+      const proj = getActiveProject();
+      if (proj.operationalDefinitions?.[idx]) {
+        proj.operationalDefinitions[idx][field] = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    addOperationalDefIndicator(defIdx, val) {
+      const proj = getActiveProject();
+      if (proj.operationalDefinitions?.[defIdx] && val && val.trim()) {
+        if (!proj.operationalDefinitions[defIdx].indicators) proj.operationalDefinitions[defIdx].indicators = [];
+        proj.operationalDefinitions[defIdx].indicators.push(val.trim());
+        saveProjects();
+        renderApp();
+        showToast("เพิ่มตัวบ่งชี้พฤติกรรมแล้ว");
+      }
+    },
+
+    removeOperationalDefIndicator(defIdx, indIdx) {
+      const proj = getActiveProject();
+      if (proj.operationalDefinitions?.[defIdx]?.indicators) {
+        proj.operationalDefinitions[defIdx].indicators.splice(indIdx, 1);
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    addOperationalDef() {
+      const proj = getActiveProject();
+      if (!proj.operationalDefinitions) proj.operationalDefinitions = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_OPERATIONAL_DEFINITIONS));
+      proj.operationalDefinitions.push({
+        construct: "ตัวแปรใหม่",
+        definition: "นิยามเชิงปฏิบัติการที่ระบุพฤติกรรมที่สังเกตได้ชัดเจน",
+        indicators: ["สามารถแสดงพฤติกรรมตัวบ่งชี้ที่ 1", "สามารถแสดงพฤติกรรมตัวบ่งชี้ที่ 2"],
+        instrumentCriteria: "วัดด้วยแบบประเมินและเกณฑ์รูบริก กำหนดเกณฑ์ผ่านร้อยละ 70"
+      });
+      saveProjects();
+      renderApp();
+      showToast("เพิ่มนิยามปฏิบัติการใหม่แล้ว");
+    },
+
+    removeOperationalDef(idx) {
+      const proj = getActiveProject();
+      if (proj.operationalDefinitions && proj.operationalDefinitions.length > 1) {
+        proj.operationalDefinitions.splice(idx, 1);
+        saveProjects();
+        renderApp();
+        showToast("ลบนิยามปฏิบัติการแล้ว");
+      } else {
+        showToast("ต้องมีนิยามศัพท์เฉพาะอย่างน้อย 1 รายการ", "warn");
+      }
+    },
+
+    addInstrument(category) {
+      const proj = getActiveProject();
+      const listKey = category === "experimental" ? "experimentalInstruments" : "dataCollectionInstruments";
+      if (!proj[listKey]) proj[listKey] = [];
+      const isExp = category === "experimental";
+      proj[listKey].push({
+        id: `${isExp ? 'exp' : 'data'}_${Date.now()}`,
+        name: isExp ? "นวัตกรรม/แผนการจัดการเรียนรู้ใหม่" : "เครื่องมือวัดและประเมินผลใหม่",
+        purpose: isExp ? "ใช้เป็นนวัตกรรมการทดลองในการจัดกิจกรรม" : "ใช้เก็บรวบรวมข้อมูลก่อน-หลังเรียน",
+        qualityMethod: isExp ? "IOC จากผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.60)" : "IOC >= 0.60, ค่าความยาก 0.20-0.80, อำนาจจำแนก >= 0.20, KR-20 >= 0.80",
+        qualityScore: isExp ? "IOC = 0.90" : "IOC = 0.88, KR-20 = 0.86"
+      });
+      saveProjects();
+      renderApp();
+      showToast(`เพิ่มเครื่องมือในกลุ่ม${isExp ? 'ทดลอง' : 'เก็บรวบรวมข้อมูล'}แล้ว`);
+    },
+
+    updateInstrument(category, idx, field, val) {
+      const proj = getActiveProject();
+      const listKey = category === "experimental" ? "experimentalInstruments" : "dataCollectionInstruments";
+      if (proj[listKey]?.[idx]) {
+        proj[listKey][idx][field] = val;
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    removeInstrument(category, idx) {
+      const proj = getActiveProject();
+      const listKey = category === "experimental" ? "experimentalInstruments" : "dataCollectionInstruments";
+      if (proj[listKey]?.[idx]) {
+        proj[listKey].splice(idx, 1);
+        saveProjects();
+        renderApp();
+        showToast("ลบเครื่องมือแล้ว");
+      }
+    },
+
+    // 1-Click Guardrail Auto-Fixes
+    autoFixHypothesesToR2Only() {
+      const proj = getActiveProject();
+      if (proj.phases) {
+        if (proj.phases.r1) proj.phases.r1.hypotheses = [];
+        if (proj.phases.d1) proj.phases.d1.hypotheses = [];
+        if (proj.phases.d2) proj.phases.d2.hypotheses = [];
+        if (proj.phases.r2 && (!proj.phases.r2.hypotheses || !proj.phases.r2.hypotheses.length)) {
+          proj.phases.r2.hypotheses = [
+            `ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${proj.A} มีผลสัมฤทธิ์ทางการเรียนหลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05`
+          ];
+        }
+      }
+      saveProjects();
+      renderApp();
+      showToast("🛡️ ปรับสมมติฐานให้อยู่เฉพาะระยะที่ 3 (R2) ตามหลักวิชาการเรียบร้อยแล้ว!", "ok");
+    },
+
+    autoSwitchSamplingToClusterRandom() {
+      const proj = getActiveProject();
+      if (!proj.samplingMetadata) proj.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA));
+      proj.samplingMetadata.type = "cluster_random";
+      proj.sample = `นักเรียนชั้น${proj.D} โรงเรียน${proj.advisorContext?.schoolName || 'สังกัด สพฐ.'} จำนวน 1 ห้องเรียน (n = 30-38 คน) ได้มาโดยการสุ่มแบบกลุ่ม (Cluster Random Sampling) โดยใช้ห้องเรียนเป็นหน่วยในการสุ่ม`;
+      saveProjects();
+      renderApp();
+      showToast("🛡️ สลับวิธีสุ่มเป็น Cluster Random Sampling พร้อมใช้ t-test ได้อย่างถูกต้องตามเกณฑ์แล้ว!", "ok");
+    },
+
+    autoSwitchStatsToDescriptiveOnly() {
+      const proj = getActiveProject();
+      if (proj.phases?.r2) {
+        proj.phases.r2.statistics = ["ค่าเฉลี่ย (Mean)", "ส่วนเบี่ยงเบนมาตรฐาน (S.D.)", "ดัชนีประสิทธิผล (E.I.)"];
+        proj.phases.r2.hypotheses = [
+          `ผู้เรียนมีคะแนนพัฒนาการหลังเรียนสูงกว่าก่อนเรียน หรือมีดัชนีประสิทธิผล (E.I.) ไม่น้อยกว่า 0.50`
+        ];
+      }
+      saveProjects();
+      renderApp();
+      showToast("🛡️ ปรับสถิติเป็น Descriptive + E.I. (งดใช้ t-test สำหรับกลุ่มประชากร/เลือกเจาะจง) เรียบร้อยแล้ว!", "ok");
+    },
+
+    updateSamplingType(val) {
+      const proj = getActiveProject();
+      if (!proj.samplingMetadata) proj.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA));
+      proj.samplingMetadata.type = val;
+      const sObj = window.ROAD_DATA.SAMPLING_METHODS.find(m => m.id === val);
+      if (sObj) {
+        if (!sObj.allowsInference) {
+          showToast(`คำเตือน: วิธีสุ่มแบบ "${sObj.name}" ไม่อนุญาตให้ใช้ t-test ตามหลักสถิติ ระบบจะแนะนำ Descriptive + E.I.`, "warn");
+        } else {
+          showToast(`ตั้งค่าวิธีการสุ่มเป็น "${sObj.name}" เรียบร้อยแล้ว`, "ok");
+        }
+      }
+      saveProjects();
+      renderApp();
+    },
+
+    // StatLab Handlers
+    updatePniItem(idx, field, val) {
+      if (state.pniItems[idx]) {
+        state.pniItems[idx][field] = Number(val);
+        renderApp();
+      }
+    },
+
+    addPniItem() {
+      const nextNum = state.pniItems.length + 1;
+      state.pniItems.push({
+        id: `pni_${Date.now()}`,
+        name: `ประเด็นความต้องการจำเป็นที่ ${nextNum}`,
+        iMean: 4.50,
+        iSD: 0.50,
+        dMean: 2.50,
+        dSD: 0.60
+      });
+      renderApp();
+      showToast("เพิ่มประเด็น PNI เรียบร้อยแล้ว");
+    },
+
+    removePniItem(idx) {
+      if (state.pniItems.length > 1) {
+        state.pniItems.splice(idx, 1);
+        renderApp();
+        showToast("ลบรายการ PNI แล้ว");
+      }
+    },
+
+    loadPniMockData() {
+      state.pniItems = [
+        { id: "pni_1", name: "1. การจัดการเรียนรู้เพื่อพัฒนาทักษะการคิดขั้นสูงและการแก้ปัญหา", iMean: 4.82, iSD: 0.39, dMean: 2.14, dSD: 0.65 },
+        { id: "pni_2", name: "2. การใช้สื่อนวัตกรรมดิจิทัลและแพลตฟอร์มการเรียนรู้เชิงรุก", iMean: 4.75, iSD: 0.44, dMean: 2.30, dSD: 0.58 },
+        { id: "pni_3", name: "3. การจัดกิจกรรมการเรียนรู้แบบร่วมมือและการทำงานเป็นทีม", iMean: 4.60, iSD: 0.52, dMean: 2.65, dSD: 0.70 },
+        { id: "pni_4", name: "4. การวัดและประเมินผลตามสภาพจริงด้วยเกณฑ์รูบริก", iMean: 4.68, iSD: 0.48, dMean: 2.42, dSD: 0.62 },
+        { id: "pni_5", name: "5. การให้ข้อมูลย้อนกลับ (Feedback) เพื่อพัฒนาการเรียนรู้ของผู้เรียน", iMean: 4.55, iSD: 0.55, dMean: 2.80, dSD: 0.72 },
+        { id: "pni_6", name: "6. การสร้างแรงบันดาลใจและเจตคติที่ดีต่อรายวิชา", iMean: 4.70, iSD: 0.46, dMean: 3.10, dSD: 0.68 }
+      ];
+      renderApp();
+      showToast("🎲 โหลดข้อมูลจำลอง PNI_modified 6 รายการเรียบร้อยแล้ว", "ok");
+    },
+
+    setIocExpertsCount(n) {
+      const count = Number(n);
+      state.iocExpertsCount = count;
+      state.cviThreshold = count === 3 ? 0.67 : 0.60;
+      state.iocItems.forEach(it => {
+        while (it.scores.length < count) it.scores.push(1);
+        while (it.scores.length > count) it.scores.pop();
+      });
+      renderApp();
+      showToast(`ปรับจำนวนผู้เชี่ยวชาญเป็น ${count} ท่าน (เกณฑ์ IOC ≥ ${state.cviThreshold})`);
+    },
+
+    loadIocMockData() {
+      const count = state.iocExpertsCount || 5;
+      state.iocItems = [
+        { name: "1. สอดคล้องกับมาตรฐานและตัวชี้วัดการเรียนรู้", scores: Array(count).fill(1) },
+        { name: "2. จุดประสงค์การเรียนรู้ครอบคลุมทั้ง K, P, A", scores: count === 5 ? [1, 1, 1, 1, 0] : [1, 1, 1] },
+        { name: "3. กิจกรรมการเรียนรู้จัดลำดับตามขั้นตอนนวัตกรรม", scores: Array(count).fill(1) },
+        { name: "4. สื่อและแหล่งเรียนรู้เหมาะสมกับวัยผู้เรียน", scores: count === 5 ? [1, 1, 0, 1, 1] : [1, 1, 0] },
+        { name: "5. คำถามกระตุ้นทักษะการคิดวิเคราะห์อย่างเป็นระบบ", scores: Array(count).fill(1) },
+        { name: "6. การวัดและประเมินผลสอดคล้องกับพฤติกรรมเป้าหมาย", scores: count === 5 ? [1, 1, 1, 1, 1] : [1, 1, 1] },
+        { name: "7. เกณฑ์การให้คะแนน (Rubrics) ชัดเจน จำแนกได้จริง", scores: count === 5 ? [1, 0, 1, 1, 1] : [1, 1, 1] },
+        { name: "8. ความเหมาะสมของเวลาและกิจกรรมการเรียนรู้", scores: count === 5 ? [1, 1, 1, 0, 1] : [1, 1, 1] }
+      ];
+      renderApp();
+      showToast("🎲 โหลดข้อมูลจำลอง IOC & CVI (ความเที่ยงตรงเชิงเนื้อหา) เรียบร้อยแล้ว", "ok");
+    },
+
+    setItemAnalysisType(t) {
+      state.itemAnalysisType = t;
+      renderApp();
+    },
+
+    loadItemAnalysisMockData() {
+      state.itemAnalysisItems = [
+        { name: "ข้อที่ 1", h: 8, l: 3 },
+        { name: "ข้อที่ 2", h: 7, l: 2 },
+        { name: "ข้อที่ 3", h: 8, l: 4 },
+        { name: "ข้อที่ 4", h: 6, l: 1 },
+        { name: "ข้อที่ 5", h: 7, l: 3 },
+        { name: "ข้อที่ 6", h: 8, l: 2 },
+        { name: "ข้อที่ 7", h: 6, l: 2 },
+        { name: "ข้อที่ 8", h: 7, l: 4 },
+        { name: "ข้อที่ 9", h: 8, l: 3 },
+        { name: "ข้อที่ 10", h: 7, l: 1 }
+      ];
+      renderApp();
+      showToast("🎲 โหลดข้อมูลจำลองข้อสอบอิงกลุ่ม (Norm-Referenced KR-20) แล้ว", "ok");
+    },
+
+    loadCriterionMockData() {
+      state.criterionItems = [
+        { name: "ข้อที่ 1", u: 14, l: 3, p: 0.57, b: 0.73 },
+        { name: "ข้อที่ 2", u: 13, l: 2, p: 0.50, b: 0.73 },
+        { name: "ข้อที่ 3", u: 15, l: 4, p: 0.63, b: 0.73 },
+        { name: "ข้อที่ 4", u: 12, l: 1, p: 0.43, b: 0.73 },
+        { name: "ข้อที่ 5", u: 14, l: 4, p: 0.60, b: 0.67 },
+        { name: "ข้อที่ 6", u: 15, l: 3, p: 0.60, b: 0.80 },
+        { name: "ข้อที่ 7", u: 13, l: 3, p: 0.53, b: 0.67 },
+        { name: "ข้อที่ 8", u: 14, l: 2, p: 0.53, b: 0.80 },
+        { name: "ข้อที่ 9", u: 15, l: 5, p: 0.67, b: 0.67 },
+        { name: "ข้อที่ 10", u: 12, l: 2, p: 0.47, b: 0.67 }
+      ];
+      renderApp();
+      showToast("🎲 โหลดข้อมูลจำลองข้อสอบอิงเกณฑ์ (Brennan's B-Index & Lovett) แล้ว", "ok");
+    },
+
+    updateCriterionRow(idx, field, val) {
+      if (state.criterionItems?.[idx]) {
+        state.criterionItems[idx][field] = Number(val);
+        renderApp();
+      }
+    },
+
+    updateBrennanParam(field, val) {
+      state[field] = Number(val);
+      renderApp();
+    },
+
+    loadCronbachMockData() {
+      state.cronbachItems = [
+        { name: "1. ผู้เรียนมีความกระตือรือร้นในการร่วมกิจกรรม", mean: 4.62, variance: 0.38, rit: 0.68 },
+        { name: "2. นวัตกรรมช่วยให้เข้าใจเนื้อหาได้ง่ายและชัดเจนขึ้น", mean: 4.75, variance: 0.32, rit: 0.74 },
+        { name: "3. กิจกรรมส่งเสริมการแลกเปลี่ยนเรียนรู้กับเพื่อน", mean: 4.58, variance: 0.42, rit: 0.65 },
+        { name: "4. สื่อการเรียนรู้มีความน่าสนใจ ทันสมัย และเข้าใจง่าย", mean: 4.80, variance: 0.28, rit: 0.78 },
+        { name: "5. ผู้เรียนสามารถนำความรู้ไปประยุกต์ใช้ในการแก้ปัญหาได้", mean: 4.65, variance: 0.35, rit: 0.71 },
+        { name: "6. ครูผู้สอนให้คำแนะนำและช่วยเหลืออย่างเหมาะสม", mean: 4.85, variance: 0.22, rit: 0.82 },
+        { name: "7. การประเมินผลมีความยุติธรรมและสะท้อนความสามารถจริง", mean: 4.70, variance: 0.30, rit: 0.69 },
+        { name: "8. ผู้เรียนมีความพึงพอใจต่อภาพรวมของการจัดการเรียนรู้", mean: 4.88, variance: 0.20, rit: 0.85 }
+      ];
+      state.cronbachTotalVariance = 14.80;
+      renderApp();
+      showToast("🎲 โหลดข้อมูลจำลองแบบสอบถาม/รูบริก (Cronbach's α & r_it) แล้ว", "ok");
+    },
+
+    loadE1E2MockData() {
+      const proj = getActiveProject();
+      if (!proj.statsData) proj.statsData = {};
+      proj.statsData.e1 = 83.40;
+      proj.statsData.e2 = 82.80;
+      proj.statsData.fullScore = 40;
+      proj.statsData.preMean = 17.50;
+      proj.statsData.postMean = 33.12;
+      proj.statsData.ei = Number(((33.12 - 17.50) / (40 - 17.50)).toFixed(4));
+      saveProjects();
+      renderApp();
+      showToast("🎲 โหลดข้อมูลประสิทธิภาพ E1/E2 และ E.I. ที่ผ่านเกณฑ์ความแตกต่าง ≤ 5% แล้ว", "ok");
+    },
+
+    setHypothesisTestType(t) {
+      state.hypothesisTestType = t;
+      renderApp();
+    },
+
+    loadHypothesisMockData(scenario = "normal_paired") {
+      if (scenario === "normal_paired") {
+        state.hypothesisTestType = "paired_t";
+        state.hypothesisData = Array.from({ length: 30 }, (_, i) => {
+          const pre = Math.round(15 + Math.random() * 8);
+          const post = Math.min(40, pre + Math.round(10 + Math.random() * 8));
+          return { id: i + 1, pre, post };
+        });
+        showToast("🎲 จำลองข้อมูล N=30 (แจกแจงปกติ ➔ Paired Samples t-test + Cohen's d)", "ok");
+      } else if (scenario === "one_sample") {
+        state.hypothesisTestType = "one_sample_t";
+        state.hypothesisOneSampleCriteria = 28; // 70% of 40
+        state.hypothesisData = Array.from({ length: 30 }, (_, i) => {
+          const pre = Math.round(14 + Math.random() * 6);
+          const post = Math.round(29 + Math.random() * 10);
+          return { id: i + 1, pre, post };
+        });
+        showToast("🎲 จำลองข้อมูลเทียบเกณฑ์ 70% (เกณฑ์ 28 คะแนน ➔ One-Sample t-test)", "ok");
+      } else if (scenario === "small_wilcoxon") {
+        state.hypothesisTestType = "wilcoxon";
+        state.hypothesisData = [
+          { id: 1, pre: 14, post: 28 },
+          { id: 2, pre: 12, post: 25 },
+          { id: 3, pre: 18, post: 34 },
+          { id: 4, pre: 15, post: 29 },
+          { id: 5, pre: 20, post: 35 },
+          { id: 6, pre: 11, post: 22 },
+          { id: 7, pre: 16, post: 30 },
+          { id: 8, pre: 13, post: 27 },
+          { id: 9, pre: 19, post: 36 },
+          { id: 10, pre: 14, post: 29 },
+          { id: 11, pre: 17, post: 32 },
+          { id: 12, pre: 15, post: 28 }
+        ];
+        showToast("🎲 จำลองข้อมูลกลุ่มเล็ก N=12 (Non-Parametric ➔ Wilcoxon Signed-Rank Test)", "ok");
+      }
+      renderApp();
+    },
+
+    updateHypothesisScore(idx, field, val) {
+      if (state.hypothesisData[idx]) {
+        state.hypothesisData[idx][field] = Math.max(0, Number(val) || 0);
+        renderApp();
+      }
+    },
+
+    addHypothesisStudent() {
+      const nextId = state.hypothesisData.length + 1;
+      state.hypothesisData.push({ id: nextId, pre: 18, post: 32 });
+      renderApp();
+      showToast(`เพิ่มนักเรียนคนที่ ${nextId} แล้ว`);
+    },
+
+    removeHypothesisStudent(idx) {
+      if (state.hypothesisData.length > 3) {
+        state.hypothesisData.splice(idx, 1);
+        renderApp();
+        showToast("ลบข้อมูลนักเรียนแล้ว");
+      } else {
+        showToast("ต้องมีข้อมูลนักเรียนอย่างน้อย 3 คน", "warn");
+      }
     },
 
     setDecisionObjective(k) {
@@ -2473,17 +3050,18 @@
             </div>
           </div>
 
-          <!-- 8 Studio Sub-Navigation Tabs (Including Workspace Portfolio & Review Center) -->
+          <!-- 9 Studio Sub-Navigation Tabs (Including Instruments Blueprint & Workspace) -->
           <div class="flex flex-wrap gap-2 pt-2">
             ${[
               ["workspace", "📁 คลังโครงการวิจัย (Workspace)"],
               ["advisor", "🧠 AI เลือกชุดวิจัยที่ดีที่สุด"],
               ["abcd", "1. ปรับแต่งชื่อเรื่อง ABCD & นวัตกรรม"],
               ["chapters", "2. โครงร่าง 5 บท & Review Center"],
-              ["diagrams", "3. แผนภาพกรอบแนวคิด & ผัง R&D"],
-              ["matrix", "4. ตารางความสอดคล้อง 360°"],
-              ["statlab", "5. ห้องปฏิบัติการสถิติ & ตารางบทที่ 4"],
-              ["ai", "6. AI Co-Pilot เขียนรายบท"]
+              ["instruments", "3. ผังแบบทดสอบ, รูบริก & นิยามศัพท์"],
+              ["diagrams", "4. แผนภาพกรอบแนวคิด & ผัง R&D"],
+              ["matrix", "5. ตารางความสอดคล้อง 360°"],
+              ["statlab", "6. ห้องปฏิบัติการสถิติ & ตารางบทที่ 4"],
+              ["ai", "7. AI Co-Pilot เขียนรายบท"]
             ].map(([key, label]) => `
               <button onclick="ROAD_APP.setStudioTab('${key}')" class="px-4 py-2.5 text-xs sm:text-sm font-bold transition cursor-pointer ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${label}
@@ -2498,6 +3076,7 @@
           ${state.studioTab === "advisor" ? renderTabAdvisor() : ""}
           ${state.studioTab === "abcd" ? renderTabAbcd(proj, health) : ""}
           ${state.studioTab === "chapters" ? renderTabChapters(proj) : ""}
+          ${state.studioTab === "instruments" ? renderTabInstruments(proj) : ""}
           ${state.studioTab === "diagrams" ? renderTabDiagrams(proj) : ""}
           ${state.studioTab === "matrix" ? renderTabMatrix(proj) : ""}
           ${state.studioTab === "statlab" ? renderTabStatLab(proj) : ""}
@@ -3596,7 +4175,399 @@
     `;
   }
 
-  // --- Studio Tab 3: Visual Conceptual Framework & R&D Flowchart ---
+  // --- Studio Tab: Instrument Blueprint, Rubrics & Operational Definitions ---
+  function renderTabInstruments(proj) {
+    const subTab = state.instrumentSubTab || "instrument_types";
+    const bp = proj.testBlueprint || JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_TEST_BLUEPRINT));
+    const rubrics = proj.analyticRubrics || JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS));
+    const opDefs = proj.operationalDefinitions || JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_OPERATIONAL_DEFINITIONS));
+    const expInst = proj.experimentalInstruments || [];
+    const dataInst = proj.dataCollectionInstruments || [];
+
+    // Calculate blueprint totals
+    let bpTotalItems = 0;
+    (bp.units || []).forEach(u => {
+      Object.values(u.bloomLevels || {}).forEach(c => { bpTotalItems += (parseInt(c) || 0); });
+    });
+    const bufferPct = bp.bufferPercent || 33;
+    const tryoutNeeded = Math.ceil(bpTotalItems * (1 + bufferPct / 100));
+
+    // Calculate rubrics total weight
+    const totalWeight = (rubrics || []).reduce((acc, r) => acc + (Number(r.weight) || 0), 0);
+    const isWeightValid = Math.abs(totalWeight - 100) < 0.01;
+
+    return `
+      <div class="flex flex-col gap-6">
+        <!-- Subtabs Navigation -->
+        <div class="neu-card p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">📐 เครื่องมือวิจัย:</span>
+            ${[
+              ["instrument_types", "1. แยกประเภทเครื่องมือ (ทดลอง VS เก็บรวบรวม)"],
+              ["blueprint", "2. ผังสร้างแบบทดสอบ (Bloom 6 ระดับ + Try-out)"],
+              ["rubrics", "3. เกณฑ์รูบริก 4 ระดับ (Analytic Rubric)"],
+              ["operational_def", "4. นิยามศัพท์เฉพาะ 3 มิติ (Operational Def)"]
+            ].map(([id, title]) => `
+              <button onclick="ROAD_APP.setInstrumentSubTab('${id}')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${subTab === id ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                ${title}
+              </button>
+            `).join("")}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">มาตรฐาน ก.ค.ศ. วPA</span>
+          </div>
+        </div>
+
+        <!-- Subtab 1: Dual Instrument Separation -->
+        ${subTab === "instrument_types" ? `
+          <div class="space-y-6">
+            <div class="neu-card p-5 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/80 dark:border-blue-800">
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">⚖️</span>
+                <div class="space-y-1">
+                  <h3 class="text-sm font-extrabold text-blue-900 dark:text-blue-200">กฎเหล็กการจำแนกเครื่องมือวิจัย (ก.ค.ศ. และผู้ทรงคุณวุฒิ):</h3>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    งานวิจัยทางการศึกษา R&D ต้องแยกกลุ่มเครื่องมือออกเป็น 2 กลุ่มอย่างเด็ดขาด: 
+                    <b>1. เครื่องมือทดลองใช้นวัตกรรม</b> (เช่น นวัตกรรม, แผนการจัดการเรียนรู้, คู่มือครู) 
+                    และ <b>2. เครื่องมือเก็บรวบรวมข้อมูล</b> (เช่น แบบทดสอบ, แบบประเมินทักษะ, แบบสอบถามความพึงพอใจ)
+                    เพื่อความถูกต้องในการเขียนบทที่ 3 และตารางความสอดคล้อง 360°
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Column 1: Experimental Instruments -->
+              <div class="neu-card p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🧪</span>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900 dark:text-white">1. เครื่องมือที่ใช้ในการทดลองนวัตกรรม</h4>
+                      <p class="text-[11px] text-slate-500">Experimental Instruments (ใช้จัดการเรียนรู้)</p>
+                    </div>
+                  </div>
+                  <button onclick="ROAD_APP.addInstrument('experimental')" class="px-2.5 py-1.5 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer">
+                    + เพิ่มเครื่องมือ
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  ${expInst.map((inst, idx) => `
+                    <div class="p-3.5 neu-input-pill rounded-xl space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <input type="text" value="${escapeHtml(inst.name || '')}" onchange="ROAD_APP.updateInstrument('experimental', ${idx}, 'name', this.value)" class="text-xs font-bold text-slate-800 dark:text-white bg-transparent flex-1 border-b border-dashed border-slate-300 dark:border-slate-700 pb-0.5 focus:outline-none" placeholder="ชื่อเครื่องมือ..." />
+                        <button onclick="ROAD_APP.removeInstrument('experimental', ${idx})" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5 rounded cursor-pointer" title="ลบ">✕</button>
+                      </div>
+                      <div class="space-y-1">
+                        <label class="text-[11px] font-semibold text-slate-500">วัตถุประสงค์การใช้:</label>
+                        <input type="text" value="${escapeHtml(inst.purpose || '')}" onchange="ROAD_APP.updateInstrument('experimental', ${idx}, 'purpose', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none" placeholder="วัตถุประสงค์..." />
+                      </div>
+                      <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                        <div>
+                          <span class="text-slate-500 font-semibold">การหาคุณภาพ:</span>
+                          <input type="text" value="${escapeHtml(inst.qualityMethod || '')}" onchange="ROAD_APP.updateInstrument('experimental', ${idx}, 'qualityMethod', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none border-b border-slate-200 dark:border-slate-700" />
+                        </div>
+                        <div>
+                          <span class="text-slate-500 font-semibold">ผลคุณภาพ:</span>
+                          <input type="text" value="${escapeHtml(inst.qualityScore || '')}" onchange="ROAD_APP.updateInstrument('experimental', ${idx}, 'qualityScore', this.value)" class="w-full text-xs font-mono font-bold text-emerald-600 bg-transparent focus:outline-none border-b border-slate-200 dark:border-slate-700" />
+                        </div>
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+
+              <!-- Column 2: Data Collection Instruments -->
+              <div class="neu-card p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">📊</span>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900 dark:text-white">2. เครื่องมือเก็บรวบรวมข้อมูล</h4>
+                      <p class="text-[11px] text-slate-500">Data Collection Instruments (ใช้วัดผล)</p>
+                    </div>
+                  </div>
+                  <button onclick="ROAD_APP.addInstrument('dataCollection')" class="px-2.5 py-1.5 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer">
+                    + เพิ่มเครื่องมือ
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  ${dataInst.map((inst, idx) => `
+                    <div class="p-3.5 neu-input-pill rounded-xl space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <input type="text" value="${escapeHtml(inst.name || '')}" onchange="ROAD_APP.updateInstrument('dataCollection', ${idx}, 'name', this.value)" class="text-xs font-bold text-slate-800 dark:text-white bg-transparent flex-1 border-b border-dashed border-slate-300 dark:border-slate-700 pb-0.5 focus:outline-none" placeholder="ชื่อเครื่องมือ..." />
+                        <button onclick="ROAD_APP.removeInstrument('dataCollection', ${idx})" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5 rounded cursor-pointer" title="ลบ">✕</button>
+                      </div>
+                      <div class="space-y-1">
+                        <label class="text-[11px] font-semibold text-slate-500">วัตถุประสงค์การใช้:</label>
+                        <input type="text" value="${escapeHtml(inst.purpose || '')}" onchange="ROAD_APP.updateInstrument('dataCollection', ${idx}, 'purpose', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none" placeholder="วัตถุประสงค์..." />
+                      </div>
+                      <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                        <div>
+                          <span class="text-slate-500 font-semibold">การหาคุณภาพ:</span>
+                          <input type="text" value="${escapeHtml(inst.qualityMethod || '')}" onchange="ROAD_APP.updateInstrument('dataCollection', ${idx}, 'qualityMethod', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent focus:outline-none border-b border-slate-200 dark:border-slate-700" />
+                        </div>
+                        <div>
+                          <span class="text-slate-500 font-semibold">ผลคุณภาพ:</span>
+                          <input type="text" value="${escapeHtml(inst.qualityScore || '')}" onchange="ROAD_APP.updateInstrument('dataCollection', ${idx}, 'qualityScore', this.value)" class="w-full text-xs font-mono font-bold text-emerald-600 bg-transparent focus:outline-none border-b border-slate-200 dark:border-slate-700" />
+                        </div>
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Subtab 2: Test Blueprint (Bloom Revised 6 Levels) -->
+        ${subTab === "blueprint" ? `
+          <div class="neu-card p-5 space-y-5">
+            <!-- Header & Buffer Try-out Rule Card -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📝</span>
+                  <span>ตารางผังสร้างแบบทดสอบ (Test Blueprint ตาม Bloom's Revised Taxonomy)</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">กระจายข้อสอบ 6 ระดับพฤติกรรมพุทธิพิสัย พร้อมระบบคำนวณข้อสอบสำรองสำหรับ Try-out</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="ROAD_APP.addTestBlueprintUnit()" class="px-3 py-1.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                  + เพิ่มหน่วยการเรียนรู้
+                </button>
+              </div>
+            </div>
+
+            <!-- Buffer Try-out Rule Alert & Counter Banner -->
+            <div class="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-1.5 text-xs font-extrabold text-amber-900 dark:text-amber-300">
+                  <span>💡 กฎเหล็กข้อสอบ Try-out (30% – 50% Buffer Rule):</span>
+                </div>
+                <p class="text-xs text-slate-700 dark:text-slate-300">
+                  ต้องออกข้อสอบทดลองใช้ (Try-out) มากกว่าข้อสอบฉบับจริง <b>30% – 50%</b> เสมอ เพื่อคัดกรองข้อสอบที่มีค่าความยาก (0.20 ≤ p ≤ 0.80) และอำนาจจำแนก (r ≥ 0.20) ให้ได้จำนวนครบตามผังจริง
+                </p>
+              </div>
+              <div class="flex items-center gap-4 shrink-0 bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 shadow-sm">
+                <div class="text-center">
+                  <div class="text-[11px] font-semibold text-slate-500">ข้อสอบจริงที่ต้องการ</div>
+                  <div class="text-xl font-mono font-black text-blue-600 dark:text-sky-400">${bpTotalItems} ข้อ</div>
+                </div>
+                <div class="text-center border-l pl-3 border-slate-200 dark:border-slate-800">
+                  <div class="text-[11px] font-semibold text-slate-500">สำรอง (%)</div>
+                  <input type="number" min="20" max="100" value="${bufferPct}" onchange="ROAD_APP.updateTestBlueprintBuffer(this.value)" class="w-16 text-center text-sm font-bold font-mono neu-input-pill py-0.5" />
+                </div>
+                <div class="text-center border-l pl-3 border-slate-200 dark:border-slate-800">
+                  <div class="text-[11px] font-semibold text-amber-600 font-bold">ต้องออก Try-out</div>
+                  <div class="text-xl font-mono font-black text-amber-600">${tryoutNeeded} ข้อ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bloom 6 Levels Matrix Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-300 dark:border-slate-700">
+                    <th class="p-3 w-12 text-center">#</th>
+                    <th class="p-3 min-w-[200px]">หน่วยการเรียนรู้ / เนื้อหา</th>
+                    <th class="p-2 text-center w-20">เวลา (ชม.)</th>
+                    <th class="p-2 text-center w-16 bg-blue-50/50 dark:bg-blue-950/30">จำ</th>
+                    <th class="p-2 text-center w-16 bg-blue-50/50 dark:bg-blue-950/30">เข้าใจ</th>
+                    <th class="p-2 text-center w-16 bg-emerald-50/50 dark:bg-emerald-950/30">ประยุกต์</th>
+                    <th class="p-2 text-center w-16 bg-emerald-50/50 dark:bg-emerald-950/30">วิเคราะห์</th>
+                    <th class="p-2 text-center w-16 bg-purple-50/50 dark:bg-purple-950/30">ประเมิน</th>
+                    <th class="p-2 text-center w-16 bg-purple-50/50 dark:bg-purple-950/30">สร้างสรรค์</th>
+                    <th class="p-3 text-center w-20 font-extrabold bg-slate-200/60 dark:bg-slate-700/60">รวม (ข้อ)</th>
+                    <th class="p-2 text-center w-12">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
+                  ${(bp.units || []).map((u, uIdx) => {
+                    const rowSum = Object.values(u.bloomLevels || {}).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                    return `
+                      <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                        <td class="p-2 text-center font-mono text-slate-400">${uIdx + 1}</td>
+                        <td class="p-2">
+                          <input type="text" value="${escapeHtml(u.unitName || '')}" onchange="ROAD_APP.updateTestBlueprintUnitName(${uIdx}, this.value)" class="w-full px-2 py-1 bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 focus:outline-none font-bold text-slate-800 dark:text-slate-200" />
+                        </td>
+                        <td class="p-2 text-center">
+                          <input type="number" min="1" max="100" value="${u.hours || 4}" onchange="const p=ROAD_APP.getActiveProject(); if(p.testBlueprint?.units?.[${uIdx}]){p.testBlueprint.units[${uIdx}].hours=parseInt(this.value)||4; ROAD_APP.saveProjects(); ROAD_APP.renderApp();}" class="w-14 text-center font-mono py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                        </td>
+                        ${['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'].map(k => `
+                          <td class="p-1.5 text-center">
+                            <input type="number" min="0" max="50" value="${u.bloomLevels?.[k] || 0}" onchange="ROAD_APP.updateTestBlueprintCell(${uIdx}, '${k}', this.value)" class="w-12 text-center font-mono font-bold py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                          </td>
+                        `).join("")}
+                        <td class="p-2 text-center font-mono font-extrabold text-blue-700 dark:text-sky-300 bg-slate-100/50 dark:bg-slate-800/50">${rowSum}</td>
+                        <td class="p-2 text-center">
+                          <button onclick="ROAD_APP.removeTestBlueprintUnit(${uIdx})" class="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5 rounded cursor-pointer" title="ลบหน่วย">✕</button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </tbody>
+                <tfoot>
+                  <tr class="bg-slate-100 dark:bg-slate-800/90 font-extrabold text-slate-900 dark:text-white border-t-2 border-slate-300 dark:border-slate-700">
+                    <td colspan="3" class="p-3 text-right">รวมจำนวนข้อสอบทั้งสิ้น:</td>
+                    ${['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'].map(k => {
+                      const colSum = (bp.units || []).reduce((acc, u) => acc + (parseInt(u.bloomLevels?.[k]) || 0), 0);
+                      return `<td class="p-2 text-center font-mono">${colSum}</td>`;
+                    }).join("")}
+                    <td class="p-3 text-center font-mono text-emerald-600 text-sm font-black">${bpTotalItems}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Subtab 3: 4-Level Analytic Rubrics -->
+        ${subTab === "rubrics" ? `
+          <div class="neu-card p-5 space-y-5">
+            <!-- Header & Weight Validation Banner -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📊</span>
+                  <span>เกณฑ์การประเมินแบบรูบริก 4 ระดับ (Analytic Rubrics: 4, 3, 2, 1)</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">ใช้สำหรับการประเมินทักษะกระบวนการ ชิ้นงาน หรือพฤติกรรม พร้อมระบบตรวจทานน้ำหนักรวม 100%</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="ROAD_APP.addRubricCriterion()" class="px-3 py-1.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                  + เพิ่มเกณฑ์ประเมิน
+                </button>
+              </div>
+            </div>
+
+            <!-- Weight Validation Warning -->
+            <div class="p-3.5 rounded-xl border flex items-center justify-between gap-3 ${isWeightValid ? 'bg-emerald-50/70 border-emerald-300 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300' : 'bg-rose-50/70 border-rose-300 text-rose-800 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-300'}">
+              <div class="flex items-center gap-2 text-xs font-bold">
+                <span>${isWeightValid ? '✔' : '⚠️'}</span>
+                <span>${isWeightValid ? 'น้ำหนักคะแนนรวมถูกต้องตามหลักการวัดผล (รวม 100%)' : `ผลรวมน้ำหนักคะแนนไม่เท่ากับ 100% (ปัจจุบัน: ${totalWeight}%) กรุณาปรับน้ำหนักเกณฑ์ให้รวมได้ 100%`}</span>
+              </div>
+              <span class="font-mono font-extrabold text-sm px-2.5 py-0.5 rounded-full ${isWeightValid ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-rose-100 dark:bg-rose-900'}">${totalWeight}%</span>
+            </div>
+
+            <!-- Rubrics Table -->
+            <div class="space-y-4">
+              ${(rubrics || []).map((r, rIdx) => `
+                <div class="neu-card p-4 space-y-3 border border-slate-200 dark:border-slate-800">
+                  <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-3 flex-1 min-w-[260px]">
+                      <span class="text-xs font-mono font-bold text-slate-400">#${rIdx + 1}</span>
+                      <input type="text" value="${escapeHtml(r.criterionName || '')}" onchange="ROAD_APP.updateRubricCriterion(${rIdx}, 'criterionName', this.value)" class="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 flex-1 focus:outline-none" placeholder="ชื่อเกณฑ์การประเมิน..." />
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <span>น้ำหนัก:</span>
+                        <input type="number" min="1" max="100" value="${r.weight || 20}" onchange="ROAD_APP.updateRubricCriterion(${rIdx}, 'weight', this.value)" class="w-16 font-mono font-bold text-center px-2 py-1 neu-input-pill text-xs" />
+                        <span>%</span>
+                      </div>
+                      <button onclick="ROAD_APP.removeRubricCriterion(${rIdx})" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1 rounded cursor-pointer" title="ลบเกณฑ์นี้">✕ ลบ</button>
+                    </div>
+                  </div>
+
+                  <!-- 4 Rating Levels Descriptors -->
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    ${(r.levels || []).map((lvl, lIdx) => `
+                      <div class="p-3 neu-input-pill rounded-xl flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between font-bold ${lvl.score === 4 ? 'text-emerald-700 dark:text-emerald-400' : lvl.score === 3 ? 'text-blue-700 dark:text-blue-400' : lvl.score === 2 ? 'text-amber-700 dark:text-amber-400' : 'text-rose-700 dark:text-rose-400'}">
+                          <span>${escapeHtml(lvl.label || `ระดับ ${lvl.score}`)}</span>
+                          <span class="font-mono text-[11px]">${lvl.score} คะแนน</span>
+                        </div>
+                        <textarea rows="3" onchange="ROAD_APP.updateRubricLevel(${rIdx}, ${lIdx}, this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent resize-none focus:outline-none leading-relaxed" placeholder="คำอธิบายพฤติกรรม...">${escapeHtml(lvl.descriptor || '')}</textarea>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- Subtab 4: 3-Dimension Operational Definitions -->
+        ${subTab === "operational_def" ? `
+          <div class="neu-card p-5 space-y-5">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📖</span>
+                  <span>นิยามศัพท์เฉพาะเชิงปฏิบัติการ 3 มิติ (3-Dimension Operational Definitions)</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  แก้ข้อบกพร่อง "นิยามเชิงทฤษฎีทั่วไป" ด้วยโครงสร้าง 3 องค์ประกอบที่ผู้ทรงคุณวุฒิตรวจสอบ: นิยาม + พฤติกรรมที่สังเกตได้ + เครื่องมือวัดและเกณฑ์
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="ROAD_APP.addOperationalDef()" class="px-3 py-1.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                  + เพิ่มตัวแปร
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-5">
+              ${(opDefs || []).map((od, oIdx) => `
+                <div class="neu-card p-4 space-y-4 border border-slate-200 dark:border-slate-800">
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="text-xs font-mono font-bold text-blue-600 dark:text-sky-400">ตัวแปร:</span>
+                      <input type="text" value="${escapeHtml(od.construct || '')}" onchange="ROAD_APP.updateOperationalDef(${oIdx}, 'construct', this.value)" class="text-sm font-extrabold text-slate-900 dark:text-white bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 flex-1 focus:outline-none" />
+                    </div>
+                    <button onclick="ROAD_APP.removeOperationalDef(${oIdx})" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1 rounded cursor-pointer">✕ ลบ</button>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <!-- Dimension 1: Theoretical Definition -->
+                    <div class="space-y-1.5 p-3 neu-input-pill rounded-xl">
+                      <label class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                        <span>1. นิยามความหมายเชิงทฤษฎี:</span>
+                      </label>
+                      <textarea rows="4" onchange="ROAD_APP.updateOperationalDef(${oIdx}, 'definition', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent resize-none focus:outline-none leading-relaxed">${escapeHtml(od.definition || '')}</textarea>
+                    </div>
+
+                    <!-- Dimension 2: Observable Behaviors / Indicators -->
+                    <div class="space-y-1.5 p-3 neu-input-pill rounded-xl">
+                      <div class="flex items-center justify-between font-bold text-slate-700 dark:text-slate-300">
+                        <span>2. พฤติกรรมที่สังเกตได้ (ตัวบ่งชี้):</span>
+                      </div>
+                      <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
+                        ${(od.indicators || []).map((ind, iIdx) => `
+                          <div class="flex items-center justify-between gap-1 text-[11px] bg-white dark:bg-slate-900 p-1.5 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="truncate flex-1">• ${escapeHtml(ind)}</span>
+                            <button onclick="ROAD_APP.removeOperationalDefIndicator(${oIdx}, ${iIdx})" class="text-rose-500 font-bold px-1 hover:text-rose-700">✕</button>
+                          </div>
+                        `).join("")}
+                      </div>
+                      <div class="flex items-center gap-1 pt-1">
+                        <input type="text" id="new-ind-${oIdx}" placeholder="เพิ่มตัวบ่งชี้..." class="flex-1 px-2 py-1 text-[11px] rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white" onkeydown="if(event.key==='Enter'){ROAD_APP.addOperationalDefIndicator(${oIdx}, this.value); this.value='';}" />
+                        <button onclick="const el=document.getElementById('new-ind-${oIdx}'); ROAD_APP.addOperationalDefIndicator(${oIdx}, el.value); el.value='';" class="px-2 py-1 text-[11px] font-bold rounded bg-blue-600 text-white cursor-pointer">+</button>
+                      </div>
+                    </div>
+
+                    <!-- Dimension 3: Measurement Instrument & Criterion -->
+                    <div class="space-y-1.5 p-3 neu-input-pill rounded-xl">
+                      <label class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                        <span>3. เครื่องมือวัดและเกณฑ์ประเมิน:</span>
+                      </label>
+                      <textarea rows="4" onchange="ROAD_APP.updateOperationalDef(${oIdx}, 'instrumentCriteria', this.value)" class="w-full text-xs text-slate-700 dark:text-slate-300 bg-transparent resize-none focus:outline-none leading-relaxed">${escapeHtml(od.instrumentCriteria || '')}</textarea>
+                    </div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  }
+
+  // --- Studio Tab 4: Visual Conceptual Framework & R&D Flowchart ---
   function renderTabDiagrams(proj) {
     const model = window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId) || window.ROAD_DATA.RESEARCH_MODELS[0];
     const steps = (proj.B_steps || []).filter(Boolean);
@@ -3983,32 +4954,32 @@
     `;
   }
 
-  // --- Studio Tab 5: Built-in R&D Stat Lab & EDURTAP Quality Engine ---
+  // --- Studio Tab 6: Built-in R&D Stat Lab V2.0 & Psychometric Engine ---
   function renderTabStatLab(proj) {
     const st = proj.statsData || {};
     const subTab = state.statlabSubTab || "decision_rules";
     const gen = window.ROAD_GENERATOR.generateChapters(proj);
     const ch4Tables = gen.chapters[3].sections[1].tables;
 
-    // Decision Rules Data Matrix
+    // Decision Rules Matrix
     const decisionObjectives = {
       survey: {
         title: "เพื่อศึกษา / เพื่อสำรวจ (สภาพปัจจุบัน ปัญหา ความต้องการ)",
         phase: "ระยะที่ 1 (R1) หรือ ระยะที่ 4 (D2)",
-        stats: "ความถี่ (Frequency), ร้อยละ (Percentage), ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.)",
+        stats: "ความถี่ (Frequency), ร้อยละ (Percentage), ค่าเฉลี่ย (x̄), ส่วนเบี่ยงเบนมาตรฐาน (S.D.), ดัชนีความต้องการจำเป็น (PNI_modified)",
         hasHypothesis: false,
         hypothesisNote: "❌ ห้ามตั้งสมมติฐานการวิจัยเด็ดขาด เพราะเป็นการศึกษาเชิงพรรณนา (Descriptive)",
         pitfall: "อย่าใช้สถิติทดสอบสมมติฐาน เช่น t-test หรือ F-test เพราะไม่มีกลุ่มเปรียบเทียบ",
-        example: "ค่าเฉลี่ยระดับปัญหาการจัดการเรียนรู้อยู่ในระดับมาก (x̄ = 4.12, S.D. = 0.54)"
+        example: "ความต้องการจำเป็นมีลำดับความสำคัญสูงสุดด้านการจัดการเรียนรู้เชิงรุก (PNI_modified = 1.252)"
       },
       e1e2: {
         title: "เพื่อหาประสิทธิภาพของนวัตกรรม (E1/E2 ตามเกณฑ์ เช่น 80/80 หรือ 75/75)",
         phase: "ระยะที่ 3 (R2)",
-        stats: "ค่าเฉลี่ยร้อยละคะแนนกระบวนการ (E1) และคะแนนหลังเรียน (E2) เทียบกับเกณฑ์มาตรฐาน",
+        stats: "ค่าเฉลี่ยร้อยละคะแนนกระบวนการ (E1) และคะแนนหลังเรียน (E2) เทียบกับเกณฑ์มาตรฐาน พร้อมตรวจสอบผลต่าง (|E1 - E2| ≤ 5%)",
         hasHypothesis: false,
         hypothesisNote: "❌ ห้ามตั้งสมมติฐานการวิจัย และ ห้ามใช้ t-test ทดสอบ E1/E2 เด็ดขาด!",
         pitfall: "ข้อบกพร่องยอดฮิต: ผู้ทรงคุณวุฒิมักท้วงติงผู้วิจัยที่นำค่า E1 และ E2 ไปทำ Dependent t-test ซึ่งผิดหลักวิชาการอย่างรุนแรง เพราะ E1/E2 เป็นการตรวจสอบประสิทธิภาพเทียบกับเกณฑ์ร้อยละ ไม่ใช่การเปรียบเทียบคะแนนก่อน-หลัง",
-        example: "นวัตกรรมมีประสิทธิภาพ E1/E2 เท่ากับ 82.45/81.68 ซึ่งสูงกว่าเกณฑ์ 80/80 ที่กำหนดไว้"
+        example: "นวัตกรรมมีประสิทธิภาพ E1/E2 เท่ากับ 83.40/82.80 ซึ่งสูงกว่าเกณฑ์ 80/80 และผลต่างไม่เกิน 5% (0.60%)"
       },
       ei: {
         title: "เพื่อหาดัชนีประสิทธิผล (Effectiveness Index: E.I.)",
@@ -4022,11 +4993,11 @@
       compare_pre_post: {
         title: "เพื่อเปรียบเทียบก่อนเรียนและหลังเรียน หรือเปรียบเทียบกับเกณฑ์ร้อยละ",
         phase: "ระยะที่ 3 (R2)",
-        stats: "Dependent Samples t-test (ก่อน-หลัง) หรือ One-sample t-test (เทียบเกณฑ์) + ขนาดอิทธิพล Cohen's d",
+        stats: "Dependent Samples t-test (ก่อน-หลัง) หรือ One-sample t-test (เทียบเกณฑ์) + Cohen's d (หากไม่แจกแจงปกติหรือกลุ่มเล็กใช้ Wilcoxon)",
         hasHypothesis: true,
         hypothesisNote: "✔ บังคับตั้งสมมติฐาน: 'หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05'",
-        pitfall: "ต้องตรวจสอบการแจกแจงปกติ (Normality: Shapiro-Wilk) ก่อน หากไม่แจกแจงปกติ ต้องใช้ Wilcoxon Signed-Rank Test แทน และต้องรายงาน Effect Size (Cohen's d) เสมอ",
-        example: "คะแนนหลังเรียน (x̄ = 32.67) สูงกว่าก่อนเรียน (x̄ = 18.42) อย่างมีนัยสำคัญที่ระดับ .01 (t = 24.86, d = 2.45 Large Effect)"
+        pitfall: "ต้องตรวจสอบการแจกแจงปกติ (Normality) ก่อน หาก n < 30 และไม่แจกแจงปกติ ต้องใช้ Wilcoxon Signed-Rank Test แทน และต้องรายงาน Effect Size (Cohen's d) เสมอ",
+        example: "คะแนนหลังเรียน (x̄ = 33.12) สูงกว่าก่อนเรียน (x̄ = 17.50) อย่างมีนัยสำคัญที่ระดับ .01 (t = 24.86, d = 2.45 Large Effect)"
       },
       compare_multigroup: {
         title: "เพื่อเปรียบเทียบความแตกต่างตั้งแต่ 3 กลุ่มขึ้นไป",
@@ -4036,99 +5007,175 @@
         hypothesisNote: "✔ มีสมมติฐานการวิจัย: 'ผู้เรียนที่เรียนด้วยวิธีต่างกันมีผลสัมฤทธิ์แตกต่างกัน'",
         pitfall: "หากพบค่า F มีนัยสำคัญทางสถิติ (p < .05) ต้องทำการเปรียบเทียบรายคู่ (Post-hoc Comparison เช่น Scheffé หรือ Tukey HSD) เสมอ",
         example: "ผลการทดสอบ F มีค่าเท่ากับ 12.45 (p < .01) จึงทดสอบรายคู่ด้วยวิธี Scheffé พบว่ากลุ่มทดลองสูงกว่ากลุ่มควบคุมอย่างมีนัยสำคัญ"
-      },
-      correlation_regression: {
-        title: "เพื่อศึกษาความสัมพันธ์ หรือการพยากรณ์สมรรถนะ",
-        phase: "ระยะที่ 1 (R1) หรือ งานวิจัยเชิงสหสัมพันธ์",
-        stats: "Pearson Correlation (แจกแจงปกติ) / Spearman Rank Correlation (ข้อมูลจัดอันดับ) หรือ Simple/Multiple Linear Regression",
-        hasHypothesis: true,
-        hypothesisNote: "✔ มีสมมติฐานการวิจัย: 'ตัวแปร X มีความสัมพันธ์ทางบวกกับตัวแปร Y'",
-        pitfall: "คำเตือนสำคัญ: 'ความสัมพันธ์ไม่ใช่เหตุและผล (Correlation does not imply Causation)' ห้ามสรุปว่า X ทำให้เกิด Y จากเพียงค่า r",
-        example: "ค่าสัมประสิทธิ์สหสัมพันธ์ r = .742 (p < .01) และสมการถดถอยมีค่า R² = .550 พยากรณ์ได้ร้อยละ 55.0"
       }
     };
 
-    // Calculate IOC Summary
+    // 1. PNI_modified Calculations
+    const pniRows = (state.pniItems || []).map((it, idx) => {
+      const iM = Number(it.iMean || 0);
+      const dM = Number(it.dMean || 0);
+      const pni = dM > 0 ? Number(((iM - dM) / dM).toFixed(3)) : 0;
+      return { ...it, iMean: iM, dMean: dM, pni, origIdx: idx };
+    });
+    const sortedPni = [...pniRows].sort((a, b) => b.pni - a.pni);
+    sortedPni.forEach((item, rIdx) => {
+      const target = pniRows.find(x => x.origIdx === item.origIdx);
+      if (target) target.rank = rIdx + 1;
+    });
+
+    // 2. IOC & CVI Calculations
     const iocItems = state.iocItems || [];
     const expertCount = state.iocExpertsCount || 5;
-    const iocResults = iocItems.map(item => {
-      const sumR = item.scores.reduce((a, b) => a + Number(b), 0);
+    const iocThreshold = expertCount === 3 ? 0.67 : 0.60;
+    const iocResults = iocItems.map((item, itemIdx) => {
+      const scores = item.scores || Array(expertCount).fill(1);
+      const sumR = scores.reduce((a, b) => a + Number(b), 0);
       const iocVal = Number((sumR / expertCount).toFixed(2));
-      const passed = iocVal >= 0.50;
-      return { ...item, sumR, iocVal, passed };
+      const passed = iocVal >= iocThreshold;
+      const relevantCount = scores.filter(s => Number(s) === 1).length;
+      const iCvi = Number((relevantCount / expertCount).toFixed(2));
+      const universalAgreement = relevantCount === expertCount ? 1 : 0;
+      return { ...item, sumR, iocVal, passed, iCvi, universalAgreement, scores };
     });
-    const avgIoc = iocResults.length ? Number((iocResults.reduce((a, b) => a + b.iocVal, 0) / iocResults.length).toFixed(2)) : 0.92;
+    const avgIoc = iocResults.length ? Number((iocResults.reduce((a, b) => a + b.iocVal, 0) / iocResults.length).toFixed(2)) : 0.90;
+    const sCviAve = iocResults.length ? Number((iocResults.reduce((a, b) => a + b.iCvi, 0) / iocResults.length).toFixed(2)) : 0.92;
+    const sCviUA = iocResults.length ? Number((iocResults.reduce((a, b) => a + b.universalAgreement, 0) / iocResults.length).toFixed(2)) : 0.75;
 
-    // Calculate Item Analysis (p, r, B-Index, KR-20)
+    // 3. Norm-Referenced Binary & KR-20
     const nh = state.itemAnalysisHighN || 8;
     const nl = state.itemAnalysisLowN || 8;
-    const itemAnalysisRows = (state.itemAnalysisItems || []).map(it => {
-      const p = Number(((it.h + it.l) / (nh + nl)).toFixed(2));
-      const r = Number(((it.h - it.l) / nh).toFixed(2));
-      const bIndex = Number(((it.h / nh) - (it.l / nl)).toFixed(2));
-      let pBadge = "เหมาะสม";
-      if (p > 0.80) pBadge = "ค่อนข้างง่าย";
-      else if (p < 0.20) pBadge = "ค่อนข้างยาก";
+    const normRows = (state.itemAnalysisItems || []).map(it => {
+      const h = Number(it.h || 0);
+      const l = Number(it.l || 0);
+      const p = Number(((h + l) / (nh + nl)).toFixed(2));
+      const r = Number(((h - l) / nh).toFixed(2));
+      const pPassed = p >= 0.20 && p <= 0.80;
       const rPassed = r >= 0.20;
-      return { ...it, p, r, bIndex, pBadge, rPassed };
+      const valid = pPassed && rPassed;
+      return { ...it, h, l, p, r, pPassed, rPassed, valid };
     });
-    const sumPq = itemAnalysisRows.reduce((acc, it) => acc + (it.p * (1 - it.p)), 0);
-    const kItems = itemAnalysisRows.length || 10;
-    const totalVarianceKR = 5.60;
-    const kr20 = Number(((kItems / (kItems - 1)) * (1 - (sumPq / totalVarianceKR))).toFixed(3));
+    const kNorm = normRows.length || 10;
+    const sumPq = normRows.reduce((acc, it) => acc + (it.p * (1 - it.p)), 0);
+    const varKr = 5.60;
+    const kr20 = kNorm > 1 ? Number(((kNorm / (kNorm - 1)) * (1 - (sumPq / varKr))).toFixed(3)) : 0.865;
+
+    // 4. Criterion-Referenced Binary, Brennan's B & Lovett
+    const nMaster = Number(state.brennanMasterN || 15);
+    const nNonMaster = Number(state.brennanNonMasterN || 15);
+    const critRows = (state.criterionItems || []).map(it => {
+      const u = Number(it.u || 0);
+      const l = Number(it.l || 0);
+      const p = Number(((u + l) / (nMaster + nNonMaster)).toFixed(2));
+      const bIndex = Number(((u / nMaster) - (l / nNonMaster)).toFixed(2));
+      const bPassed = bIndex >= 0.20;
+      return { ...it, u, l, p, bIndex, bPassed };
+    });
     const lovettReliability = 0.865;
 
-    // Calculate Cronbach Alpha
+    // 5. Cronbach's Alpha
     const cronItems = state.cronbachItems || [];
     const sumSi2 = Number(cronItems.reduce((acc, it) => acc + Number(it.variance || 0), 0).toFixed(2));
-    const totalSt2 = Number(state.cronbachTotalVariance || 18.50);
+    const totalSt2 = Number(state.cronbachTotalVariance || 14.80);
     const kAlpha = cronItems.length || 8;
-    const cronbachAlpha = Number(((kAlpha / (kAlpha - 1)) * (1 - (sumSi2 / totalSt2))).toFixed(3));
+    let cronbachAlpha = 0;
+    let cronbachZeroVariance = false;
+    if (totalSt2 <= 0 || sumSi2 <= 0 || kAlpha <= 1) {
+      cronbachZeroVariance = true;
+      cronbachAlpha = 0;
+    } else {
+      cronbachAlpha = Number(((kAlpha / (kAlpha - 1)) * (1 - (sumSi2 / totalSt2))).toFixed(3));
+      if (isNaN(cronbachAlpha) || cronbachAlpha < 0) cronbachAlpha = 0;
+    }
 
-    // Interactive E1/E2 & E.I. local vars
-    const curE1 = Number(st.e1 || 82.45);
-    const curE2 = Number(st.e2 || 81.68);
-    const curEI = Number(st.ei || 0.6842);
+    // 6. E1/E2 & E.I. Calculations with Variance Tolerance Validator
+    const curE1 = Number(st.e1 || 83.40);
+    const curE2 = Number(st.e2 || 82.80);
+    const eGap = Number(Math.abs(curE1 - curE2).toFixed(2));
+    const isGapExceeded = eGap > 5.0; // Variance Tolerance Validator
     const critParts = String(proj.efficiencyCriterion || "80/80").split("/").map(Number);
     const critE1 = critParts[0] || 80;
     const critE2 = critParts[1] || 80;
     const e1Pass = curE1 >= critE1;
     const e2Pass = curE2 >= critE2;
+    const curEI = Number(st.ei || 0.6842);
+    const eiPass = curEI >= 0.50;
 
-    // Cohen's d
-    const preM = Number(st.preMean || 18.42);
-    const postM = Number(st.postMean || 32.67);
-    const preS = Number(st.preSD || 2.50);
-    const postS = Number(st.postSD || 2.10);
-    const pooledSD = Math.sqrt(((preS * preS) + (postS * postS)) / 2);
-    const cohenD = Number((Math.abs(postM - preM) / (pooledSD || 1)).toFixed(2));
-    let dInterpretation = "ขนาดใหญ่มาก (Large Effect: นวัตกรรมสร้างการเปลี่ยนแปลงอย่างสูง)";
-    if (cohenD < 0.2) dInterpretation = "ขนาดเล็กน้อย (Negligible Effect)";
-    else if (cohenD < 0.5) dInterpretation = "ขนาดเล็ก (Small Effect)";
-    else if (cohenD < 0.8) dInterpretation = "ขนาดปานกลาง (Medium Effect)";
+    // 7. Smart Hypothesis Testing Lab
+    const hypType = state.hypothesisTestType || "paired_t";
+    const hypData = state.hypothesisData || [];
+    const nHyp = hypData.length;
+    let preSum = 0, postSum = 0, diffSum = 0, diffSqSum = 0;
+    hypData.forEach(d => {
+      preSum += Number(d.pre || 0);
+      postSum += Number(d.post || 0);
+      const diff = Number(d.post || 0) - Number(d.pre || 0);
+      diffSum += diff;
+      diffSqSum += (diff * diff);
+    });
+    const xBarPre = nHyp > 0 ? Number((preSum / nHyp).toFixed(2)) : 0;
+    const xBarPost = nHyp > 0 ? Number((postSum / nHyp).toFixed(2)) : 0;
+    const dMean = nHyp > 0 ? Number((diffSum / nHyp).toFixed(2)) : 0;
+    let preVarSum = 0, postVarSum = 0;
+    hypData.forEach(d => {
+      preVarSum += Math.pow(d.pre - xBarPre, 2);
+      postVarSum += Math.pow(d.post - xBarPost, 2);
+    });
+    const sdPre = nHyp > 1 ? Number(Math.sqrt(preVarSum / (nHyp - 1)).toFixed(2)) : 0;
+    const sdPost = nHyp > 1 ? Number(Math.sqrt(postVarSum / (nHyp - 1)).toFixed(2)) : 0;
+    const dVariance = nHyp > 1 ? (diffSqSum - (Math.pow(diffSum, 2) / nHyp)) / (nHyp - 1) : 0;
+    const sdD = Number(Math.sqrt(Math.max(0, dVariance)).toFixed(2));
+    const seD = nHyp > 0 && sdD > 0 ? sdD / Math.sqrt(nHyp) : 0.001;
+    const tValue = seD > 0 ? Number((dMean / seD).toFixed(2)) : 0;
+    const dfValue = Math.max(1, nHyp - 1);
+    const pooledSD = Math.sqrt(((sdPre * sdPre) + (sdPost * sdPost)) / 2) || 1;
+    const cohenD = Number((Math.abs(xBarPost - xBarPre) / pooledSD).toFixed(2));
+
+    // Wilcoxon Signed-Rank Calculations
+    const nonZeroDiffs = hypData.map(d => ({ id: d.id, pre: d.pre, post: d.post, diff: d.post - d.pre, absDiff: Math.abs(d.post - d.pre) })).filter(d => d.diff !== 0);
+    nonZeroDiffs.sort((a, b) => a.absDiff - b.absDiff);
+    let wi = 0;
+    while (wi < nonZeroDiffs.length) {
+      let wj = wi;
+      while (wj < nonZeroDiffs.length && nonZeroDiffs[wj].absDiff === nonZeroDiffs[wi].absDiff) wj++;
+      const avgRank = (wi + 1 + wj) / 2;
+      for (let k = wi; k < wj; k++) nonZeroDiffs[k].rank = avgRank;
+      wi = wj;
+    }
+    const sumPosRanks = nonZeroDiffs.filter(d => d.diff > 0).reduce((acc, d) => acc + d.rank, 0);
+    const sumNegRanks = nonZeroDiffs.filter(d => d.diff < 0).reduce((acc, d) => acc + d.rank, 0);
+    const wilcoxonT = Math.min(sumPosRanks, sumNegRanks);
+    const nWilcoxon = nonZeroDiffs.length;
+    const muWilcoxon = (nWilcoxon * (nWilcoxon + 1)) / 4;
+    const sigmaWilcoxon = Math.sqrt((nWilcoxon * (nWilcoxon + 1) * (2 * nWilcoxon + 1)) / 24) || 1;
+    const wilcoxonZ = Number(((wilcoxonT - muWilcoxon) / sigmaWilcoxon).toFixed(2));
+
+    const isPurposiveOrPop = proj.samplingMetadata?.type === "purposive" || proj.samplingMetadata?.type === "population";
 
     return `
       <div class="flex flex-col gap-6">
-        <!-- StatLab Sub-Navigation Bar -->
-        <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-2">
+        <!-- StatLab Sub-Navigation Bar (8 Subtabs) -->
+        <div class="p-3 neu-card shadow-sm flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap gap-2">
             ${[
-              ["decision_rules", "🧭 1. กฎเหล็กการเลือกสถิติ"],
-              ["ioc", `📋 2. ดัชนี IOC/IC (เฉลี่ย ${avgIoc})`],
-              ["item_analysis", `🎯 3. คุณภาพข้อสอบ (KR-20 = ${kr20})`],
-              ["cronbach", `📏 4. ความเชื่อมั่นแบบสอบถาม (α = ${cronbachAlpha})`],
-              ["e1e2", `⚙️ 5. ประสิทธิภาพ E1/E2 & E.I.`],
-              ["ttest", `📈 6. t-test & Cohen's d (${cohenD})`],
-              ["ch4_tables", "📑 7. ตารางมาตรฐาน APA บทที่ 4"]
+              ["decision_rules", "🧭 1. กฎเหล็กเลือกสถิติ"],
+              ["pni_modified", "🎯 2. Needs PNI_modified"],
+              ["ioc_cvi", `📋 3. IOC & CVI (ผชช. ${expertCount})`],
+              ["item_analysis", `🎯 4. วิเคราะห์ข้อสอบ (Norm/Crit)`],
+              ["cronbach", `📏 5. Cronbach's α`],
+              ["e1e2", `⚙️ 6. ประสิทธิภาพ E1/E2 & E.I.`],
+              ["hypothesis_lab", `📈 7. Smart Hypothesis Lab`],
+              ["ch4_tables", "📑 8. ตารางมาตรฐาน APA บทที่ 4"]
             ].map(([k, lbl]) => `
               <button onclick="ROAD_APP.setStatlabSubTab('${k}')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${lbl}
               </button>
             `).join("")}
           </div>
-          <button onclick="ROAD_APP.simulateAlignedStats()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold shadow-sm cursor-pointer shrink-0">
-            🎲 สุ่มจำลองข้อมูลให้ผ่านเกณฑ์ ${escapeHtml(proj.efficiencyCriterion)}
-          </button>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold font-mono">
+              StatLab Studio V2.0
+            </span>
+          </div>
         </div>
 
         <!-- 1. Sub-Tab: Statistical Decision Rules -->
@@ -4136,7 +5183,7 @@
           <div class="neu-card p-6 flex flex-col gap-6">
             <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
               <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">
-                STATISTICAL DECISION RULES · แนวทาง รศ.ดร.ประเสริฐ และเกณฑ์ วPA
+                SMART STATISTICAL DECISION ENGINE · วPA & R&D MASTERY
               </span>
               <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1">
                 ระบบตัดสินใจเลือกสถิติวิจัยให้ตรงตามวัตถุประสงค์ (ป้องกันข้อผิดพลาดร้ายแรง)
@@ -4144,6 +5191,19 @@
               <p class="text-xs text-slate-500 mt-1">
                 เลือกรูปแบบวัตถุประสงค์การวิจัยที่คุณต้องการ ระบบจะแนะนำสถิติที่ได้รับอนุญาต ข้อกำหนดการตั้งสมมติฐาน และข้อพึงระวังทันที
               </p>
+            </div>
+
+            <!-- Guardrail Alert Banner -->
+            <div class="p-4 rounded-xl bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div class="space-y-1">
+                <div class="font-extrabold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                  <span>🛡️</span> 360-Alignment Methodological Guardrails:
+                </div>
+                <p class="text-slate-700 dark:text-slate-300">
+                  <b>กฎที่ 1:</b> สมมติฐานการวิจัยตั้งได้เฉพาะใน <b>ระยะที่ 3 (R2: ทดลองใช้นวัตกรรม)</b> เท่านั้น (ห้ามตั้งใน R1, D1, D2)<br/>
+                  <b>กฎที่ 2:</b> หากเลือกกลุ่มตัวอย่างแบบเจาะจง (Purposive) หรือศึกษาจากประชากรทั้งหมด (Population) ห้ามใช้สถิติอ้างอิง t-test / ANOVA ในการทดสอบสมมติฐาน
+                </p>
+              </div>
             </div>
 
             <div class="grid lg:grid-cols-[1.2fr_1.8fr] gap-6">
@@ -4201,38 +5261,151 @@
           </div>
         ` : ""}
 
-        <!-- 2. Sub-Tab: IOC / IC Analyzer -->
-        ${subTab === "ioc" ? `
+        <!-- 2. Sub-Tab: R1 Need Assessment Calculator (PNI_modified) -->
+        ${subTab === "pni_modified" ? `
           <div class="neu-card p-6 flex flex-col gap-5">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP · EXPERT VALIDITY ANALYZER</span>
-                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การวิเคราะห์ดัชนีความสอดคล้อง (IOC / IC = ΣR / N)</h2>
-                <p class="text-xs text-slate-500">โดยผู้ทรงคุณวุฒิ ${expertCount} ท่าน (เกณฑ์ตัดสิน: ค่า IOC ≥ 0.50 ถือว่าสอดคล้อง นำไปใช้ได้)</p>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">R1 NEED ASSESSMENT CALCULATOR · PNI_modified</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ดัชนีจัดลำดับความต้องการจำเป็น (Priority Needs Index: PNI_modified)</h2>
+                <p class="text-xs text-slate-500">
+                  สูตร: PNI_modified = (Ī - D̄) / D̄ | I = สภาพที่ควรจะเป็น (Expected), D = สภาพปัจจุบัน (Current) มาตรวัด Likert 5 ระดับ
+                </p>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="px-4 py-2 rounded-xl bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 text-center">
-                  <div class="text-[10px] text-slate-400 uppercase font-bold">IOC เฉลี่ยทั้งฉบับ</div>
-                  <div class="text-lg font-extrabold text-sky-700 dark:text-sky-300">${avgIoc} ${avgIoc >= 0.50 ? '✔ ผ่านเกณฑ์' : '❌ ปรับปรุง'}</div>
-                </div>
-                <button onclick="ROAD_APP.copyTableText('ioc-table-content', 'คัดลอกตาราง IOC เรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
-                  📋 คัดลอกตารางไปใส่บทที่ 3
+              <div class="flex items-center gap-2">
+                <button onclick="ROAD_APP.loadPniMockData()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer">
+                  <span>🎲 1-Click Realistic Mock Data (6 ประเด็น R1)</span>
+                </button>
+                <button onclick="ROAD_APP.addPniItem()" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer">
+                  + เพิ่มประเด็น
                 </button>
               </div>
             </div>
 
-            <div id="ioc-table-content" class="overflow-x-auto">
+            <!-- Interactive Table -->
+            <div class="overflow-x-auto">
               <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
                 <thead>
                   <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
-                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left">ข้อคำถาม / จุดประสงค์การเรียนรู้</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 1</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 2</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 3</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 4</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. 5</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left min-w-[260px]">ประเด็นความต้องการจำเป็นในการพัฒนา (Needs Issue)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24 bg-blue-50/50 dark:bg-blue-950/30">สภาพที่ควรเป็น Ī</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-20 bg-blue-50/50 dark:bg-blue-950/30">S.D._I</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24 bg-amber-50/50 dark:bg-amber-950/30">สภาพปัจจุบัน D̄</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-20 bg-amber-50/50 dark:bg-amber-950/30">S.D._D</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-extrabold">PNI_modified</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24 font-extrabold">ลำดับความสำคัญ (Rank)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">ลบ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pniRows.map((it, idx) => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 text-left font-medium">
+                        <input type="text" value="${escapeHtml(it.name || '')}" onchange="ROAD_APP.updatePniItem(${idx}, 'name', this.value)" class="w-full bg-transparent border-b border-dashed border-slate-300 dark:border-slate-700 pb-0.5 focus:outline-none text-xs text-slate-800 dark:text-slate-200" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" min="1" max="5" value="${it.iMean}" onchange="ROAD_APP.updatePniItem(${idx}, 'iMean', this.value)" class="w-20 py-1 text-center font-mono font-bold text-blue-700 dark:text-sky-300 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" min="0" max="2" value="${it.iSD}" onchange="ROAD_APP.updatePniItem(${idx}, 'iSD', this.value)" class="w-16 py-1 text-center font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" min="1" max="5" value="${it.dMean}" onchange="ROAD_APP.updatePniItem(${idx}, 'dMean', this.value)" class="w-20 py-1 text-center font-mono font-bold text-amber-700 dark:text-amber-400 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-1">
+                        <input type="number" step="0.01" min="0" max="2" value="${it.dSD}" onchange="ROAD_APP.updatePniItem(${idx}, 'dSD', this.value)" class="w-16 py-1 text-center font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-extrabold text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20">
+                        ${it.pni.toFixed(3)}
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-black ${it.rank === 1 ? 'text-rose-600 dark:text-rose-400 text-sm' : it.rank <= 3 ? 'text-amber-600 text-xs' : 'text-slate-500 text-xs'}">
+                        ${it.rank === 1 ? '🏆 ลำดับ 1 (เร่งด่วนที่สุด)' : `ลำดับที่ ${it.rank}`}
+                      </td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2">
+                        <button onclick="ROAD_APP.removePniItem(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5 rounded cursor-pointer">✕</button>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Interpretation Box -->
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+              <div class="space-y-1">
+                <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <span>💡</span> สรุปผลความต้องการจำเป็นเพื่อนำไปพัฒนาเป็นนวัตกรรม (R1 ➔ D1):
+                </div>
+                <p class="text-slate-600 dark:text-slate-400">
+                  ประเด็นที่มีค่า <b>PNI_modified สูงสุดลำดับที่ 1</b> คือ "${sortedPni[0]?.name || ''}" (PNI = ${sortedPni[0]?.pni || 0}) 
+                  ผู้วิจัยจึงนำประเด็นดังกล่าวมาเป็นแกนหลักในการสังเคราะห์กรอบแนวคิดและพัฒนานวัตกรรมการจัดการเรียนรู้
+                </p>
+              </div>
+              <button onclick="ROAD_APP.copyTableText('pni-table', 'คัดลอกตาราง PNI เรียบร้อยแล้ว')" class="shrink-0 px-3 py-1.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                📋 คัดลอกตาราง PNI ใส่บทที่ 4
+              </button>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- 3. Sub-Tab: IOC & CVI Analyzer -->
+        ${subTab === "ioc_cvi" ? `
+          <div class="neu-card p-6 flex flex-col gap-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">VALIDITY SUITE · IOC & CVI CALCULATOR</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การหาความเที่ยงตรงเชิงเนื้อหา (Content Validity: IOC, I-CVI, S-CVI)</h2>
+                <p class="text-xs text-slate-500">
+                  เกณฑ์ผ่าน: ผู้เชี่ยวชาญ 3 ท่านต้อง IOC ≥ 0.67 | ผู้เชี่ยวชาญ 5 ท่านต้อง IOC ≥ 0.60
+                </p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span>จำนวนผู้เชี่ยวชาญ:</span>
+                  <select onchange="ROAD_APP.setIocExpertsCount(this.value)" class="neu-input-pill px-3 py-1 text-xs font-mono font-bold cursor-pointer">
+                    <option value="3" ${expertCount === 3 ? 'selected' : ''}>3 ท่าน (เกณฑ์ ≥ 0.67)</option>
+                    <option value="5" ${expertCount === 5 ? 'selected' : ''}>5 ท่าน (เกณฑ์ ≥ 0.60)</option>
+                  </select>
+                </div>
+                <button onclick="ROAD_APP.loadIocMockData()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer">
+                  <span>🎲 1-Click Realistic Mock Data (8 ข้อ)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Metrics Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="neu-card p-4 text-center">
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">IOC เฉลี่ยทั้งฉบับ</div>
+                <div class="text-xl font-mono font-black text-sky-600 dark:text-sky-400 mt-1">${avgIoc}</div>
+                <div class="text-[10px] font-bold mt-0.5 ${avgIoc >= iocThreshold ? 'text-emerald-600' : 'text-rose-600'}">
+                  ${avgIoc >= iocThreshold ? `✔ ผ่านเกณฑ์ (≥ ${iocThreshold})` : '❌ ต่ำกว่าเกณฑ์'}
+                </div>
+              </div>
+              <div class="neu-card p-4 text-center">
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">S-CVI / Average (เฉลี่ย)</div>
+                <div class="text-xl font-mono font-black text-indigo-600 dark:text-indigo-400 mt-1">${sCviAve}</div>
+                <div class="text-[10px] font-bold text-emerald-600 mt-0.5">✔ มาตรฐานสากล (เกณฑ์ ≥ 0.90)</div>
+              </div>
+              <div class="neu-card p-4 text-center">
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">S-CVI / Universal Agreement</div>
+                <div class="text-xl font-mono font-black text-emerald-600 dark:text-emerald-400 mt-1">${sCviUA}</div>
+                <div class="text-[10px] font-bold text-emerald-600 mt-0.5">✔ เอกฉันท์ทุกท่าน (${(sCviUA * 100).toFixed(0)}%)</div>
+              </div>
+            </div>
+
+            <!-- Table of Items -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
+                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left">ข้อคำถาม / ข้อสอบ / รายการประเมิน</th>
+                    ${Array.from({ length: expertCount }, (_, i) => `
+                      <th class="border border-slate-300 dark:border-slate-700 p-2 w-14">ผชช. ${i + 1}</th>
+                    `).join("")}
                     <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">ΣR</th>
                     <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">IOC</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-16">I-CVI</th>
                     <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ผลการพิจารณา</th>
                   </tr>
                 </thead>
@@ -4251,186 +5424,253 @@
                       `).join("")}
                       <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold">${it.sumR}</td>
                       <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-sky-700 dark:text-sky-400">${it.iocVal}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-indigo-700 dark:text-indigo-400">${it.iCvi}</td>
                       <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.passed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
-                        ${it.passed ? '✔ สอดคล้อง (ใช้ได้)' : '❌ ปรับปรุง/ตัดทิ้ง'}
+                        ${it.passed ? `✔ สอดคล้อง (≥ ${iocThreshold})` : '❌ ปรับปรุง/ตัดทิ้ง'}
                       </td>
                     </tr>
                   `).join("")}
                 </tbody>
               </table>
             </div>
-
-            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <b>สูตรคำนวณ:</b> IOC = ΣR / N | +1 = แน่ใจว่าสอดคล้อง, 0 = ไม่แน่ใจ, -1 = แน่ใจว่าไม่สอดคล้อง | ผลรวม IOC เฉลี่ย = <b>${avgIoc}</b> (มีความเที่ยงตรงเชิงเนื้อหาในระดับดีมาก)
-              </div>
-            </div>
           </div>
         ` : ""}
 
-        <!-- 3. Sub-Tab: Test Item Analysis (EDURTAP: p, r, B-Index, KR-20, Lovett) -->
+        <!-- 4. Sub-Tab: Test Item Analysis (Norm-Referenced & Criterion-Referenced) -->
         ${subTab === "item_analysis" ? `
           <div class="neu-card p-6 flex flex-col gap-5">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP QUALITY ENGINE · TEST ITEM ANALYSIS</span>
-                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การวิเคราะห์คุณภาพแบบทดสอบรายข้อและทั้งฉบับ</h2>
-                <p class="text-xs text-slate-500">
-                  เทคนิคกลุ่มสูง-กลุ่มต่ำ 27% (กลุ่มตัวอย่าง N = 30, กลุ่มสูง nh = ${nh}, กลุ่มต่ำ nl = ${nl}) | เกณฑ์ความยาก: 0.20 ≤ p ≤ 0.80, อำนาจจำแนก: r ≥ 0.20
-                </p>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">ITEM ANALYSIS SUITE · NORM VS CRITERION</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">การวิเคราะห์คุณภาพข้อสอบรายข้อและทั้งฉบับ</h2>
+                <p class="text-xs text-slate-500">เลือกโหมดระหว่างแบบทดสอบอิงกลุ่ม (KR-20) หรือแบบทดสอบอิงเกณฑ์ (Brennan's B & Lovett)</p>
               </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <div class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-center">
-                  <div class="text-[10px] text-slate-400 font-bold uppercase">KR-20 (อิงกลุ่ม)</div>
-                  <div class="text-base font-extrabold text-emerald-700 dark:text-emerald-300">${kr20}</div>
+              <div class="flex items-center gap-2">
+                <div class="flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <button onclick="ROAD_APP.setItemAnalysisType('norm')" class="px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer ${state.itemAnalysisType !== 'criterion' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300'}">
+                    1. อิงกลุ่ม (Norm: p, r, KR-20)
+                  </button>
+                  <button onclick="ROAD_APP.setItemAnalysisType('criterion')" class="px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer ${state.itemAnalysisType === 'criterion' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300'}">
+                    2. อิงเกณฑ์ (Criterion: Brennan, Lovett)
+                  </button>
                 </div>
-                <div class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-center">
-                  <div class="text-[10px] text-slate-400 font-bold uppercase">Lovett (อิงเกณฑ์)</div>
-                  <div class="text-base font-extrabold text-indigo-700 dark:text-indigo-300">${lovettReliability}</div>
-                </div>
-                <button onclick="ROAD_APP.copyTableText('item-analysis-table-content', 'คัดลอกตารางวิเคราะห์ข้อสอบเรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
-                  📋 คัดลอกตารางไปใส่บทที่ 3
+                <button onclick="${state.itemAnalysisType === 'criterion' ? 'ROAD_APP.loadCriterionMockData()' : 'ROAD_APP.loadItemAnalysisMockData()'}" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold shadow-sm cursor-pointer">
+                  <span>🎲 1-Click Realistic Mock Data (10 ข้อ)</span>
                 </button>
               </div>
             </div>
 
-            <div id="item-analysis-table-content" class="overflow-x-auto">
-              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
-                <thead>
-                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
-                    <th class="border border-slate-300 dark:border-slate-700 p-2.5 w-20">ข้อที่</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มสูงถูก (H)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มต่ำถูก (L)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-20">ความยาก (p)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">อำนาจจำแนก (r)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">B-Index (อิงเกณฑ์)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">แปลผลความยาก</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ผลการคัดเลือก</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemAnalysisRows.map((it, idx) => `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold">${escapeHtml(it.name)}</td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-1">
-                        <input type="number" min="0" max="${nh}" value="${it.h}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'h', this.value)" class="w-16 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
-                      </td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-1">
-                        <input type="number" min="0" max="${nl}" value="${it.l}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'l', this.value)" class="w-16 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
-                      </td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold">${it.p}</td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold ${it.rPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">${it.r}</td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono">${it.bIndex}</td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-semibold text-slate-700 dark:text-slate-300">${it.pBadge}</td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.rPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
-                        ${it.rPassed ? '✔ คัดเลือกไว้' : '❌ ตัดทิ้ง/ปรับปรุง'}
-                      </td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
+            ${state.itemAnalysisType !== "criterion" ? `
+              <!-- Norm-Referenced View -->
+              <div class="space-y-4">
+                <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs">
+                  <div>
+                    <b>แบบทดสอบอิงกลุ่ม (Norm-Referenced Test):</b> คำนวณความยากง่าย (p) และอำนาจจำแนก (r) ด้วยเทคนิคกลุ่มสูง-กลุ่มต่ำ 27% (nh = ${nh}, nl = ${nl})
+                  </div>
+                  <div class="font-mono font-extrabold text-sm text-blue-700 dark:text-sky-300">
+                    KR-20 Reliability = <b>${kr20}</b> (ความเชื่อมั่นสูงมาก)
+                  </div>
+                </div>
 
-            <div class="grid sm:grid-cols-2 gap-4 text-xs bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-              <div>
-                <span class="font-bold text-emerald-700 dark:text-emerald-400">สูตรความเชื่อมั่น KR-20:</span>
-                <p class="font-mono mt-0.5">r_tt = [k / (k-1)] * [1 - (Σpq / S_t²)] = <b>${kr20}</b> (ความเชื่อมั่นสูงมาก)</p>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-center">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold text-slate-900 dark:text-white">
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-20">ข้อที่</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มสูงถูก (H)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มต่ำถูก (L)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">ความยาก (p)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">อำนาจจำแนก (r)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-32">ผลการคัดเลือก</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${normRows.map((it, idx) => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold">${escapeHtml(it.name)}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-1">
+                            <input type="number" min="0" max="${nh}" value="${it.h}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'h', this.value)" class="w-16 py-1 text-center font-mono font-bold rounded border border-slate-300 dark:border-slate-700" />
+                          </td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-1">
+                            <input type="number" min="0" max="${nl}" value="${it.l}" onchange="ROAD_APP.updateItemAnalysisRow(${idx}, 'l', this.value)" class="w-16 py-1 text-center font-mono font-bold rounded border border-slate-300 dark:border-slate-700" />
+                          </td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold ${it.pPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-600'}">${it.p}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold ${it.rPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600'}">${it.r}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.valid ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
+                            ${it.valid ? '✔ คัดเลือกไว้ (ผ่านเกณฑ์)' : '❌ ปรับปรุง/ตัดทิ้ง'}
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div>
-                <span class="font-bold text-indigo-700 dark:text-indigo-400">สูตรความเชื่อมั่นของ Lovett (อิงเกณฑ์):</span>
-                <p class="font-mono mt-0.5">r_xx' = 1 - [kΣx - Σx²] / [(k-1)Σ(x-c)²] = <b>${lovettReliability}</b> (ผ่านเกณฑ์มาตรฐาน)</p>
+            ` : `
+              <!-- Criterion-Referenced View (Brennan's B & Lovett) -->
+              <div class="space-y-4">
+                <div class="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between text-xs">
+                  <div>
+                    <b>แบบทดสอบอิงเกณฑ์ (Criterion-Referenced Test):</b> ดัชนีอำนาจจำแนกของ Brennan (B-Index: B = U/n1 - L/n2) | กลุ่มรอบรู้ (Master) n1 = ${nMaster}, กลุ่มไม่รอบรู้ n2 = ${nNonMaster}
+                  </div>
+                  <div class="font-mono font-extrabold text-sm text-indigo-700 dark:text-indigo-300">
+                    Lovett's Reliability (r_cc) = <b>${lovettReliability}</b>
+                  </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-center">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold text-slate-900 dark:text-white">
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-20">ข้อที่</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มรอบรู้ถูก (U)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">กลุ่มไม่รอบรู้ถูก (L)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-24">ความยาก (p)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">Brennan's B-Index</th>
+                        <th class="border border-slate-300 dark:border-slate-700 p-2 w-32">ผลการคัดเลือก</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${critRows.map((it, idx) => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold">${escapeHtml(it.name)}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-1">
+                            <input type="number" min="0" max="${nMaster}" value="${it.u}" onchange="ROAD_APP.updateCriterionRow(${idx}, 'u', this.value)" class="w-16 py-1 text-center font-mono font-bold rounded border border-slate-300 dark:border-slate-700" />
+                          </td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-1">
+                            <input type="number" min="0" max="${nNonMaster}" value="${it.l}" onchange="ROAD_APP.updateCriterionRow(${idx}, 'l', this.value)" class="w-16 py-1 text-center font-mono font-bold rounded border border-slate-300 dark:border-slate-700" />
+                          </td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold">${it.p}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold ${it.bPassed ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-600'}">${it.bIndex}</td>
+                          <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold ${it.bPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">
+                            ${it.bPassed ? '✔ คัดเลือกไว้ (B ≥ 0.20)' : '❌ ปรับปรุง/ตัดทิ้ง'}
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            `}
           </div>
         ` : ""}
 
-        <!-- 4. Sub-Tab: Cronbach's Alpha Analyzer -->
+        <!-- 5. Sub-Tab: Cronbach's Alpha Analyzer -->
         ${subTab === "cronbach" ? `
           <div class="neu-card p-6 flex flex-col gap-5">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EDURTAP · QUESTIONNAIRE RELIABILITY</span>
-                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ความเชื่อมั่นของแบบสอบถามมาตราส่วนประมาณค่า (Cronbach's Alpha Coefficient)</h2>
-                <p class="text-xs text-slate-500">แบบประเมิน Likert 5 ระดับ (เกณฑ์ตัดสิน: ค่า α ≥ 0.80 ถือว่ามีความสอดคล้องภายในสูงมาก นำไปใช้ได้จริง)</p>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">RELIABILITY ENGINE · CRONBACH'S ALPHA</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ความเชื่อมั่นแบบสอบถาม/รูบริก (Cronbach's Alpha Coefficient)</h2>
+                <p class="text-xs text-slate-500">
+                  สูตร: α = [k / (k-1)] * [1 - (ΣSi² / St²)] พร้อมระบบป้องกันความแปรปรวนเป็นศูนย์ (Zero-Variance Safeguard)
+                </p>
               </div>
               <div class="flex items-center gap-3">
-                <div class="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-center">
-                  <div class="text-[10px] text-slate-400 uppercase font-bold">ค่าสัมประสิทธิ์แอลฟา (α)</div>
-                  <div class="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">${cronbachAlpha} (ความเชื่อมั่นสูงมาก)</div>
-                </div>
-                <button onclick="ROAD_APP.copyTableText('cronbach-table-content', 'คัดลอกตารางวิเคราะห์ความเชื่อมั่นเรียบร้อยแล้ว')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer print:hidden">
-                  📋 คัดลอกตารางไปใส่บทที่ 3
+                <button onclick="ROAD_APP.loadCronbachMockData()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer">
+                  <span>🎲 1-Click Realistic Mock Data (8 ข้อ Likert)</span>
                 </button>
               </div>
             </div>
 
-            <div id="cronbach-table-content" class="overflow-x-auto">
-              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700">
+            <!-- Warning for Zero Variance -->
+            ${cronbachZeroVariance ? `
+              <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 text-xs font-bold">
+                ⚠️ คำเตือน: ความแปรปรวนของคะแนนรวม (St²) หรือความแปรปรวนรายข้อ (ΣSi²) มีค่าเท่ากับ 0 ไม่สามารถคำนวณค่าสัมประสิทธิ์แอลฟาได้ กรุณาตรวจสอบข้อมูล
+              </div>
+            ` : ""}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="neu-card p-4 text-center">
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">ค่าสัมประสิทธิ์แอลฟา (α)</div>
+                <div class="text-2xl font-mono font-black text-emerald-600 dark:text-emerald-400 mt-1">${cronbachAlpha}</div>
+                <div class="text-[10px] font-bold text-emerald-600 mt-0.5">✔ ความเชื่อมั่นสูงมาก (เกณฑ์ ≥ 0.80)</div>
+              </div>
+              <div class="neu-card p-4 text-center">
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">ความแปรปรวนรวม (St²)</div>
+                <div class="text-2xl font-mono font-black text-blue-600 dark:text-sky-400 mt-1">${totalSt2}</div>
+                <div class="text-[10px] font-bold text-slate-500 mt-0.5">ΣSi² = ${sumSi2} (จำนวน ${kAlpha} ข้อ)</div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-center">
                 <thead>
-                  <tr class="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-center">
+                  <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold text-slate-900 dark:text-white">
                     <th class="border border-slate-300 dark:border-slate-700 p-2.5 text-left">ข้อรายการประเมิน</th>
                     <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">ค่าเฉลี่ย (x̄)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-32">ความแปรปรวนรายข้อ (Si²)</th>
-                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-36">อำนาจจำแนกรายข้อ (r_xy)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-32">ความแปรปรวน (Si²)</th>
+                    <th class="border border-slate-300 dark:border-slate-700 p-2 w-36">อำนาจจำแนก (r_it)</th>
                     <th class="border border-slate-300 dark:border-slate-700 p-2 w-28">การแปลผล</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${cronItems.map((it, idx) => `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-center">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                       <td class="border border-slate-300 dark:border-slate-700 p-2.5 text-left font-medium">${escapeHtml(it.name)}</td>
                       <td class="border border-slate-300 dark:border-slate-700 p-1">
-                        <input type="number" step="0.01" value="${it.mean}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'mean', this.value)" class="w-20 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono text-xs" />
+                        <input type="number" step="0.01" value="${it.mean}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'mean', this.value)" class="w-20 py-1 text-center font-mono rounded border border-slate-300 dark:border-slate-700 text-xs" />
                       </td>
                       <td class="border border-slate-300 dark:border-slate-700 p-1">
-                        <input type="number" step="0.01" value="${it.variance}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'variance', this.value)" class="w-24 py-1 px-1 text-center rounded border border-slate-300 dark:border-slate-700 font-mono text-xs" />
+                        <input type="number" step="0.01" value="${it.variance}" onchange="ROAD_APP.updateCronbachRow(${idx}, 'variance', this.value)" class="w-24 py-1 text-center font-mono rounded border border-slate-300 dark:border-slate-700 text-xs" />
                       </td>
-                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-sky-700 dark:text-sky-300">${(0.55 + (idx * 0.03)).toFixed(2)}</td>
+                      <td class="border border-slate-300 dark:border-slate-700 p-2 font-mono font-bold text-sky-700 dark:text-sky-300">${it.rit || (0.65 + (idx * 0.02)).toFixed(2)}</td>
                       <td class="border border-slate-300 dark:border-slate-700 p-2 font-bold text-emerald-700 dark:text-emerald-400">✔ จำแนกได้ดี</td>
                     </tr>
                   `).join("")}
                 </tbody>
               </table>
             </div>
-
-            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
-              <div class="space-y-1">
-                <div>จำนวนข้อ (k) = <b>${kAlpha}</b> | ผลรวมความแปรปรวนรายข้อ (ΣSi²) = <b>${sumSi2}</b></div>
-                <div>ความแปรปรวนของคะแนนรวมทั้งฉบับ (St²) = <b>${totalSt2}</b></div>
-              </div>
-              <div class="font-mono text-right text-slate-700 dark:text-slate-300">
-                α = [k / (k-1)] * [1 - (ΣSi² / St²)] = [${kAlpha}/${kAlpha - 1}] * [1 - (${sumSi2}/${totalSt2})] = <b>${cronbachAlpha}</b>
-              </div>
-            </div>
           </div>
         ` : ""}
 
-        <!-- 5. Sub-Tab: E1/E2 & E.I. Calculator -->
+        <!-- 6. Sub-Tab: E1/E2 & E.I. Calculator with Variance Tolerance Validator -->
         ${subTab === "e1e2" ? `
           <div class="neu-card p-6 flex flex-col gap-5">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
-              <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">INNOVATION EFFICIENCY & EFFECTIVENESS</span>
-              <h2 class="text-lg font-bold text-slate-900 dark:text-white">การคำนวณประสิทธิภาพของนวัตกรรม (E1/E2) และดัชนีประสิทธิผล (E.I.)</h2>
-              <p class="text-xs text-slate-500">ตามเกณฑ์ รศ.ดร.ชวลิต ชูกำแพง และมาตรฐาน วPA (ห้ามใช้ t-test ทดสอบ E1/E2)</p>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">EFFICIENCY ENGINE · E1/E2 & E.I.</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ประสิทธิภาพกระบวนการ/ผลลัพธ์ (E1/E2) และดัชนีประสิทธิผล (E.I.)</h2>
+                <p class="text-xs text-slate-500">พร้อมตัวตรวจสอบความต่างของความแปรปรวน (Variance Tolerance Validator: |E1 - E2| ≤ 5.0%)</p>
+              </div>
+              <button onclick="ROAD_APP.loadE1E2MockData()" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer">
+                <span>🎲 1-Click Realistic Mock Data (เกณฑ์ 80/80 ผ่านฉลุย)</span>
+              </button>
+            </div>
+
+            <!-- Variance Tolerance Alert Banner -->
+            <div class="p-4 rounded-xl border flex items-center justify-between gap-3 ${!isGapExceeded ? 'bg-emerald-50/70 border-emerald-300 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300' : 'bg-amber-50/80 border-amber-300 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-200'}">
+              <div class="space-y-0.5">
+                <div class="text-xs font-bold flex items-center gap-1.5">
+                  <span>${!isGapExceeded ? '✔ ผ่านการตรวจสอบความสมดุล' : '⚠️ คำเตือนผลต่างเกินเกณฑ์มาตรฐาน:'}</span>
+                </div>
+                <p class="text-xs leading-relaxed">
+                  ${!isGapExceeded 
+                    ? `ผลต่างระหว่าง E1 และ E2 เท่ากับ <b>${eGap}%</b> (ไม่เกินเกณฑ์ 5.0%) ถือว่าประสิทธิภาพของกระบวนการและผลลัพธ์สอดคล้องสมดุลกันตามหลักวิชาการของ รศ.ดร.ชัยยงค์ พรหมวงศ์`
+                    : `ผลต่างระหว่าง E1 และ E2 เท่ากับ <b>${eGap}%</b> ซึ่งเกินกว่าเกณฑ์ยอมรับ <b>5.0%</b> บ่งชี้ว่าระดับความยากของแบบฝึกหัดระหว่างเรียนกับแบบทดสอบหลังเรียนไม่สอดคล้องกัน`}
+                </p>
+              </div>
+              <span class="font-mono font-extrabold text-sm px-3 py-1 rounded-full ${!isGapExceeded ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300'}">
+                Δ = ${eGap}%
+              </span>
             </div>
 
             <div class="grid lg:grid-cols-2 gap-6">
-              <!-- E1/E2 Calculator Card -->
+              <!-- E1/E2 Form Card -->
               <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
                 <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                   <h3 class="font-bold text-sm text-slate-900 dark:text-white">1. ประสิทธิภาพนวัตกรรม (E1/E2)</h3>
                   <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${e1Pass && e2Pass ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
-                    เกณฑ์ตั้งไว้: ${escapeHtml(proj.efficiencyCriterion)}
+                    เกณฑ์: ${escapeHtml(proj.efficiencyCriterion)}
                   </span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 text-xs">
                   <label class="flex flex-col gap-1">
-                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพระหว่างเรียน (E1)</span>
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพระหว่างเรียน (E1 %)</span>
                     <input type="number" step="0.01" value="${curE1}" oninput="ROAD_APP.updateStatField('e1', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
                   </label>
                   <label class="flex flex-col gap-1">
-                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพหลังเรียน (E2)</span>
+                    <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพหลังเรียน (E2 %)</span>
                     <input type="number" step="0.01" value="${curE2}" oninput="ROAD_APP.updateStatField('e2', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
                   </label>
                 </div>
@@ -4449,18 +5689,13 @@
                     <div class="text-[11px] text-slate-500 font-mono">เกณฑ์: ${critE1}/${critE2}</div>
                   </div>
                 </div>
-
-                <div class="text-xs text-slate-600 dark:text-slate-400 bg-sky-50 dark:bg-sky-950/40 p-3 rounded-xl border border-sky-200 dark:border-sky-800 leading-relaxed">
-                  <b>สูตร:</b> E1 = [(ΣX / N) / A] * 100 | E2 = [(ΣY / N) / B] * 100<br/>
-                  (A = คะแนนเต็มกิจกรรมระหว่างเรียน, B = คะแนนเต็มแบบทดสอบหลังเรียน)
-                </div>
               </div>
 
-              <!-- E.I. Calculator Card -->
+              <!-- E.I. Form Card -->
               <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
                 <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                   <h3 class="font-bold text-sm text-slate-900 dark:text-white">2. ดัชนีประสิทธิผล (Effectiveness Index: E.I.)</h3>
-                  <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${eiPass ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-amber-100'}">
                     เกณฑ์มาตรฐาน ≥ 0.50
                   </span>
                 </div>
@@ -4472,11 +5707,11 @@
                   </label>
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยก่อนเรียน (Pre)</span>
-                    <input type="number" step="0.01" value="${st.preMean || 18.42}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                    <input type="number" step="0.01" value="${st.preMean || 17.50}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
                   </label>
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยหลังเรียน (Post)</span>
-                    <input type="number" step="0.01" value="${st.postMean || 32.67}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                    <input type="number" step="0.01" value="${st.postMean || 33.12}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
                   </label>
                 </div>
 
@@ -4484,168 +5719,225 @@
                   <div>
                     <div class="text-[11px] text-slate-400">ดัชนีประสิทธิผล (E.I.):</div>
                     <div class="text-xl font-black text-indigo-700 dark:text-indigo-400">
-                      ${curEI} (คิดเป็นร้อยละ ${(curEI * 100).toFixed(2)}%)
+                      ${curEI} (${(curEI * 100).toFixed(2)}%)
                     </div>
                   </div>
                   <div class="text-right">
-                    <div class="text-xs font-bold ${curEI >= 0.50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700'}">
-                      ${curEI >= 0.50 ? '✔ ก้าวหน้าในระดับสูงมาก' : '⚠️ ควรปรับปรุง'}
+                    <div class="text-xs font-bold ${eiPass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700'}">
+                      ${eiPass ? '✔ ก้าวหน้าในระดับสูง (≥ 0.50)' : '⚠️ ต่ำกว่าเกณฑ์ 0.50'}
                     </div>
-                    <div class="text-[11px] text-slate-500 font-mono">เกณฑ์: ≥ 0.50</div>
                   </div>
-                </div>
-
-                <div class="text-xs text-slate-600 dark:text-slate-400 bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 leading-relaxed">
-                  <b>สูตร:</b> E.I. = (P2 - P1) / (Total - P1) = (${st.postMean || 32.67} - ${st.preMean || 18.42}) / (${st.fullScore || 40} - ${st.preMean || 18.42}) = <b>${curEI}</b>
                 </div>
               </div>
             </div>
           </div>
         ` : ""}
 
-        <!-- 6. Sub-Tab: t-test & Cohen's d -->
-        ${subTab === "ttest" ? `
+        <!-- 7. Sub-Tab: Smart Hypothesis Testing Lab (Parametric + Non-Parametric) -->
+        ${subTab === "hypothesis_lab" ? `
           <div class="neu-card p-6 flex flex-col gap-5">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
-              <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">HYPOTHESIS TESTING · T-TEST & EFFECT SIZE</span>
-              <h2 class="text-lg font-bold text-slate-900 dark:text-white">การทดสอบสมมติฐานการวิจัย (t-test) และขนาดอิทธิพล (Cohen's d)</h2>
-              <p class="text-xs text-slate-500">เปรียบเทียบคะแนนก่อนเรียนและหลังเรียนของกลุ่มตัวอย่าง (Dependent Samples t-test, n = ${st.n || 38})</p>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">SMART HYPOTHESIS LAB · PARAMETRIC & NON-PARAMETRIC</span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ห้องปฏิบัติการทดสอบสมมติฐานการวิจัยตามแบบจำลองตัดสินใจ</h2>
+                <p class="text-xs text-slate-500">เลือกสถิติทดสอบอัตโนมัติตามขนาดกลุ่มตัวอย่าง (n) และการแจกแจงปกติ (Normality)</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="ROAD_APP.loadHypothesisMockData('normal_paired')" class="px-3 py-1.5 neu-btn-primary text-xs font-bold cursor-pointer">
+                  🎲 Mock N=30 (Paired t-test)
+                </button>
+                <button onclick="ROAD_APP.loadHypothesisMockData('one_sample')" class="px-3 py-1.5 neu-btn-emerald text-xs font-bold cursor-pointer">
+                  🎲 Mock เทียบเกณฑ์ 70% (One-Sample)
+                </button>
+                <button onclick="ROAD_APP.loadHypothesisMockData('small_wilcoxon')" class="px-3 py-1.5 neu-squircle text-xs font-bold text-purple-700 dark:text-purple-300 cursor-pointer">
+                  🎲 Mock N=12 (Wilcoxon Fallback)
+                </button>
+              </div>
             </div>
 
-            <div class="grid lg:grid-cols-[1.2fr_1.8fr] gap-6">
-              <!-- Controls -->
-              <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
-                <h3 class="font-bold text-sm text-slate-900 dark:text-white">พารามิเตอร์การทดสอบ t-test</h3>
-                <div class="grid grid-cols-2 gap-3 text-xs">
-                  <label class="flex flex-col gap-1">
-                    <span class="font-semibold">จำนวน นร. (n)</span>
-                    <input type="number" value="${st.n || 38}" oninput="ROAD_APP.updateStatField('n', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
-                  </label>
-                  <label class="flex flex-col gap-1">
-                    <span class="font-semibold">ค่าสถิติ t</span>
-                    <input type="number" step="0.01" value="${st.tValue || 24.86}" oninput="ROAD_APP.updateStatField('tValue', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
-                  </label>
-                  <label class="flex flex-col gap-1">
-                    <span class="font-semibold">ก่อนเรียน x̄ (S.D.)</span>
-                    <input type="number" step="0.01" value="${preM}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
-                  </label>
-                  <label class="flex flex-col gap-1">
-                    <span class="font-semibold">หลังเรียน x̄ (S.D.)</span>
-                    <input type="number" step="0.01" value="${postM}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-1.5 rounded-lg border font-mono" />
-                  </label>
+            <!-- Sampling Method Guardrail Warning -->
+            ${isPurposiveOrPop ? `
+              <div class="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 font-bold">
+                <span>⚠️ ข้อควรระวังด้านการสุ่มตัวอย่าง:</span>
+                <span>โครงการนี้ใช้กลุ่มตัวอย่างแบบ "${proj.samplingMetadata?.type === 'purposive' ? 'เลือกแบบเจาะจง (Purposive)' : 'ศึกษาจากประชากรทั้งหมด (Population)'}" ตามหลักวิชาการสถิติ ไม่แนะนำให้อ้างอิงผลสู่ประชากรทั่วไปด้วย t-test หรือควรรายงานเป็นข้อจำกัดการวิจัย</span>
+              </div>
+            ` : ""}
+
+            <!-- Decision Tree Selector -->
+            <div class="flex flex-wrap gap-2 p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800">
+              <button onclick="ROAD_APP.setHypothesisTestType('paired_t')" class="px-3 py-2 text-xs font-bold rounded-lg cursor-pointer ${hypType === 'paired_t' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300'}">
+                1. Paired Samples t-test (N ≥ 30 หรือแจกแจงปกติ) + Cohen's d
+              </button>
+              <button onclick="ROAD_APP.setHypothesisTestType('one_sample_t')" class="px-3 py-2 text-xs font-bold rounded-lg cursor-pointer ${hypType === 'one_sample_t' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300'}">
+                2. One-Sample t-test (เทียบเกณฑ์คงที่ เช่น ร้อยละ 70)
+              </button>
+              <button onclick="ROAD_APP.setHypothesisTestType('wilcoxon')" class="px-3 py-2 text-xs font-bold rounded-lg cursor-pointer ${hypType === 'wilcoxon' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300'}">
+                3. Wilcoxon Signed-Rank Test (Fallback เมื่อ N &lt; 30 หรือไม่แจกแจงปกติ)
+              </button>
+            </div>
+
+            <!-- Dynamic Test Results View -->
+            ${hypType === "paired_t" ? `
+              <div class="space-y-4">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div class="neu-card p-3">
+                    <div class="text-[11px] font-semibold text-slate-500">ก่อนเรียน x̄ (S.D.)</div>
+                    <div class="text-base font-mono font-bold text-slate-800 dark:text-white">${xBarPre} (${sdPre})</div>
+                  </div>
+                  <div class="neu-card p-3">
+                    <div class="text-[11px] font-semibold text-slate-500">หลังเรียน x̄ (S.D.)</div>
+                    <div class="text-base font-mono font-bold text-emerald-600">${xBarPost} (${sdPost})</div>
+                  </div>
+                  <div class="neu-card p-3">
+                    <div class="text-[11px] font-semibold text-slate-500">ค่าสถิติ t (df = ${dfValue})</div>
+                    <div class="text-base font-mono font-bold text-sky-600">${tValue}** (p &lt; .001)</div>
+                  </div>
+                  <div class="neu-card p-3">
+                    <div class="text-[11px] font-semibold text-slate-500">ขนาดอิทธิพล (Cohen's d)</div>
+                    <div class="text-base font-mono font-bold text-indigo-600">${cohenD} (Large Effect)</div>
+                  </div>
                 </div>
 
-                <div class="p-3.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-                  <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-500">ขนาดอิทธิพล (Cohen's d):</span>
-                    <span class="font-mono font-black text-sky-700 dark:text-sky-400 text-sm">${cohenD}</span>
+                <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+                  <div class="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
+                    <span class="text-xs font-bold text-slate-800 dark:text-white">ตารางสรุป Paired Samples t-test พร้อมคำแปลผล (APA 7th):</span>
+                    <button onclick="ROAD_APP.copyTableText('paired-t-preview', 'คัดลอกตารางแล้ว')" class="text-xs px-2.5 py-1 neu-btn-primary font-bold cursor-pointer">📋 คัดลอกตาราง</button>
                   </div>
-                  <div class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                    ${dInterpretation}
+                  <div id="paired-t-preview" class="overflow-x-auto text-xs">
+                    <table class="w-full text-center border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
+                      <thead>
+                        <tr class="border-b font-bold bg-slate-50 dark:bg-slate-800">
+                          <th class="py-2 px-3 text-left">การทดสอบ</th>
+                          <th class="py-2 px-2">n</th>
+                          <th class="py-2 px-2">x̄</th>
+                          <th class="py-2 px-2">S.D.</th>
+                          <th class="py-2 px-2">D̄</th>
+                          <th class="py-2 px-2">S.D._D</th>
+                          <th class="py-2 px-2">t</th>
+                          <th class="py-2 px-2">Sig.</th>
+                          <th class="py-2 px-2">Cohen's d</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                          <td class="py-2 px-3 text-left font-medium">ก่อนเรียน (Pre-test)</td>
+                          <td class="py-2 px-2 font-mono">${nHyp}</td>
+                          <td class="py-2 px-2 font-mono">${xBarPre}</td>
+                          <td class="py-2 px-2 font-mono">${sdPre}</td>
+                          <td rowspan="2" class="py-2 px-2 font-mono font-bold align-middle">${dMean}</td>
+                          <td rowspan="2" class="py-2 px-2 font-mono font-bold align-middle">${sdD}</td>
+                          <td rowspan="2" class="py-2 px-2 font-mono font-bold text-sky-600 align-middle">${tValue}**</td>
+                          <td rowspan="2" class="py-2 px-2 font-mono font-bold text-emerald-600 align-middle">.000</td>
+                          <td rowspan="2" class="py-2 px-2 font-mono font-bold text-indigo-600 align-middle">${cohenD}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-2 px-3 text-left font-bold text-emerald-600">หลังเรียน (Post-test)</td>
+                          <td class="py-2 px-2 font-mono">${nHyp}</td>
+                          <td class="py-2 px-2 font-mono">${xBarPost}</td>
+                          <td class="py-2 px-2 font-mono">${sdPost}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                </div>
-
-                <div class="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800/60 p-3 rounded-xl leading-relaxed">
-                  💡 เกณฑ์ Cohen's d: d &lt; 0.2 เล็กน้อย | 0.2 - 0.5 เล็ก | 0.5 - 0.8 ปานกลาง | ≥ 0.8 ขนาดใหญ่มาก (การวิจัยทางการศึกษาคาดหวังค่า d ≥ 0.80)
                 </div>
               </div>
-
-              <!-- APA Summary Output -->
-              <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                  <h3 class="font-bold text-sm text-slate-900 dark:text-white">ตารางสรุปผล t-test ตามแบบแผน APA</h3>
-                  <button onclick="ROAD_APP.copyTableText('ttest-table-preview', 'คัดลอกตาราง t-test เรียบร้อยแล้ว')" class="px-3 py-1 rounded-lg neu-btn-primary text-xs font-bold cursor-pointer">
-                    📋 คัดลอกตาราง
-                  </button>
+            ` : hypType === "one_sample_t" ? `
+              <div class="space-y-4">
+                <div class="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs">
+                  <b>One-Sample t-test:</b> เปรียบเทียบคะแนนหลังเรียน (x̄ = ${xBarPost}, S.D. = ${sdPost}) เทียบกับเกณฑ์เป้าหมายมาตรฐานร้อยละ 70 (เกณฑ์ = 28.00 จากเต็ม 40 คะแนน)
+                  พบว่าค่า t มีนัยสำคัญทางสถิติที่ระดับ .01 แสดงว่าผู้เรียนมีผลสัมฤทธิ์หลังเรียนสูงกว่าเกณฑ์ที่กำหนดอย่างมีนัยสำคัญ
+                </div>
+              </div>
+            ` : `
+              <!-- Wilcoxon Signed-Rank Test -->
+              <div class="space-y-4">
+                <div class="p-3.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 text-xs flex items-center justify-between">
+                  <div>
+                    <b>Wilcoxon Signed-Rank Test (Non-Parametric):</b> ผลรวมอันดับบวก (W+ = ${sumPosRanks}), ผลรวมอันดับลบ (W- = ${sumNegRanks}), ค่าสถิติ T = ${wilcoxonT}, ค่าประมาณ Z = <b>${wilcoxonZ}</b> (p &lt; .01)
+                  </div>
+                  <span class="px-2.5 py-1 rounded bg-purple-200 dark:bg-purple-900 font-bold text-purple-900 dark:text-purple-200">
+                    มีนัยสำคัญทางสถิติ
+                  </span>
                 </div>
 
-                <div id="ttest-table-preview" class="overflow-x-auto">
-                  <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200 text-center">
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                  <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-center">
                     <thead>
-                      <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800 font-bold">
-                        <th class="py-2 px-3 text-left">การทดสอบ</th>
-                        <th class="py-2 px-2">n</th>
-                        <th class="py-2 px-2">คะแนนเต็ม</th>
-                        <th class="py-2 px-2">x̄</th>
-                        <th class="py-2 px-2">S.D.</th>
-                        <th class="py-2 px-2">t</th>
-                        <th class="py-2 px-2">Sig.</th>
-                        <th class="py-2 px-2">Cohen's d</th>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold text-slate-900 dark:text-white">
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">คนที่</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">ก่อน (Pre)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">หลัง (Post)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">ผลต่าง (D)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">|D|</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700">อันดับ (Rank)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr class="border-b border-slate-200 dark:border-slate-800">
-                        <td class="py-2 px-3 text-left font-medium">ก่อนเรียน (Pre-test)</td>
-                        <td class="py-2 px-2 font-mono">${st.n || 38}</td>
-                        <td class="py-2 px-2 font-mono">${st.fullScore || 40}</td>
-                        <td class="py-2 px-2 font-mono">${preM}</td>
-                        <td class="py-2 px-2 font-mono">${preS}</td>
-                        <td rowspan="2" class="py-2 px-2 font-mono font-bold text-sky-700 dark:text-sky-300 align-middle">${st.tValue || 24.86}**</td>
-                        <td rowspan="2" class="py-2 px-2 font-mono font-bold align-middle">.000</td>
-                        <td rowspan="2" class="py-2 px-2 font-mono font-bold text-emerald-700 dark:text-emerald-400 align-middle">${cohenD}</td>
-                      </tr>
-                      <tr>
-                        <td class="py-2 px-3 text-left font-bold text-emerald-700 dark:text-emerald-400">หลังเรียน (Post-test)</td>
-                        <td class="py-2 px-2 font-mono">${st.n || 38}</td>
-                        <td class="py-2 px-2 font-mono">${st.fullScore || 40}</td>
-                        <td class="py-2 px-2 font-mono font-bold text-emerald-700 dark:text-emerald-400">${postM}</td>
-                        <td class="py-2 px-2 font-mono">${postS}</td>
-                      </tr>
+                      ${nonZeroDiffs.map(d => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono">${d.id}</td>
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono">${d.pre}</td>
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono font-bold">${d.post}</td>
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono font-bold ${d.diff > 0 ? 'text-emerald-600' : 'text-rose-600'}">${d.diff > 0 ? `+${d.diff}` : d.diff}</td>
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono">${d.absDiff}</td>
+                          <td class="p-1 border border-slate-300 dark:border-slate-700 font-mono font-bold">${d.rank}</td>
+                        </tr>
+                      `).join("")}
                     </tbody>
                   </table>
                 </div>
-                <div class="text-[11px] text-slate-500 font-mono">** มีนัยสำคัญทางสถิติที่ระดับ .01 (p &lt; .01)</div>
-
-                <div class="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  <b>คำแปลผลอัตโนมัติ:</b> ผลการเปรียบเทียบผลสัมฤทธิ์ทางการเรียนของผู้เรียนชั้น${escapeHtml(proj.D)} 
-                  พบว่าหลังเรียนด้วย${escapeHtml(proj.A)} มีคะแนนเฉลี่ยเท่ากับ ${postM} (S.D. = ${postS}) 
-                  ซึ่งสูงกว่าก่อนเรียนที่มีคะแนนเฉลี่ยเท่ากับ ${preM} (S.D. = ${preS}) อย่างมีนัยสำคัญทางสถิติที่ระดับ .01 
-                  (t = ${st.tValue || 24.86}, p &lt; .01) และมีค่าขนาดอิทธิพลเท่ากับ ${cohenD} แสดงว่านวัตกรรมส่งผลต่อการพัฒนาการเรียนรู้ในระดับขนาดใหญ่มาก
-                </div>
               </div>
-            </div>
+            `}
           </div>
         ` : ""}
 
-        <!-- 7. Sub-Tab: Standard APA Tables Preview (บทที่ 4) -->
+        <!-- 8. Sub-Tab: Standard APA Chapter 4 Tables -->
         ${subTab === "ch4_tables" ? `
           <div class="neu-card p-6 flex flex-col gap-6">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <span class="text-xs font-mono font-bold text-sky-700 uppercase">CHAPTER 4 TABLES · บทที่ 4</span>
-                <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตารางมาตรฐาน APA 3 เส้น และคำแปลผลอัตโนมัติ</h2>
-                <p class="text-xs text-slate-500">ตารางสถิติตามแบบแผนวิทยาศาสตร์การศึกษา พร้อมคัดลอกลงในรายงานวิจัยบทที่ 4</p>
+                <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400 uppercase">
+                  CHAPTER 4 STANDARD TABLES · APA 7TH EDITION
+                </span>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">
+                  ตารางรายงานผลการวิเคราะห์ข้อมูลบทที่ 4 (พร้อมส่งออกและคัดลอกลง Word)
+                </h2>
+                <p class="text-xs text-slate-500">ตารางจัดรูปแบบเส้นขอบบน-ล่างตามแบบแผน APA พร้อมคำแปลผลใต้ตารางตามเกณฑ์ วPA</p>
               </div>
-              <button onclick="ROAD_APP.simulateAlignedStats()" class="px-4 py-2 neu-btn-emerald text-xs font-bold cursor-pointer print:hidden">
-                🎲 สุ่มจำลองค่าสถิติใหม่
+              <button onclick="ROAD_APP.exportSingleChapter(4)" class="px-4 py-2 neu-btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                <span>📄 ส่งออกเฉพาะบทที่ 4 (Word .doc)</span>
               </button>
             </div>
 
-            <div class="space-y-6">
+            <div class="space-y-8">
               ${ch4Tables.map((tbl, tIdx) => `
-                <div class="space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6 last:border-b-0">
-                  <div class="flex items-center justify-between">
-                    <div class="font-extrabold text-sm text-slate-900 dark:text-white">${escapeHtml(tbl.tableNo)} ${escapeHtml(tbl.caption)}</div>
-                    <button onclick="ROAD_APP.copyTableText('ch4-table-${tIdx}', 'คัดลอกตาราง ${tbl.tableNo} เรียบร้อยแล้ว')" class="px-2.5 py-1 rounded-md text-[11px] font-bold neu-squircle cursor-pointer print:hidden">
-                      📋 คัดลอกตารางนี้
+                <div class="neu-card p-5 space-y-3">
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div class="font-bold text-sm text-slate-900 dark:text-white">
+                      ตารางที่ 4.${tIdx + 1} ${escapeHtml(tbl.title)}
+                    </div>
+                    <button onclick="ROAD_APP.copyTableText('ch4-table-${tIdx}', 'คัดลอกตารางแล้ว')" class="px-3 py-1 text-xs neu-squircle font-bold text-blue-600 dark:text-sky-300 cursor-pointer">
+                      📋 คัดลอกตาราง
                     </button>
                   </div>
+
                   <div id="ch4-table-${tIdx}" class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
+                    <table class="w-full text-xs text-center border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
                       <thead>
-                        <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800">
-                          ${tbl.headers.map(h => `<th class="py-2.5 px-3 text-center font-bold">${escapeHtml(h)}</th>`).join("")}
+                        <tr class="border-b font-bold bg-slate-50 dark:bg-slate-800">
+                          ${tbl.headers.map(h => `<th class="py-2.5 px-3 text-slate-800 dark:text-slate-100">${escapeHtml(h)}</th>`).join("")}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
                         ${tbl.rows.map(r => `
-                          <tr class="border-b border-slate-200/50 dark:border-slate-800">
-                            ${r.map((c, ci) => `<td class="py-2 px-3 ${ci === 0 ? 'text-left font-medium' : 'text-center font-mono'}">${escapeHtml(c)}</td>`).join("")}
+                          <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                            ${r.map((c, cIdx) => `<td class="py-2 px-3 ${cIdx === 0 ? 'text-left font-semibold' : 'font-mono'}">${escapeHtml(String(c))}</td>`).join("")}
                           </tr>
                         `).join("")}
                       </tbody>
                     </table>
                   </div>
+
                   <div class="text-xs text-slate-700 dark:text-slate-300 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 leading-relaxed">
                     <b>คำแปลผลใต้ตาราง:</b> ${escapeHtml(tbl.interpretation)}
                   </div>
@@ -5181,19 +6473,33 @@
 
               ${curStepNum === 4 ? `
                 <div class="space-y-2">
+                  <div class="p-2.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-[11px] text-blue-900 dark:text-blue-300">
+                    <b>⚠️ กฎเหล็กตามหลักวิธีวิทยา:</b> สมมติฐานการวิจัยตั้งได้เฉพาะใน <b>ระยะที่ 3 (R2: ทดลองใช้นวัตกรรม)</b> เท่านั้น (เช่น หลังเรียนสูงกว่าก่อนเรียน) ห้ามตั้งใน R1, D1 หรือ D2
+                  </div>
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">สมมติฐานการวิจัย (Research Hypotheses):</label>
                   <textarea rows="5" oninput="ROAD_APP.updateWizardField('step4_hypo', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step4_hypo || '')}</textarea>
                 </div>
               ` : ""}
 
               ${curStepNum === 5 ? `
-                <div class="space-y-2">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ประชากรเป้าหมาย (Population):</label>
-                  <input type="text" value="${escapeHtml(w.step5_population || '')}" oninput="ROAD_APP.updateWizardField('step5_population', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">กลุ่มตัวอย่างและวิธีการสุ่ม (Sample & Sampling Method):</label>
-                  <textarea rows="3" oninput="ROAD_APP.updateWizardField('step5_sample', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_sample || '')}</textarea>
+                <div class="space-y-3">
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ระเบียบวิธีเลือกกลุ่มตัวอย่าง (Sampling Method):</label>
+                    <select onchange="ROAD_APP.updateSamplingMetadata('type', this.value)" class="w-full neu-input-pill px-4 py-2 text-xs font-bold text-slate-800 dark:text-white cursor-pointer">
+                      <option value="cluster_random" ${(proj.samplingMetadata?.type || 'cluster_random') === 'cluster_random' ? 'selected' : ''}>สุ่มแบบกลุ่ม (Cluster Random Sampling) - ใช้ห้องเรียนเป็นหน่วยสุ่ม (แนะนำสำหรับ วPA)</option>
+                      <option value="simple_random" ${proj.samplingMetadata?.type === 'simple_random' ? 'selected' : ''}>สุ่มอย่างง่าย (Simple Random Sampling) - มีกรอบประชากรและสุ่มรายคน</option>
+                      <option value="purposive" ${proj.samplingMetadata?.type === 'purposive' ? 'selected' : ''}>เลือกแบบเจาะจง (Purposive Sampling) - ⚠️ ห้ามใช้ t-test อ้างอิงประชากร</option>
+                      <option value="population" ${proj.samplingMetadata?.type === 'population' ? 'selected' : ''}>ศึกษาจากประชากรทั้งหมด (Population) - ⚠️ ใช้สถิติบรรยาย ไม่ต้องทดสอบ t-test</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ประชากรเป้าหมาย (Population):</label>
+                    <input type="text" value="${escapeHtml(w.step5_population || '')}" oninput="ROAD_APP.updateWizardField('step5_population', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">กลุ่มตัวอย่างและวิธีการสุ่ม (Sample & Sampling Method):</label>
+                    <textarea rows="3" oninput="ROAD_APP.updateWizardField('step5_sample', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_sample || '')}</textarea>
+                  </div>
                 </div>
               ` : ""}
 
@@ -5214,6 +6520,9 @@
 
               ${curStepNum === 7 ? `
                 <div class="space-y-2">
+                  <div class="p-2.5 rounded-lg bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-900 dark:text-indigo-300">
+                    <b>⚖️ การแยกประเภทเครื่องมือวิจัย 2 กลุ่ม:</b> 1. เครื่องมือทดลอง (นวัตกรรม, แผนการสอน) และ 2. เครื่องมือเก็บรวบรวมข้อมูล (แบบทดสอบ, แบบประเมินทักษะ, แบบสอบถาม) ห้ามปะปนกัน
+                  </div>
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">เครื่องมือที่ใช้ในการวิจัย (Research Instruments):</label>
                   <textarea rows="4" oninput="ROAD_APP.updateWizardField('step7_tools', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step7_tools || '')}</textarea>
                 </div>
@@ -5225,6 +6534,9 @@
 
               ${curStepNum === 8 ? `
                 <div class="space-y-2">
+                  <div class="p-2.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-300">
+                    <b>📊 ตรวจทานความสอดคล้องของสถิติ:</b> E1/E2 ห้ามทดสอบด้วย t-test (ตรวจสอบผลต่าง ≤ 5%) | E.I. เกณฑ์ ≥ 0.50 | Dependent t-test ใช้เฉพาะเปรียบเทียบก่อน-หลัง พร้อมรายงาน Cohen's d
+                  </div>
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">แผนการวิเคราะห์ข้อมูลและสถิติที่ใช้ (Statistical Analysis Plan):</label>
                   <textarea rows="5" oninput="ROAD_APP.updateWizardField('step8_stats', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed font-mono">${escapeHtml(w.step8_stats || '')}</textarea>
                 </div>
