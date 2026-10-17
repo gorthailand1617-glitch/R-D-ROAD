@@ -4,6 +4,7 @@
   "description": "ROAD Next-Gen: Report Outline Assistant for Development & AI Research Studio",
   "main": "server.js",
   "scripts": {
+    "build": "echo 'Static build complete'",
     "start": "node server.js"
   }
 }
