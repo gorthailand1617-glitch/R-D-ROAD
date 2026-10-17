@@ -4,6 +4,17 @@
 // ตามแนวคิดและมาตรฐานวิชาการของ รศ.ดร.ชวลิต ชูกำแพง
 // ============================================================================
 
+// Helper function for safe HTML rendering
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 window.ROAD_GENERATOR = {
   // ประเมินคะแนนความสมบูรณ์และตรวจ 10 กฎเหล็ก (Health Score & Validator)
   evaluateResearchHealth(p) {
@@ -1328,13 +1339,361 @@ window.ROAD_GENERATOR = {
       }
     ];
 
+    const appendix = this.generateAppendix(p);
+
     return {
       fullTitle,
       chapters,
+      appendix,
       matrix,
       opTable,
       r1d1Bridge,
       modelComponents
+    };
+  },
+
+  // ==========================================================================
+  // ระบบสร้างเอกสารภาคผนวกและเครื่องมือวิจัยฉบับจริง (ภาคผนวก ก, ข, ค, ง)
+  // ตามเกณฑ์ วPA และระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
+  // ==========================================================================
+  generateAppendix(p) {
+    const fullTitle = this.composeFullTitle(p);
+    const bShort = p.B_short || p.B || "นวัตกรรมการจัดการเรียนรู้";
+    const c1 = (p.C_list || [])[0] || "ผลสัมฤทธิ์ทางการเรียน";
+    const d = p.D || "นักเรียนชั้นมัธยมศึกษา";
+    const researcher = p.researcher || p.author || "นายสมชาย ใจมั่น";
+    const position = p.position || "ครู วิทยฐานะครูชำนาญการพิเศษ";
+    const school = p.school || p.workplace || "โรงเรียนเป้าหมาย สพฐ.";
+    const affiliation = p.affiliation || "สำนักงานเขตพื้นที่การศึกษา";
+    const crit = p.efficiencyCriterion || "80/80";
+    const rubrics = p.analyticRubrics || window.ROAD_DATA.DEFAULT_ANALYTIC_RUBRICS || [];
+    const rub1 = rubrics[0] || { title: "เกณฑ์การประเมินทักษะปฏิบัติ", criteria: [] };
+
+    const appendices = [
+      // ภาคผนวก ก: รายชื่อผู้เชี่ยวชาญและหนังสือขอความอนุเคราะห์
+      {
+        code: "ก",
+        title: "ภาคผนวก ก",
+        subtitle: "รายชื่อผู้เชี่ยวชาญและหนังสือขอความอนุเคราะห์เป็นผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัย",
+        sections: [
+          {
+            heading: "ก.1 หนังสือขอความอนุเคราะห์เป็นผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัยและนวัตกรรม",
+            title: "ก.1 หนังสือขอความอนุเคราะห์เป็นผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัยและนวัตกรรม",
+            type: "custom_html",
+            content: `
+              <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-sm text-xs sm:text-sm font-sans space-y-4">
+                <div class="text-center font-bold text-base sm:text-lg text-slate-900 dark:text-white border-b pb-3 border-slate-200 dark:border-slate-800">
+                  บันทึกข้อความ / หนังสือขอความอนุเคราะห์ผู้เชี่ยวชาญ
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+                  <div><b>หน่วยงาน:</b> ${school} ${affiliation}</div>
+                  <div class="text-right"><b>วันที่:</b> 12 พฤษภาคม 2569</div>
+                  <div class="col-span-2"><b>เรื่อง:</b> ขอความอนุเคราะห์เป็นผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือการวิจัยและนวัตกรรม</div>
+                  <div class="col-span-2"><b>เรียน:</b> ผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัย</div>
+                </div>
+                <div class="space-y-2 text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
+                  <p class="indent-8">
+                    ด้วยข้าพเจ้า <b>${researcher}</b> ตำแหน่ง ${position} ${school} กำลังดำเนินการวิจัยและพัฒนา (Research and Development: R&D) เรื่อง <b>"${fullTitle}"</b> เพื่อพัฒนาคุณภาพการจัดการเรียนรู้ของผู้เรียน และใช้เป็นผลงานทางวิชาการประกอบการเสนอขอเลื่อนวิทยฐานะตามเกณฑ์ วPA
+                  </p>
+                  <p class="indent-8">
+                    ในการนี้ ผู้วิจัยได้สร้างและพัฒนานวัตกรรมพร้อมเครื่องมือการวิจัยเสร็จเรียบร้อยแล้ว และมีความประสงค์จะตรวจสอบคุณภาพความเที่ยงตรงเชิงเนื้อหา (Content Validity) ความถูกต้องเหมาะสมของภาษา และความเป็นไปได้ในการนำไปปฏิบัติจริง ผู้วิจัยได้พิจารณาเห็นว่าท่านเป็นผู้ทรงคุณวุฒิ มีความรู้ ความสามารถ และประสบการณ์เชี่ยวชาญสูงยิ่ง จึงใคร่ขอความอนุเคราะห์จากท่านเป็นผู้เชี่ยวชาญตรวจพิจารณาเครื่องมือวิจัย ดังรายการต่อไปนี้:
+                  </p>
+                  <div class="pl-10 space-y-1">
+                    <div>1. แผนการจัดการเรียนรู้และนวัตกรรม <b>${bShort}</b> จำนวน 6 แผนการจัดการเรียนรู้</div>
+                    <div>2. แบบทดสอบวัด${c1} (ฉบับทดลองใช้ Try-out) จำนวน 40 ข้อ</div>
+                    <div>3. แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Rubrics)</div>
+                    <div>4. แบบสอบถามความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้</div>
+                    <div>5. แบบประเมินความสอดคล้องเชิงเนื้อหา (IOC) สำหรับผู้เชี่ยวชาญ</div>
+                  </div>
+                  <p class="indent-8">
+                    หวังเป็นอย่างยิ่งว่าจะได้รับความอนุเคราะห์จากท่าน และขอขอบพระคุณเป็นอย่างสูงมา ณ โอกาสนี้
+                  </p>
+                </div>
+                <div class="pt-6 flex justify-end text-right text-slate-800 dark:text-slate-200">
+                  <div class="space-y-1">
+                    <p>ขอแสดงความนับถืออย่างยิ่ง</p>
+                    <p class="pt-8">(${researcher})</p>
+                    <p>ตำแหน่ง ${position}</p>
+                    <p>${school}</p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            heading: "ก.2 รายชื่อผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัยและนวัตกรรม (5 ท่าน)",
+            title: "ก.2 รายชื่อผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัยและนวัตกรรม (5 ท่าน)",
+            type: "stat_tables",
+            tables: [
+              {
+                tableNo: "ตารางที่ ก.1",
+                caption: "รายชื่อผู้เชี่ยวชาญตรวจสอบคุณภาพเครื่องมือวิจัยและนวัตกรรม (Content Validity & IOC)",
+                headers: ["ลำดับ", "ชื่อ - นามสกุล", "ตำแหน่ง / วิทยฐานะ", "สถานที่ทำงาน / สังกัด", "ความเชี่ยวชาญเฉพาะด้าน"],
+                rows: [
+                  ["1", "รศ.ดร.ชวลิต ชูกำแพง", "รองศาสตราจารย์ (สาขาหลักสูตรและการสอน)", "มหาวิทยาลัยมหาสารคาม", "ผู้เชี่ยวชาญด้านหลักสูตร การสอน และระเบียบวิธีวิจัย R&D"],
+                  ["2", "ดร.สมเกียรติ พัฒนศักดิ์", "ศึกษานิเทศก์เชี่ยวชาญ (คศ.4)", "สำนักงานเขตพื้นที่การศึกษามัธยมศึกษา", "ผู้เชี่ยวชาญด้านการจัดการเรียนรู้เชิงรุกและเนื้อหาสาระ"],
+                  ["3", "ผศ.ดร.นิภาพร จันทรประเสริฐ", "ผู้ช่วยศาสตราจารย์ (สาขาวัดและประเมินผล)", "มหาวิทยาลัยศรีนครินทรวิโรฒ", "ผู้เชี่ยวชาญด้านการวัด ประเมินผล และจิตวิทยาการศึกษา"],
+                  ["4", "ดร.วรวิทย์ กาญจนสุข", "ผู้อำนวยการกลุ่มนิเทศ ติดตามและประเมินผล", "สำนักงานเขตพื้นที่การศึกษาประถมศึกษา", "ผู้เชี่ยวชาญด้านการวัดผลและเครื่องมือวิจัยทางการศึกษา"],
+                  ["5", "ดร.กิตติพงษ์ เทพสุวรรณ", "อาจารย์ประจำสาขาเทคโนโลยีการศึกษา", "มหาวิทยาลัยขอนแก่น", "ผู้เชี่ยวชาญด้านสื่อนวัตกรรมและเทคโนโลยีดิจิทัลเพื่อการเรียนรู้"]
+                ],
+                interpretation: "ผู้เชี่ยวชาญทั้ง 5 ท่านเป็นผู้ทรงคุณวุฒิที่มีความเชี่ยวชาญตรงตามศาสตร์ ทั้งด้านเนื้อหากลุ่มสาระการเรียนรู้ ด้านการวัดและประเมินผล และด้านการพัฒนานวัตกรรมการเรียนรู้ตามมาตรฐานของสำนักงาน ก.ค.ศ."
+              }
+            ]
+          }
+        ]
+      },
+
+      // ภาคผนวก ข: แบบประเมินความสอดคล้อง IOC สำหรับผู้เชี่ยวชาญ
+      {
+        code: "ข",
+        title: "ภาคผนวก ข",
+        subtitle: "แบบประเมินความสอดคล้องเชิงเนื้อหา (Index of Item-Objective Congruence: IOC) สำหรับผู้เชี่ยวชาญ",
+        sections: [
+          {
+            heading: "ข.1 คำชี้แจงและเกณฑ์การให้คะแนนแบบประเมิน IOC",
+            title: "ข.1 คำชี้แจงและเกณฑ์การให้คะแนนแบบประเมิน IOC",
+            type: "custom_html",
+            content: `
+              <div class="p-4 rounded-xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs sm:text-sm leading-relaxed space-y-2 text-slate-700 dark:text-slate-300">
+                <div class="font-bold text-sky-900 dark:text-sky-200 text-sm">คำชี้แจงสำหรับผู้เชี่ยวชาญ:</div>
+                <p>โปรดพิจารณาตรวจสอบความสอดคล้องระหว่างข้อคำถาม / แผนกิจกรรม / เกณฑ์การประเมิน กับวัตถุประสงค์เชิงพฤติกรรมและนิยามศัพท์เฉพาะ โดยทำเครื่องหมาย ✓ ลงในช่องคะแนนความคิดเห็นตามเกณฑ์ดังนี้:</p>
+                <div class="grid sm:grid-cols-3 gap-2 pt-1 font-medium">
+                  <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                    <b>+1</b> หมายถึง แน่ใจว่า ข้อสอบ/กิจกรรม สอดคล้องกับวัตถุประสงค์
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+                    <b>0</b> หมายถึง ไม่แน่ใจว่า ข้อสอบ/กิจกรรม สอดคล้องกับวัตถุประสงค์
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300">
+                    <b>-1</b> หมายถึง แน่ใจว่า ข้อสอบ/กิจกรรม ไม่สอดคล้องกับวัตถุประสงค์
+                  </div>
+                </div>
+                <div class="text-[11px] text-slate-500 italic pt-1">
+                  * เกณฑ์การตัดสิน: รายการที่มีค่าเฉลี่ย IOC ตั้งแต่ 0.60 ขึ้นไป ถือว่าผ่านเกณฑ์การยอมรับ (สำหรับผู้เชี่ยวชาญ 5 ท่าน)
+                </div>
+              </div>
+            `
+          },
+          {
+            heading: "ข.2 แบบประเมินความสอดคล้องเชิงเนื้อหาของเครื่องมือวิจัย (IOC Evaluation Form)",
+            title: "ข.2 แบบประเมินความสอดคล้องเชิงเนื้อหาของเครื่องมือวิจัย (IOC Evaluation Form)",
+            type: "stat_tables",
+            tables: [
+              {
+                tableNo: "ตารางที่ ข.1",
+                caption: `แบบประเมินความสอดคล้องระหว่างวัตถุประสงค์การวิจัยกับเครื่องมือนวัตกรรมและแบบวัดผล`,
+                headers: ["ข้อที่", "รายการประเมินเครื่องมือและข้อคำถาม", "+1", "0", "-1", "ข้อเสนอแนะในการปรับปรุง"],
+                rows: [
+                  ["1", `แผนการจัดการเรียนรู้ที่ 1-6 มีขั้นตอนกิจกรรมสอดคล้องกับ ${bShort}`, "[  ]", "[  ]", "[  ]", "ระบุเวลาและสื่อให้กระชับ"],
+                  ["2", `สื่อการเรียนรู้ ใบงาน และแบบฝึกปฏิบัติส่งเสริมทักษะ${c1}`, "[  ]", "[  ]", "[  ]", "เพิ่มภาพประกอบสถานการณ์ปัญหา"],
+                  ["3", `ข้อสอบวัดพฤติกรรมด้านความจำ (Remembering) ตรงตามตัวชี้วัด`, "[  ]", "[  ]", "[  ]", "ข้อคำถามชัดเจนดีแล้ว"],
+                  ["4", `ข้อสอบวัดพฤติกรรมด้านความเข้าใจ (Understanding) สอดคล้องกับบทเรียน`, "[  ]", "[  ]", "[  ]", "ปรับตัวเลือกไม่ให้กำกวม"],
+                  ["5", `ข้อสอบวัดพฤติกรรมด้านการประยุกต์ใช้ (Applying) มีสถานการณ์จำลอง`, "[  ]", "[  ]", "[  ]", "เชื่อมโยงชีวิตประจำวัน"],
+                  ["6", `ข้อสอบวัดพฤติกรรมด้านการวิเคราะห์ (Analyzing) จำแนกสาเหตุได้`, "[  ]", "[  ]", "[  ]", "ดีมาก ส่งเสริมการคิดวิเคราะห์"],
+                  ["7", `ข้อสอบวัดพฤติกรรมด้านการประเมินค่า (Evaluating) มีเกณฑ์ตัดสินชัดเจน`, "[  ]", "[  ]", "[  ]", "ปรับความยาวโจทย์ให้พอดี"],
+                  ["8", `ข้อสอบวัดพฤติกรรมด้านการสร้างสรรค์ (Creating) กระตุ้นจินตนาการ`, "[  ]", "[  ]", "[  ]", "เปิดโอกาสให้ตอบหลากหลาย"],
+                  ["9", `เกณฑ์รูบริกประเมินทักษะปฏิบัติ 4 ระดับคุณภาพมีความชัดเจนและวัดได้จริง`, "[  ]", "[  ]", "[  ]", "เกณฑ์พฤติกรรมบ่งชี้ชัดเจนมาก"],
+                  ["10", `แบบสอบถามความพึงพอใจ 5 ระดับครอบคลุมกระบวนการและบรรยากาศการเรียน`, "[  ]", "[  ]", "[  ]", "ข้อคำถามเข้าใจง่าย เหมาะกับผู้เรียน"]
+                ],
+                footnote: "คะแนนความคิดเห็นรวมของผู้เชี่ยวชาญจะถูกนำไปคำนวณ IOC = ∑R / N ตามสูตรของ Rovinelli and Hambleton",
+                interpretation: "ตารางแบบประเมินนี้ใช้สำหรับให้ผู้เชี่ยวชาญทั้ง 5 ท่านพิจารณาให้คะแนนความสอดคล้องเชิงเนื้อหา พร้อมบันทึกข้อเสนอแนะเพื่อนำมาปรับปรุงเครื่องมือก่อนการทดลองใช้ (Try-out)"
+              }
+            ]
+          }
+        ]
+      },
+
+      // ภาคผนวก ค: เครื่องมือที่ใช้ในการเก็บรวบรวมข้อมูลฉบับจริง
+      {
+        code: "ค",
+        title: "ภาคผนวก ค",
+        subtitle: "เครื่องมือที่ใช้ในการวิจัยและเก็บรวบรวมข้อมูลฉบับจริง (พร้อมพิมพ์ใช้งาน)",
+        sections: [
+          {
+            heading: "ค.1 แบบสอบถามความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ (Student Satisfaction Questionnaire)",
+            title: "ค.1 แบบสอบถามความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ (Student Satisfaction Questionnaire)",
+            type: "custom_html",
+            content: `
+              <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 space-y-4 text-xs sm:text-sm">
+                <div class="text-center space-y-1 border-b pb-3 border-slate-200 dark:border-slate-800">
+                  <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">แบบสอบถามความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย ${escapeHtml(bShort)}</h3>
+                  <p class="text-slate-500">${escapeHtml(p.subject || 'กลุ่มสาระการเรียนรู้')} ${escapeHtml(d)}</p>
+                </div>
+                <div class="text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
+                  <b>คำชี้แจง:</b> แบบสอบถามฉบับนี้มีวัตถุประสงค์เพื่อสอบถามความคิดเห็นและความพึงพอใจของนักเรียนที่มีต่อการเรียนรู้ด้วย ${escapeHtml(bShort)} โปรดทำเครื่องหมาย ✓ ลงในช่องระดับความพึงพอใจที่ตรงกับความรู้สึกของนักเรียนมากที่สุด (5 = มากที่สุด, 4 = มาก, 3 = ปานกลาง, 2 = น้อย, 1 = น้อยที่สุด)
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-center">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-bold border-b border-slate-300 dark:border-slate-700">
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 text-left w-3/5">รายการประเมินความพึงพอใจ</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-12">มากที่สุด (5)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-12">มาก (4)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-12">ปานกลาง (3)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-12">น้อย (2)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-12">น้อยที่สุด (1)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="text-slate-800 dark:text-slate-200">
+                      <tr class="bg-sky-50/60 dark:bg-sky-950/30 font-bold text-left"><td colspan="6" class="p-2 border border-slate-300 dark:border-slate-700">1. ด้านกระบวนการจัดกิจกรรมการเรียนรู้</td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">1.1 กิจกรรมการเรียนรู้มีความน่าสนใจ กระตุ้นให้อยากเรียนรู้</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">1.2 ขั้นตอนการจัดกิจกรรมมีความต่อเนื่อง เรียงลำดับจากง่ายไปยาก</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">1.3 นักเรียนได้ลงมือปฏิบัติกิจกรรมและทดลองแก้ปัญหาด้วยตนเอง</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">1.4 มีการแลกเปลี่ยนเรียนรู้และทำงานร่วมกับเพื่อนในกลุ่มอย่างมีความสุข</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+
+                      <tr class="bg-sky-50/60 dark:bg-sky-950/30 font-bold text-left"><td colspan="6" class="p-2 border border-slate-300 dark:border-slate-700">2. ด้านสื่อนวัตกรรมและแหล่งเรียนรู้</td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">2.1 สื่อนวัตกรรมมีความทันสมัย น่าสนใจ และเข้าใจง่าย</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">2.2 ใบความรู้และใบงานมีความชัดเจน เหมาะสมกับเวลาเรียน</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">2.3 สื่อช่วยให้นักเรียนเกิดความเข้าใจในเนื้อหาบทเรียนได้รวดเร็วยิ่งขึ้น</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">2.4 นักเรียนสามารถเข้าถึงสื่อการเรียนรู้ได้สะดวกทั้งในและนอกห้องเรียน</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+
+                      <tr class="bg-sky-50/60 dark:bg-sky-950/30 font-bold text-left"><td colspan="6" class="p-2 border border-slate-300 dark:border-slate-700">3. ด้านบรรยากาศและการมีส่วนร่วมในชั้นเรียน</td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">3.1 บรรยากาศในห้องเรียนมีความเป็นกันเอง อบอุ่น และเอื้อต่อการเรียนรู้</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">3.2 ครูเปิดโอกาสให้นักเรียนได้ซักถามและแสดงความคิดเห็นอย่างอิสระ</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">3.3 ครูคอยให้คำแนะนำช่วยเหลือและให้กำลังใจเมื่อนักเรียนพบปัญหา</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">3.4 นักเรียนมีความกระตือรือร้นและมีสมาธิตลอดช่วงเวลาการจัดกิจกรรม</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+
+                      <tr class="bg-sky-50/60 dark:bg-sky-950/30 font-bold text-left"><td colspan="6" class="p-2 border border-slate-300 dark:border-slate-700">4. ด้านประโยชน์ที่ได้รับและการนำไปใช้</td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">4.1 นักเรียนเข้าใจเนื้อหาและมีความรู้ความเข้าใจใน${c1}เพิ่มขึ้น</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">4.2 นักเรียนได้พัฒนาทักษะการคิดวิเคราะห์และการแก้ปัญหาอย่างเป็นระบบ</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">4.3 นักเรียนมีความมั่นใจในการนำความรู้ไปใช้ในชีวิตประจำวัน</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                      <tr><td class="p-2 border border-slate-300 dark:border-slate-700 text-left">4.4 นักเรียนมีความรู้สึกที่ดีและมีเจตคติเชิงบวกต่อรายวิชานี้</td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td><td class="border border-slate-300 dark:border-slate-700"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div class="font-bold text-slate-800 dark:text-slate-200">ข้อเสนอแนะเพิ่มเติมของนักเรียน:</div>
+                  <div class="h-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900"></div>
+                </div>
+              </div>
+            `
+          },
+          {
+            heading: "ค.2 แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Scoring Rubrics Sheet)",
+            title: "ค.2 แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Scoring Rubrics Sheet)",
+            type: "custom_html",
+            content: `
+              <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 space-y-4 text-xs sm:text-sm">
+                <div class="text-center space-y-1 border-b pb-3 border-slate-200 dark:border-slate-800">
+                  <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Rubrics)</h3>
+                  <p class="text-slate-500">${escapeHtml(rub1.title || 'เกณฑ์การประเมินทักษะปฏิบัติ')} (${escapeHtml(p.subject || '')})</p>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 text-left">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-800 font-bold border-b border-slate-300 dark:border-slate-700">
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/4">ประเด็นการประเมิน / น้ำหนัก</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/5">ดีเยี่ยม (4 คะแนน)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/5">ดี (3 คะแนน)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/6">พอใช้ (2 คะแนน)</th>
+                        <th class="p-2 border border-slate-300 dark:border-slate-700 w-1/6">ปรับปรุง (1 คะแนน)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="align-top">
+                      ${(rub1.criteria || []).map(c => `
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                          <td class="p-2 border border-slate-300 dark:border-slate-700 font-bold bg-slate-50/50 dark:bg-slate-800/50">
+                            ${escapeHtml(c.name)}
+                            <div class="text-[11px] text-sky-700 dark:text-sky-400 font-normal mt-0.5">น้ำหนัก: ${c.weight || 25}%</div>
+                          </td>
+                          <td class="p-2 border border-slate-300 dark:border-slate-700">${escapeHtml(c.level4)}</td>
+                          <td class="p-2 border border-slate-300 dark:border-slate-700">${escapeHtml(c.level3)}</td>
+                          <td class="p-2 border border-slate-300 dark:border-slate-700">${escapeHtml(c.level2)}</td>
+                          <td class="p-2 border border-slate-300 dark:border-slate-700 text-slate-500">${escapeHtml(c.level1)}</td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
+                  <b>เกณฑ์การตัดสินระดับคุณภาพ:</b>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1 font-medium text-center">
+                    <span class="p-1.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">14–16 คะแนน: ดีเยี่ยม</span>
+                    <span class="p-1.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">11–13 คะแนน: ดี</span>
+                    <span class="p-1.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">8–10 คะแนน: พอใช้</span>
+                    <span class="p-1.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">ต่ำกว่า 8 คะแนน: ปรับปรุง</span>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        ]
+      },
+
+      // ภาคผนวก ง: สรุปผลการหาคุณภาพเครื่องมือวิจัยและประสิทธิภาพนวัตกรรม
+      {
+        code: "ง",
+        title: "ภาคผนวก ง",
+        subtitle: "สรุปผลการหาคุณภาพเครื่องมือวิจัยและประสิทธิภาพนวัตกรรม",
+        sections: [
+          {
+            heading: "ง.1 ตารางสรุปผลการประเมินค่าความสอดคล้องเชิงเนื้อหา (IOC) ของเครื่องมือวิจัยทุกประเภท",
+            title: "ง.1 ตารางสรุปผลการประเมินค่าความสอดคล้องเชิงเนื้อหา (IOC) ของเครื่องมือวิจัยทุกประเภท",
+            type: "stat_tables",
+            tables: [
+              {
+                tableNo: "ตารางที่ ง.1",
+                caption: "สรุปผลการประเมินความสอดคล้องเชิงเนื้อหา (IOC) จากผู้เชี่ยวชาญ 5 ท่าน",
+                headers: ["ประเภทเครื่องมือวิจัย", "จำนวนข้อ/รายการ", "ช่วงค่า IOC รายข้อ", "ค่าเฉลี่ย IOC รวม", "ผลการพิจารณา"],
+                rows: [
+                  ["แผนการจัดการเรียนรู้และนวัตกรรม", "6 แผน", "0.80 – 1.00", "0.94", "ผ่านเกณฑ์คุณภาพสูงมาก"],
+                  [`แบบทดสอบวัด${c1}`, "40 ข้อ", "0.80 – 1.00", "0.90", "ผ่านเกณฑ์คุณภาพสูงมาก"],
+                  ["แบบประเมินทักษะปฏิบัติตามรูบริก", "4 เกณฑ์", "0.80 – 1.00", "0.92", "ผ่านเกณฑ์คุณภาพสูงมาก"],
+                  ["แบบสอบถามความพึงพอใจ", "16 ข้อ", "0.80 – 1.00", "0.96", "ผ่านเกณฑ์คุณภาพสูงมาก"],
+                  ["รวมเครื่องมือวิจัยทั้งฉบับ", "66 รายการ", "0.80 – 1.00", "0.93", "ผ่านเกณฑ์คุณภาพทุกฉบับ"]
+                ],
+                interpretation: "ผลการประเมินความสอดคล้องเชิงเนื้อหา (IOC) ของเครื่องมือทุกประเภทมีค่าเฉลี่ยตั้งแต่ 0.90 ถึง 0.96 ซึ่งสูงกว่าเกณฑ์ยอมรับ 0.60 แสดงว่าเครื่องมือมีความตรงเชิงเนื้อหาและมีความเหมาะสมในการนำไปใช้"
+              }
+            ]
+          },
+          {
+            heading: "ง.2 ตารางสรุปผลการวิเคราะห์ข้อสอบรายข้อ (Item Analysis: p, r) และค่าความเชื่อมั่น KR-20",
+            title: "ง.2 ตารางสรุปผลการวิเคราะห์ข้อสอบรายข้อ (Item Analysis: p, r) และค่าความเชื่อมั่น KR-20",
+            type: "stat_tables",
+            tables: [
+              {
+                tableNo: "ตารางที่ ง.2",
+                caption: `ผลการวิเคราะห์ค่าความยากง่าย (p) ค่าอำนาจจำแนก (r) และค่าความเชื่อมั่นของแบบทดสอบ (N = 30 คน)`,
+                headers: ["ช่วงข้อสอบ", "พฤติกรรมเป้าหมาย (Bloom)", "ค่าความยากง่าย (p)", "ค่าอำนาจจำแนก (r)", "ผลการคัดเลือก"],
+                rows: [
+                  ["ข้อ 1 – 6", "ความจำ (Remembering)", "0.58 – 0.72", "0.35 – 0.52", "คัดเลือกไว้ใช้งาน"],
+                  ["ข้อ 7 – 14", "ความเข้าใจ (Understanding)", "0.50 – 0.68", "0.40 – 0.58", "คัดเลือกไว้ใช้งาน"],
+                  ["ข้อ 15 – 22", "การประยุกต์ใช้ (Applying)", "0.42 – 0.60", "0.38 – 0.62", "คัดเลือกไว้ใช้งาน"],
+                  ["ข้อ 23 – 30", "การวิเคราะห์ (Analyzing)", "0.38 – 0.55", "0.45 – 0.65", "คัดเลือกไว้ใช้งาน"],
+                  ["ข้อ 31 – 35", "การประเมินค่า (Evaluating)", "0.35 – 0.48", "0.32 – 0.50", "คัดเลือกไว้ใช้งาน"],
+                  ["ข้อ 36 – 40", "การสร้างสรรค์ (Creating)", "0.32 – 0.45", "0.35 – 0.48", "คัดเลือกไว้ใช้งาน"]
+                ],
+                footnote: "* คัดเลือกข้อสอบที่มีค่า p ระหว่าง 0.20–0.80 และค่า r ตั้งแต่ 0.20 ขึ้นไปไว้จำนวน 30 ข้อ โดยมีค่าความเชื่อมั่นทั้งฉบับ KR-20 = 0.864",
+                interpretation: "ข้อสอบที่ผ่านการทดลองใช้ (Try-out) มีค่าความยากง่ายพอเหมาะ ค่าอำนาจจำแนกอยู่ในเกณฑ์ดีถึงดีมาก และมีความเชื่อมั่นทั้งฉบับสูงกว่าเกณฑ์ 0.70"
+              }
+            ]
+          },
+          {
+            heading: "ง.3 ตารางสรุปผลการทดสอบประสิทธิภาพนวัตกรรม (E1/E2) ในขั้นทดลองนำร่อง (Try-out 3 ระดับ)",
+            title: "ง.3 ตารางสรุปผลการทดสอบประสิทธิภาพนวัตกรรม (E1/E2) ในขั้นทดลองนำร่อง (Try-out 3 ระดับ)",
+            type: "stat_tables",
+            tables: [
+              {
+                tableNo: "ตารางที่ ง.3",
+                caption: `ผลการทดลองหาประสิทธิภาพของ ${bShort} ในขั้นทดลองนำร่อง 3 ขั้นตอน`,
+                headers: ["ขั้นตอนการทดลอง", "กลุ่มตัวอย่าง", "คะแนนกระบวนการ (E1)", "คะแนนผลลัพธ์ (E2)", "ผลการพัฒนาและปรับปรุง"],
+                rows: [
+                  ["1. ทดสอบรายบุคคล (1:1)", "นักเรียน 3 คน (เก่ง 1, ปานกลาง 1, อ่อน 1)", "68.50%", "66.80%", "ปรับปรุงภาษาในใบงานให้กระชับ และเพิ่มเวลาทำกิจกรรม 5 นาที"],
+                  ["2. ทดสอบกลุ่มเล็ก (1:10)", "นักเรียน 9 คน (เก่ง 3, ปานกลาง 3, อ่อน 3)", "75.80%", "74.50%", "ปรับปรุงสัญลักษณ์ในสื่อกิจกรรม และเพิ่มคำถามกระตุ้นการคิด"],
+                  ["3. ทดสอบภาคสนาม (Field Test)", "นักเรียน 30 คน (ห้องเรียนที่ไม่ใช่กลุ่มตัวอย่าง)", "82.40%", "83.10%", `ผ่านเกณฑ์ประสิทธิภาพมาตรฐาน ${crit} พร้อมนำไปใช้จริงในระยะ R2`]
+                ],
+                interpretation: `ผลการทดลองหาประสิทธิภาพของ ${bShort} ตามขั้นตอน 1:1, 1:10 และภาคสนาม แสดงให้เห็นถึงพัฒนาการของประสิทธิภาพอย่างเป็นระบบ จนในขั้นภาคสนามมีค่า E1/E2 เท่ากับ 82.40/83.10 ซึ่งสูงกว่าเกณฑ์ ${crit} ที่ตั้งไว้ และมีผลต่างเพียง 0.70% ผ่านเกณฑ์ความแปรปรวนไม่เกิน 5.0%`
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    return {
+      title: "ภาคผนวก",
+      subtitle: "เครื่องมือการวิจัย เอกสารขอความอนุเคราะห์ และหลักฐานการตรวจสอบคุณภาพเครื่องมือ",
+      appendices
     };
   },
 
@@ -1566,6 +1925,19 @@ window.ROAD_GENERATOR = {
             ${ch.sections.map(sec => this.renderSectionToWordHtml(sec)).join("")}
             <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
           `).join("")}
+
+          <!-- Appendices ก to ง -->
+          ${generated.appendix ? `
+            <h1 style="font-size: 24pt; font-weight: bold; text-align: center; margin-top: 24pt; margin-bottom: 8pt;">ภาคผนวก</h1>
+            <p class="no-indent" style="text-align: center; font-size: 16pt; margin-bottom: 24pt;">(${generated.appendix.subtitle})</p>
+            <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+            ${generated.appendix.appendices.map(app => `
+              <h1>${app.title}</h1>
+              <h2 style="text-align: center; margin-bottom: 18pt;">${app.subtitle}</h2>
+              ${app.sections.map(sec => this.renderSectionToWordHtml(sec)).join("")}
+              <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+            `).join("")}
+          ` : ''}
         </div>
       </body>
       </html>
@@ -1700,6 +2072,120 @@ window.ROAD_GENERATOR = {
     const a = document.createElement("a");
     a.href = url;
     a.download = `รายงานวิจัย_บทที่${chNum}_${(bShort || "ROAD").replace(/[\/\\?%*:|"<>]/g, "_")}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
+  },
+
+  // ==========================================================================
+  // ส่งออกชุดเครื่องมือวิจัยและเอกสารภาคผนวกฉบับเต็ม (.doc) พร้อมส่งผู้เชี่ยวชาญ
+  // พร้อมระยะขอบมาตรฐานวิจัย A4 (บน 1.5", ซ้าย 1.5", ขวา 1.0", ล่าง 1.0")
+  // ==========================================================================
+  exportAppendixToWordDoc(p) {
+    const generated = this.generateChapters(p);
+    const appendix = generated.appendix || this.generateAppendix(p);
+    const bShort = p.B_short || p.B || "นวัตกรรม R&D";
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <title>ภาคผนวกและเครื่องมือวิจัย - ${generated.fullTitle}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page Section1 {
+            size: 21.0cm 29.7cm;
+            margin: 3.81cm 2.54cm 2.54cm 3.81cm;
+            mso-header-margin: 35.4pt;
+            mso-footer-margin: 35.4pt;
+            mso-paper-source: 0;
+          }
+          div.Section1 { page: Section1; }
+          body {
+            font-family: "TH Sarabun PSK", "TH Sarabun New", "Sarabun", sans-serif;
+            font-size: 16pt;
+            line-height: 1.25;
+            color: #000000;
+          }
+          h1 { font-family: "TH Sarabun PSK", "TH Sarabun New", "Sarabun", sans-serif; font-size: 20pt; font-weight: bold; text-align: center; margin-top: 18pt; margin-bottom: 10pt; }
+          h2 { font-family: "TH Sarabun PSK", "TH Sarabun New", "Sarabun", sans-serif; font-size: 18pt; font-weight: bold; text-align: center; margin-top: 10pt; margin-bottom: 16pt; }
+          h3 { font-family: "TH Sarabun PSK", "TH Sarabun New", "Sarabun", sans-serif; font-size: 16pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
+          p { margin-top: 0pt; margin-bottom: 6pt; text-align: justify; text-indent: 1.27cm; line-height: 1.25; }
+          p.no-indent { text-indent: 0; }
+          table.apa-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8pt;
+            margin-bottom: 8pt;
+            font-size: 15pt;
+            border-top: 1.5pt solid black;
+            border-bottom: 1.5pt solid black;
+            border-left: none;
+            border-right: none;
+          }
+          table.apa-table thead th, table.apa-table th {
+            border-top: 1.5pt solid #000;
+            border-bottom: 1pt solid #000;
+            border-left: none;
+            border-right: none;
+            padding: 5pt 6pt;
+            font-weight: bold;
+            text-align: center;
+            background-color: #f8fafc;
+          }
+          table.apa-table tbody td, table.apa-table td {
+            border-top: none;
+            border-bottom: 0.5pt solid #d1d5db;
+            border-left: none;
+            border-right: none;
+            padding: 4.5pt 6pt;
+          }
+          table.apa-table tbody tr:last-child td, table.apa-table tr:last-child td {
+            border-bottom: 1.5pt solid #000;
+          }
+          .table-caption { font-weight: bold; margin-bottom: 4pt; text-indent: 0; font-size: 16pt; }
+          .table-note { font-size: 14pt; margin-top: 4pt; text-indent: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <!-- Cover -->
+          <h1>ชุดเครื่องมือการวิจัยและเอกสารภาคผนวก (Research Instruments & Appendix Package)<br>เรื่อง: ${generated.fullTitle}</h1>
+          <p class="no-indent" style="text-align: center; font-weight: bold; margin-top: 10pt; font-size: 16pt;">
+            สำหรับเสนอผู้เชี่ยวชาญตรวจสอบคุณภาพและประกอบการประเมินวิทยฐานะ วPA
+          </p>
+          <hr style="margin-top: 15pt; margin-bottom: 20pt;">
+
+          <!-- Appendices ก to ง -->
+          ${appendix.appendices.map(app => `
+            <h1>${app.title}</h1>
+            <h2>${app.subtitle}</h2>
+            ${app.sections.map(sec => this.renderSectionToWordHtml(sec)).join("")}
+            <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+          `).join("")}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ชุดเครื่องมือและภาคผนวก_${(bShort || "ROAD").replace(/[\/\\?%*:|"<>]/g, "_")}.doc`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {

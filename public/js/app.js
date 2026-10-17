@@ -1551,9 +1551,23 @@
 
     exportSingleChapter(chapNum) {
       const proj = getActiveProject();
+      if (Number(chapNum) === 6) {
+        return this.exportAppendix();
+      }
       window.ROAD_GENERATOR.exportSingleChapterToWordDoc(proj, Number(chapNum));
       recordAudit("EXPORT_DOC", `ส่งออกบทที่ ${chapNum} (Word): ${proj.label || proj.B_short}`);
       showToast(`กำลังดาวน์โหลดบทที่ ${chapNum} เป็นไฟล์ Word (.doc)...`);
+    },
+
+    exportAppendix() {
+      const proj = getActiveProject();
+      if (window.ROAD_GENERATOR && window.ROAD_GENERATOR.exportAppendixToWordDoc) {
+        window.ROAD_GENERATOR.exportAppendixToWordDoc(proj);
+        recordAudit("EXPORT_DOC", `ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง (Word): ${proj.label || proj.B_short}`);
+        showToast("กำลังดาวน์โหลดชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc)...");
+      } else {
+        showToast("ไม่พบโมดูลส่งออกภาคผนวก");
+      }
     },
 
     exportJson() {
@@ -3064,7 +3078,10 @@
 
             <div class="flex flex-wrap items-center gap-2.5">
               <button onclick="ROAD_APP.exportWord()" class="px-4 py-2.5 neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer">
-                📄 ส่งออกไฟล์ Word (.doc ฟอนต์สารบัญ)
+                📄 ส่งออก Word (.doc 5 บท)
+              </button>
+              <button onclick="ROAD_APP.exportAppendix()" class="px-3.5 py-2 neu-squircle bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs sm:text-sm font-bold cursor-pointer flex items-center gap-1" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ (.doc)">
+                📎 ภาคผนวก & เครื่องมือ (.doc)
               </button>
               <button onclick="window.print()" class="px-3.5 py-2 neu-squircle text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold cursor-pointer">
                 🖨️ พิมพ์ A4 / PDF
@@ -4009,9 +4026,13 @@
                   ${escapeHtml(c.title)}
                 </button>
               `).join("")}
+              <button onclick="ROAD_APP.setChapterFilter(6)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === 6 ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
+                📎 ภาคผนวก ก–ง & เครื่องมือ
+              </button>
             </div>
             <div class="flex items-center gap-2">
               <button onclick="ROAD_APP.resetCustomSections()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 cursor-pointer">🔄 ซิงค์เริ่มต้น</button>
+              <button onclick="ROAD_APP.exportAppendix()" class="px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-semibold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc พร้อมส่งผู้เชี่ยวชาญ)">📥 ส่งออกภาคผนวก & เครื่องมือ (.doc)</button>
               <button onclick="ROAD_APP.exportWord()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold cursor-pointer">📥 ส่งออก Word (ครบ 5 บท)</button>
             </div>
           </div>
@@ -4117,6 +4138,97 @@
               </div>
             </section>
           `).join("")}
+
+          <!-- Appendices Section (Shown when filter is 0 or 6) -->
+          ${(state.activeChapterFilter === 0 || state.activeChapterFilter === 6) && gen.appendix && gen.appendix.appendices && gen.appendix.appendices.length > 0 ? `
+            <div class="mt-8 pt-8 border-t-2 border-dashed border-slate-300 dark:border-slate-700 space-y-6">
+              <div class="bg-gradient-to-r from-indigo-900 via-sky-900 to-indigo-950 text-white p-6 sm:p-7 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+                <div class="space-y-1">
+                  <span class="text-xs font-mono uppercase tracking-wider text-indigo-300 font-bold flex items-center gap-1.5">
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span>RESEARCH INSTRUMENTS & APPENDIX PACKAGE</span>
+                  </span>
+                  <h2 class="text-2xl font-black">${escapeHtml(gen.appendix.title)} (${escapeHtml(gen.appendix.subtitle)})</h2>
+                  <p class="text-xs text-indigo-200">ชุดเครื่องมือการวิจัยและเอกสารภาคผนวก ก, ข, ค, ง จัดทำสำเร็จรูปพร้อมพิมพ์และเสนอผู้เชี่ยวชาญ/คณะกรรมการ วPA</p>
+                </div>
+                <button onclick="ROAD_APP.exportAppendix()" class="px-4 py-2.5 rounded-xl bg-white text-indigo-900 hover:bg-indigo-50 text-xs font-bold cursor-pointer shadow flex items-center gap-1.5 transition-all">
+                  <span>📥 ดาวน์โหลดชุดภาคผนวก & เครื่องมือ (.doc)</span>
+                </button>
+              </div>
+
+              ${gen.appendix.appendices.map(appItem => `
+                <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col gap-5 break-inside-avoid">
+                  <div class="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span class="text-xs font-mono uppercase tracking-wider text-indigo-700 dark:text-indigo-400 font-bold">APPENDIX ${appItem.code}</span>
+                      <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">${escapeHtml(appItem.title)}</h2>
+                      <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(appItem.subtitle)}</p>
+                    </div>
+                    <div class="flex items-center gap-2 print:hidden">
+                      <button onclick="ROAD_APP.exportAppendix()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกชุดภาคผนวกนี้เป็นไฟล์ Word (.doc)">
+                        <span>📥 ส่งออกภาคผนวก (.doc)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-6">
+                    ${appItem.sections.map(sec => `
+                      <div class="space-y-2.5">
+                        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          <span class="w-1.5 h-5 rounded-full bg-indigo-600 inline-block"></span>
+                          <span>${escapeHtml(sec.heading || sec.title)}</span>
+                        </h3>
+
+                        ${sec.type === "paragraphs" && Array.isArray(sec.content) ? `
+                          <div class="space-y-3 pl-3 text-sm sm:text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">
+                            ${sec.content.map(pText => `<p class="indent-8 text-justify">${escapeHtml(pText)}</p>`).join("")}
+                          </div>
+                        ` : ""}
+
+                        ${sec.type === "stat_tables" && Array.isArray(sec.tables) ? `
+                          <div class="space-y-6 pl-2">
+                            ${sec.tables.map(tbl => `
+                              <div class="space-y-2">
+                                <div class="font-bold text-sm text-slate-900 dark:text-white">${escapeHtml(tbl.tableNo)} ${escapeHtml(tbl.caption)}</div>
+                                <div class="overflow-x-auto">
+                                  <table class="w-full text-xs sm:text-sm border-collapse border-t-2 border-b-2 border-slate-900 dark:border-slate-200">
+                                    <thead>
+                                      <tr class="border-b border-slate-900 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/60">
+                                        ${tbl.headers.map(h => `<th class="py-2 px-3 text-center font-bold">${escapeHtml(h)}</th>`).join("")}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      ${tbl.rows.map(row => `
+                                        <tr class="border-b border-slate-200/60 dark:border-slate-800">
+                                          ${row.map((cell, ci) => `<td class="py-2 px-3 ${ci === 0 ? 'text-left font-medium' : 'text-center font-mono'}">${escapeHtml(cell)}</td>`).join("")}
+                                        </tr>
+                                      `).join("")}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                ${tbl.footnote ? `<div class="text-xs text-slate-500">${escapeHtml(tbl.footnote)}</div>` : ""}
+                                ${tbl.interpretation ? `
+                                  <p class="text-sm text-slate-700 dark:text-slate-300 bg-indigo-50/60 dark:bg-indigo-950/30 p-3 rounded-xl border border-indigo-200/70 dark:border-indigo-800/50">
+                                    <b>การแปลผล:</b> ${escapeHtml(tbl.interpretation)}
+                                  </p>
+                                ` : ""}
+                              </div>
+                            `).join("")}
+                          </div>
+                        ` : ""}
+
+                        ${sec.type === "custom_html" ? `
+                          <div class="pl-2">
+                            ${sec.content}
+                          </div>
+                        ` : ""}
+                      </div>
+                    `).join("")}
+                  </div>
+                </section>
+              `).join("")}
+            </div>
+          ` : ""}
           </div>
         </div>
 
@@ -4151,6 +4263,9 @@
             <div class="pt-2 flex flex-col gap-2">
               <button onclick="ROAD_APP.exportWord()" class="w-full py-2.5 neu-btn-primary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
                 <span>📄 ดาวน์โหลด Word (5 บทเต็ม)</span>
+              </button>
+              <button onclick="ROAD_APP.exportAppendix()" class="w-full py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ">
+                <span>📎 ส่งออกภาคผนวก & เครื่องมือ (.doc)</span>
               </button>
               <button onclick="ROAD_APP.openWizardModal(10)" class="w-full py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1 cursor-pointer">
                 <span>🧭 ตรวจทานด้วย Wizard 10 ขั้น</span>
