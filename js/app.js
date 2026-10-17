@@ -59,6 +59,8 @@
     projects: [],
     activeProjectId: null,
     showAbcdModal: false,
+    showContextMetaModal: false,
+    contextMetaModalTab: "context", // "context" | "plans" | "experts"
     abcdModalTab: "manual", // "manual" | "parse" | "blank"
     abcdParseInput: "",
     abcdParsedResult: null,
@@ -247,6 +249,21 @@
 
   function hydrateProjectSchema(p) {
     if (!p) return p;
+    if (!p.contextMeta) {
+      p.contextMeta = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_CONTEXT_META || {}));
+    }
+    if (p.researcher && !p.contextMeta.researcherName) p.contextMeta.researcherName = p.researcher;
+    if (p.position && !p.contextMeta.academicRank) p.contextMeta.academicRank = p.position;
+    if (p.school && !p.contextMeta.schoolName) p.contextMeta.schoolName = p.school;
+    if (p.affiliation && !p.contextMeta.affiliation) p.contextMeta.affiliation = p.affiliation;
+
+    if (!p.lessonPlans || !Array.isArray(p.lessonPlans) || p.lessonPlans.length === 0) {
+      p.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
+    }
+    if (!p.expertRoster || !Array.isArray(p.expertRoster) || p.expertRoster.length === 0) {
+      p.expertRoster = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERT_ROSTER || []));
+    }
+
     if (!p.samplingMetadata) {
       p.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA || {
         type: "cluster_random",
@@ -1541,18 +1558,49 @@
       showToast("คืนค่าโครงร่างมาตรฐานอัตโนมัติเรียบร้อยแล้ว");
     },
 
-    // --- Export Actions ---
+    // --- Export Actions (Modular Publication Export Hub V2.0) ---
     exportWord() {
+      this.exportFullManuscript();
+    },
+
+    exportFullManuscript() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportToWordDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกรายงานวิจัยฉบับเต็ม 5 บท (Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดไฟล์ Microsoft Word (.doc) ฟอนต์ TH Sarabun...");
+      window.ROAD_GENERATOR.exportFullManuscriptToWordDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (All-in-One Word): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (.doc)...");
+    },
+
+    exportFrontMatter() {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportFrontMatterToWordDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกส่วนนำและบทคัดย่อภาษาไทย/อังกฤษ (Word): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดส่วนนำและบทคัดย่อไทย/อังกฤษ (.doc)...");
+    },
+
+    exportExpertKit() {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportExpertKitToWordDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกชุดผู้เชี่ยวชาญ 5 ท่านและแบบประเมิน IOC (Word): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดชุดส่งผู้เชี่ยวชาญ 5 ท่าน + แบบประเมิน IOC (.doc)...");
+    },
+
+    exportBackMatter() {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportBackMatterToWordDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกบรรณานุกรม APA 7th และภาคผนวก ก-ง (Word): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดบรรณานุกรม APA 7th และภาคผนวก ก–ง (.doc)...");
     },
 
     exportSingleChapter(chapNum) {
       const proj = getActiveProject();
       if (Number(chapNum) === 6) {
         return this.exportAppendix();
+      }
+      if (Number(chapNum) === -1) {
+        return this.exportFrontMatter();
+      }
+      if (Number(chapNum) === 7) {
+        return this.exportBackMatter();
       }
       window.ROAD_GENERATOR.exportSingleChapterToWordDoc(proj, Number(chapNum));
       recordAudit("EXPORT_DOC", `ส่งออกบทที่ ${chapNum} (Word): ${proj.label || proj.B_short}`);
@@ -1568,6 +1616,104 @@
       } else {
         showToast("ไม่พบโมดูลส่งออกภาคผนวก");
       }
+    },
+
+    // --- Essential Manuscript Context Modal Actions ---
+    openContextMetaModal(tab = "context") {
+      state.contextMetaModalTab = tab;
+      state.showContextMetaModal = true;
+      renderApp();
+    },
+
+    closeContextMetaModal() {
+      state.showContextMetaModal = false;
+      renderApp();
+    },
+
+    setContextMetaTab(tab) {
+      state.contextMetaModalTab = tab;
+      renderApp();
+    },
+
+    saveContextMeta() {
+      const proj = getActiveProject();
+      if (!proj) return;
+      if (!proj.contextMeta) proj.contextMeta = {};
+
+      const getVal = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : fallback;
+      };
+
+      proj.contextMeta.researcherName = getVal("ctx_researcherName", proj.contextMeta.researcherName || proj.researcher || "");
+      proj.contextMeta.academicRank = getVal("ctx_academicRank", proj.contextMeta.academicRank || proj.position || "");
+      proj.contextMeta.degree = getVal("ctx_degree", proj.contextMeta.degree || "กศ.ม. (หลักสูตรและการจัดการเรียนรู้)");
+      proj.contextMeta.schoolName = getVal("ctx_schoolName", proj.contextMeta.schoolName || proj.school || "");
+      proj.contextMeta.affiliation = getVal("ctx_affiliation", proj.contextMeta.affiliation || proj.affiliation || "");
+      proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "มหาสารคาม");
+      proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ดร.วิชัย มุ่งมั่น");
+      proj.contextMeta.academicYear = getVal("ctx_academicYear", proj.contextMeta.academicYear || "2569");
+      proj.contextMeta.semester = getVal("ctx_semester", proj.contextMeta.semester || "1");
+      proj.contextMeta.courseCode = getVal("ctx_courseCode", proj.contextMeta.courseCode || "ว23101");
+      proj.contextMeta.courseName = getVal("ctx_courseName", proj.contextMeta.courseName || proj.subject || "");
+      proj.contextMeta.totalHours = getVal("ctx_totalHours", proj.contextMeta.totalHours || "18 ชั่วโมง");
+      proj.contextMeta.pastScoreAvg = getVal("ctx_pastScoreAvg", proj.contextMeta.pastScoreAvg || "56.80%");
+
+      // Sync back to top-level project fields
+      if (proj.contextMeta.researcherName) proj.researcher = proj.contextMeta.researcherName;
+      if (proj.contextMeta.academicRank) proj.position = proj.contextMeta.academicRank;
+      if (proj.contextMeta.schoolName) proj.school = proj.contextMeta.schoolName;
+      if (proj.contextMeta.affiliation) proj.affiliation = proj.contextMeta.affiliation;
+      if (proj.contextMeta.courseName) proj.subject = proj.contextMeta.courseName;
+
+      // Read Lesson Plans
+      if (!Array.isArray(proj.lessonPlans) || proj.lessonPlans.length === 0) {
+        proj.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
+      }
+      if (Array.isArray(proj.lessonPlans)) {
+        proj.lessonPlans.forEach((lp, idx) => {
+          lp.unitTitle = getVal(`ctx_lp_title_${idx}`, lp.unitTitle);
+          lp.hours = Number(getVal(`ctx_lp_hours_${idx}`, lp.hours)) || lp.hours;
+          lp.conceptSummary = getVal(`ctx_lp_concept_${idx}`, lp.conceptSummary);
+        });
+      }
+
+      // Read Expert Roster
+      if (!Array.isArray(proj.expertRoster) || proj.expertRoster.length === 0) {
+        proj.expertRoster = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERT_ROSTER || []));
+      }
+      if (Array.isArray(proj.expertRoster)) {
+        proj.expertRoster.forEach((exp, idx) => {
+          exp.prefixName = getVal(`ctx_exp_name_${idx}`, exp.prefixName);
+          exp.position = getVal(`ctx_exp_pos_${idx}`, exp.position);
+          exp.organization = getVal(`ctx_exp_org_${idx}`, exp.organization);
+          exp.role = getVal(`ctx_exp_role_${idx}`, exp.role);
+        });
+      }
+
+      saveProject();
+      state.showContextMetaModal = false;
+      renderApp();
+      recordAudit("EDIT_TITLE", `อัปเดตข้อมูลบริบทสถานศึกษาและคณะผู้เชี่ยวชาญ: ${proj.label || proj.B_short}`);
+      showToast("บันทึกข้อมูลบริบทสถานศึกษาและคณะผู้เชี่ยวชาญเรียบร้อยแล้ว");
+    },
+
+    resetLessonPlansDefault() {
+      const proj = getActiveProject();
+      if (!proj) return;
+      proj.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
+      saveProject();
+      renderApp();
+      showToast("รีเซ็ตตารางแผนการจัดการเรียนรู้เป็นค่าเริ่มต้นเรียบร้อยแล้ว");
+    },
+
+    resetExpertsDefault() {
+      const proj = getActiveProject();
+      if (!proj) return;
+      proj.expertRoster = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERT_ROSTER || []));
+      saveProject();
+      renderApp();
+      showToast("รีเซ็ตคณะผู้เชี่ยวชาญ 5 ท่านเป็นค่าเริ่มต้นเรียบร้อยแล้ว");
     },
 
     exportJson() {
@@ -4015,30 +4161,108 @@
       <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
         <!-- Left Column: Chapters Content & Editor (lg:col-span-8) -->
         <div class="lg:col-span-8 flex flex-col gap-5 w-full">
+          <!-- Modular Publication Export Hub Card -->
+          <div class="rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white p-5 sm:p-6 border border-sky-800/40 shadow-lg print:hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="space-y-1">
+                <span class="text-xs font-mono uppercase tracking-wider text-sky-400 font-bold flex items-center gap-1.5">
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>MODULAR PUBLICATION EXPORT HUB V2.0</span>
+                </span>
+                <h3 class="text-lg sm:text-xl font-black">🏆 ศูนย์ส่งออกเอกสารวิจัยฉบับสมบูรณ์เพื่อการประเมิน วPA และเผยแพร่</h3>
+                <p class="text-xs text-sky-200">ส่งออกเอกสารวิจัยฉบับสมบูรณ์ 100% แยกเป็นโมดูลมาตรฐาน Word (.doc TH Sarabun PSK 16pt) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง</p>
+              </div>
+              <button onclick="ROAD_APP.openContextMetaModal()" class="px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-xs font-bold text-sky-200 cursor-pointer flex items-center gap-1.5 transition">
+                <span>⚙️ ข้อมูลบริบท & ผู้เชี่ยวชาญ</span>
+              </button>
+            </div>
+
+            <!-- 1-Click Export Buttons Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-sky-800/50">
+              <button onclick="ROAD_APP.exportFullManuscript()" class="col-span-2 sm:col-span-3 lg:col-span-1 p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs cursor-pointer shadow-md flex items-center justify-center gap-1.5 text-center transition">
+                <span>🏆 รวมเล่มสมบูรณ์</span>
+              </button>
+              <button onclick="ROAD_APP.exportFrontMatter()" class="p-2.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
+                <span>📄 ส่วนนำ & บทคัดย่อ</span>
+              </button>
+              <button onclick="ROAD_APP.exportExpertKit()" class="p-2.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition" title="หนังสือเชิญรายบุคคล 5 ฉบับ + แบบประเมิน IOC">
+                <span>👥 ชุด 5 ผู้เชี่ยวชาญ</span>
+              </button>
+              <button onclick="ROAD_APP.exportBackMatter()" class="p-2.5 rounded-xl bg-teal-700/90 hover:bg-teal-700 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
+                <span>📚 บรรณานุกรม & ประวัติ</span>
+              </button>
+              <button onclick="ROAD_APP.exportAppendix()" class="p-2.5 rounded-xl bg-blue-700/90 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
+                <span>📎 ภาคผนวก ก–ง</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Chapter Filter Bar -->
-          <div class="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 print:hidden shadow-sm">
+          <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5 print:hidden shadow-sm">
             <div class="flex flex-wrap gap-1.5">
-              <button onclick="ROAD_APP.setChapterFilter(0)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
-                📚 แสดงครบทั้ง 5 บท
+              <button onclick="ROAD_APP.setChapterFilter(0)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                🏆 ทั้งเล่มสมบูรณ์
+              </button>
+              <button onclick="ROAD_APP.setChapterFilter(-1)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === -1 ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                📄 ส่วนนำ & บทคัดย่อ
               </button>
               ${gen.chapters.map(c => `
-                <button onclick="ROAD_APP.setChapterFilter(${c.number})" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === c.number ? 'bg-sky-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
-                  ${escapeHtml(c.title)}
+                <button onclick="ROAD_APP.setChapterFilter(${c.number})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === c.number ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                  บทที่ ${c.number}
                 </button>
               `).join("")}
-              <button onclick="ROAD_APP.setChapterFilter(6)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${state.activeChapterFilter === 6 ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">
-                📎 ภาคผนวก ก–ง & เครื่องมือ
+              <button onclick="ROAD_APP.setChapterFilter(7)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 7 ? 'bg-teal-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                📚 บรรณานุกรม & ประวัติ
+              </button>
+              <button onclick="ROAD_APP.setChapterFilter(6)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 6 ? 'bg-indigo-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                📎 ภาคผนวก ก–ง
               </button>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="ROAD_APP.resetCustomSections()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 cursor-pointer">🔄 ซิงค์เริ่มต้น</button>
-              <button onclick="ROAD_APP.exportAppendix()" class="px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-semibold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc พร้อมส่งผู้เชี่ยวชาญ)">📥 ส่งออกภาคผนวก & เครื่องมือ (.doc)</button>
-              <button onclick="ROAD_APP.exportWord()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold cursor-pointer">📥 ส่งออก Word (ครบ 5 บท)</button>
+              <button onclick="ROAD_APP.resetCustomSections()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" title="รีเซ็ตเนื้อหากลับเป็นค่าสังเคราะห์เริ่มต้น">🔄 ซิงค์เริ่มต้น</button>
+              <button onclick="ROAD_APP.openContextMetaModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">⚙️ แก้ไขบริบท</button>
             </div>
           </div>
 
           <!-- Chapters Document View -->
           <div class="space-y-6">
+
+          <!-- Front Matter Section (Shown when filter is 0 or -1) -->
+          ${(state.activeChapterFilter === 0 || state.activeChapterFilter === -1) && gen.frontMatter ? `
+            <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col gap-5 break-inside-avoid">
+              <div class="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-xs font-mono uppercase tracking-wider text-amber-700 dark:text-amber-400 font-bold">FRONT MATTER & ABSTRACT</span>
+                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">${escapeHtml(gen.frontMatter.title)}</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(gen.frontMatter.subtitle)}</p>
+                </div>
+                <div class="flex items-center gap-2 print:hidden">
+                  <button onclick="ROAD_APP.exportFrontMatter()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกเฉพาะส่วนนำและบทคัดย่อไทย/อังกฤษเป็นไฟล์ Word (.doc)">
+                    <span>📥 ส่งออกส่วนนำ (.doc)</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                ${gen.frontMatter.sections.map(sec => `
+                  <div class="space-y-2.5">
+                    ${sec.hideHeading ? '' : `
+                      <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-1.5 h-5 rounded-full bg-amber-600 inline-block"></span>
+                        <span>${escapeHtml(sec.heading || sec.title)}</span>
+                      </h3>
+                    `}
+                    ${sec.type === "custom_html" ? `
+                      <div class="pl-2">
+                        ${sec.content}
+                      </div>
+                    ` : ""}
+                  </div>
+                `).join("")}
+              </div>
+            </section>
+          ` : ""}
+
           ${chaptersToShow.map(ch => `
             <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col gap-5 break-inside-avoid">
               <div class="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
@@ -4138,6 +4362,40 @@
               </div>
             </section>
           `).join("")}
+
+          <!-- Bibliography & Researcher Vitae Section (Shown when filter is 0 or 7) -->
+          ${(state.activeChapterFilter === 0 || state.activeChapterFilter === 7) && gen.bibliography ? `
+            <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col gap-5 break-inside-avoid">
+              <div class="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-xs font-mono uppercase tracking-wider text-teal-700 dark:text-teal-400 font-bold">BACK MATTER & REFERENCES</span>
+                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">${escapeHtml(gen.bibliography.title)}</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(gen.bibliography.subtitle)}</p>
+                </div>
+                <div class="flex items-center gap-2 print:hidden">
+                  <button onclick="ROAD_APP.exportBackMatter()" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1 shadow-sm" title="ส่งออกบรรณานุกรม APA 7th และประวัติผู้วิจัย (.doc)">
+                    <span>📥 ส่งออกบรรณานุกรม & ประวัติ (.doc)</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                ${gen.bibliography.sections.map(sec => `
+                  <div class="space-y-2.5">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span class="w-1.5 h-5 rounded-full bg-teal-600 inline-block"></span>
+                      <span>${escapeHtml(sec.heading || sec.title)}</span>
+                    </h3>
+                    ${sec.type === "custom_html" ? `
+                      <div class="pl-2">
+                        ${sec.content}
+                      </div>
+                    ` : ""}
+                  </div>
+                `).join("")}
+              </div>
+            </section>
+          ` : ""}
 
           <!-- Appendices Section (Shown when filter is 0 or 6) -->
           ${(state.activeChapterFilter === 0 || state.activeChapterFilter === 6) && gen.appendix && gen.appendix.appendices && gen.appendix.appendices.length > 0 ? `
@@ -6848,6 +7106,220 @@
     `;
   }
 
+  // --- Essential Manuscript Context Modal (School, Lesson Plans & Expert Roster) ---
+  function renderContextMetaModal() {
+    const proj = getActiveProject();
+    if (!proj) return "";
+    const meta = proj.contextMeta || (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_CONTEXT_META) || {};
+    const plans = (Array.isArray(proj.lessonPlans) && proj.lessonPlans.length > 0)
+      ? proj.lessonPlans
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_LESSON_PLANS) || [];
+    const experts = (Array.isArray(proj.expertRoster) && proj.expertRoster.length > 0)
+      ? proj.expertRoster
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_EXPERT_ROSTER) || [];
+    const tab = state.contextMetaModalTab || "context";
+
+    return `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-fade-in print:hidden">
+        <div class="neu-card max-w-4xl w-full p-5 sm:p-8 my-auto max-h-[92vh] flex flex-col gap-5 overflow-y-auto relative shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl">
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white text-2xl shadow-md">
+                ⚙️
+              </div>
+              <div>
+                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>ข้อมูลบริบทสถานศึกษา แผนการสอน & คณะผู้เชี่ยวชาญ</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  กรอกข้อมูลจริงเพียงครั้งเดียว ระบบจะซิงค์ชื่อ, วิทยฐานะ, แผนการสอน 6 แผน และหนังสือเชิญผู้เชี่ยวชาญ 5 ท่านลงในเล่มวิจัยฉบับสมบูรณ์ทันที
+                </p>
+              </div>
+            </div>
+            <button onclick="ROAD_APP.closeContextMetaModal()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-lg" title="ปิดหน้าต่าง">
+              ✕
+            </button>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="flex flex-wrap gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
+            <button onclick="ROAD_APP.setContextMetaTab('context')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-1.5 ${tab === 'context' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              <span>🏫 1. บริบทสถานศึกษา & งานวิจัย</span>
+            </button>
+            <button onclick="ROAD_APP.setContextMetaTab('plans')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-1.5 ${tab === 'plans' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              <span>📅 2. แผนการจัดการเรียนรู้ (${plans.length} แผน)</span>
+            </button>
+            <button onclick="ROAD_APP.setContextMetaTab('experts')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-1.5 ${tab === 'experts' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              <span>👥 3. คณะผู้เชี่ยวชาญ 5 ท่าน & IOC</span>
+            </button>
+          </div>
+
+          <!-- Tab 1: Context Meta Form (13 fields) -->
+          ${tab === "context" ? `
+            <div class="space-y-4">
+              <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-900 dark:text-sky-300 leading-relaxed">
+                💡 <b>คำแนะนำ:</b> ข้อมูลในส่วนนี้จะถูกนำไปใช้อัตโนมัติใน ปกนอก, ปกใน, บทคัดย่อไทย/อังกฤษ, กิตติกรรมประกาศ, บทที่ 1 (บริบทและขอบเขต), บรรณานุกรม และประวัติผู้วิจัย
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อผู้วิจัย (พร้อมคำนำหน้า):</label>
+                  <input type="text" id="ctx_researcherName" value="${escapeHtml(meta.researcherName || proj.researcher || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น นายสมชาย ใจมั่น" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ตำแหน่งและวิทยฐานะ:</label>
+                  <input type="text" id="ctx_academicRank" value="${escapeHtml(meta.academicRank || proj.position || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ครู วิทยฐานะครูชำนาญการพิเศษ" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">วุฒิการศึกษาสูงสุด:</label>
+                  <input type="text" id="ctx_degree" value="${escapeHtml(meta.degree || 'กศ.ม. (หลักสูตรและการจัดการเรียนรู้)')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น กศ.ม. (หลักสูตรและการจัดการเรียนรู้)" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อโรงเรียน / สถานศึกษา:</label>
+                  <input type="text" id="ctx_schoolName" value="${escapeHtml(meta.schoolName || proj.school || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น โรงเรียนผดุงนารี" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">หน่วยงานต้นสังกัด / สพม. / สพป.:</label>
+                  <input type="text" id="ctx_affiliation" value="${escapeHtml(meta.affiliation || proj.affiliation || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น สำนักงานเขตพื้นที่การศึกษามัธยมศึกษามหาสารคาม" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">จังหวัด:</label>
+                  <input type="text" id="ctx_province" value="${escapeHtml(meta.province || 'มหาสารคาม')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น มหาสารคาม" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อผู้อำนวยการโรงเรียน (กิตติกรรมประกาศ):</label>
+                  <input type="text" id="ctx_directorName" value="${escapeHtml(meta.directorName || 'ดร.วิชัย มุ่งพัฒนา')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ดร.วิชัย มุ่งพัฒนา" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ปีการศึกษา:</label>
+                  <input type="text" id="ctx_academicYear" value="${escapeHtml(meta.academicYear || '2569')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น 2569" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ภาคเรียนที่:</label>
+                  <input type="text" id="ctx_semester" value="${escapeHtml(meta.semester || '1')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น 1 หรือ 2" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">รหัสวิชา:</label>
+                  <input type="text" id="ctx_courseCode" value="${escapeHtml(meta.courseCode || 'ว23101')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ว23101 หรือ ค23101" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อรายวิชา:</label>
+                  <input type="text" id="ctx_courseName" value="${escapeHtml(meta.courseName || proj.subject || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น วิทยาศาสตร์พื้นฐาน" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">จำนวนชั่วโมงจัดกิจกรรมรวม:</label>
+                  <input type="text" id="ctx_totalHours" value="${escapeHtml(meta.totalHours || '18 ชั่วโมง')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น 18 ชั่วโมง" />
+                </div>
+                <div class="space-y-1 sm:col-span-2 lg:col-span-3">
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ผลสัมฤทธิ์เดิม / คะแนนเฉลี่ยก่อนใช้นวัตกรรม (% หรือ x̄):</label>
+                  <input type="text" id="ctx_pastScoreAvg" value="${escapeHtml(meta.pastScoreAvg || '56.80%')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น 56.80% (คะแนนเฉลี่ยร้อยละของภาคเรียนที่ผ่านมาเพื่อใช้อ้างอิงในบทที่ 1)" />
+                </div>
+              </div>
+            </div>
+          ` : ""}
+
+          <!-- Tab 2: Lesson Plans Form (6 plans) -->
+          ${tab === "plans" ? `
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300">
+                <div>
+                  📅 <b>โครงสร้างหน่วยและแผนการจัดการเรียนรู้:</b> ระบบกำหนดโครงสร้าง 6 แผน (รวม 18 ชั่วโมง) ใช้จัดกิจกรรมในบทที่ 1, บทที่ 3 (ตาราง 3.1) และภาคผนวก
+                </div>
+                <button onclick="ROAD_APP.resetLessonPlansDefault()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 cursor-pointer">
+                  🔄 รีเซ็ตแผนเป็นค่าเริ่มต้น
+                </button>
+              </div>
+
+              <div class="space-y-3">
+                ${plans.map((lp, idx) => `
+                  <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <span class="flex items-center gap-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[11px] font-bold">${lp.planNo || idx + 1}</span>
+                        <span>แผนการจัดการเรียนรู้ที่ ${lp.planNo || idx + 1}</span>
+                      </span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-500 font-normal">เวลา:</span>
+                        <input type="number" id="ctx_lp_hours_${idx}" value="${escapeHtml(lp.hours || 3)}" class="w-16 neu-input-pill px-2.5 py-1 text-xs font-mono text-center text-slate-900 dark:text-white" min="1" max="10" />
+                        <span class="text-slate-500 font-normal">ชั่วโมง</span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                      <div class="sm:col-span-5">
+                        <input type="text" id="ctx_lp_title_${idx}" value="${escapeHtml(lp.unitTitle || '')}" class="w-full neu-input-pill px-3 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="ชื่อหน่วยการเรียนรู้ / หัวข้อแผน" />
+                      </div>
+                      <div class="sm:col-span-7">
+                        <input type="text" id="ctx_lp_concept_${idx}" value="${escapeHtml(lp.conceptSummary || '')}" class="w-full neu-input-pill px-3 py-2 text-xs text-slate-700 dark:text-slate-300" placeholder="สาระสำคัญและกระบวนการจัดการเรียนรู้เชิงรุก" />
+                      </div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          ` : ""}
+
+          <!-- Tab 3: Expert Roster Form (5 experts) -->
+          ${tab === "experts" ? `
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-300">
+                <div>
+                  👥 <b>รายชื่อคณะผู้เชี่ยวชาญ 5 ท่าน:</b> ระบบใช้ชื่อและตำแหน่งนี้ในตารางบทที่ 3 (ตาราง 3.2), กิตติกรรมประกาศ, แบบประเมิน IOC และหนังสือขอความอนุเคราะห์รายบุคคล 5 ฉบับ
+                </div>
+                <button onclick="ROAD_APP.resetExpertsDefault()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer">
+                  🔄 รีเซ็ต 5 ผู้เชี่ยวชาญ
+                </button>
+              </div>
+
+              <div class="space-y-3">
+                ${experts.map((exp, idx) => `
+                  <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                      <span class="flex items-center gap-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold">${exp.id || idx + 1}</span>
+                        <span>ผู้เชี่ยวชาญท่านที่ ${exp.id || idx + 1}</span>
+                      </span>
+                      <span class="text-[11px] text-slate-500 font-mono">${escapeHtml(exp.role ? exp.role.substring(0, 30) + '...' : '')}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-[11px] font-semibold text-slate-500">ชื่อ-สกุล พร้อมตำแหน่งทางวิชาการ/วิทยฐานะ:</label>
+                        <input type="text" id="ctx_exp_name_${idx}" value="${escapeHtml(exp.prefixName || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white mt-0.5" placeholder="เช่น รศ.ดร.ชวลิต ชูกำแพง" />
+                      </div>
+                      <div>
+                        <label class="text-[11px] font-semibold text-slate-500">ตำแหน่ง / วิทยฐานะปัจจุบัน:</label>
+                        <input type="text" id="ctx_exp_pos_${idx}" value="${escapeHtml(exp.position || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs text-slate-900 dark:text-white mt-0.5" placeholder="เช่น รองศาสตราจารย์ ระดับ 9" />
+                      </div>
+                      <div>
+                        <label class="text-[11px] font-semibold text-slate-500">หน่วยงาน / สถาบันการศึกษาต้นสังกัด:</label>
+                        <input type="text" id="ctx_exp_org_${idx}" value="${escapeHtml(exp.organization || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs text-slate-900 dark:text-white mt-0.5" placeholder="เช่น คณะศึกษาศาสตร์ มหาวิทยาลัยมหาสารคาม" />
+                      </div>
+                      <div>
+                        <label class="text-[11px] font-semibold text-slate-500">บทบาทความเชี่ยวชาญในการตรวจสอบ:</label>
+                        <input type="text" id="ctx_exp_role_${idx}" value="${escapeHtml(exp.role || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs text-slate-900 dark:text-white mt-0.5" placeholder="เช่น ผู้เชี่ยวชาญด้านระเบียบวิธีวิจัยและนวัตกรรม" />
+                      </div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          ` : ""}
+
+          <!-- Footer Controls -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 rounded-2xl">
+            <button onclick="ROAD_APP.closeContextMetaModal()" class="px-4 py-2 neu-squircle text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+              ✕ ยกเลิก
+            </button>
+            <button onclick="ROAD_APP.saveContextMeta()" class="px-5 py-2.5 neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-md">
+              <span>💾 บันทึกและซิงค์ข้อมูลลงเล่มวิจัยทันที</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderFooter() {
     if (state.view === "slides") return "";
     return `
@@ -6869,7 +7341,7 @@
     else if (state.view === "slides") mainHtml = renderSlidesView();
     else mainHtml = renderStudioView();
 
-    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}`;
+    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}${state.showContextMetaModal ? renderContextMetaModal() : ""}`;
   }
 
   window.addEventListener("DOMContentLoaded", () => {
