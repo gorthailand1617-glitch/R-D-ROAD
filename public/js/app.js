@@ -290,13 +290,23 @@
     if (!p.samplingMetadata) {
       p.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA || {
         type: "cluster_random",
-        sampleSize: 38,
-        unit: "ห้องเรียน",
-        populationSize: 180,
+        populationSize: 120,
+        sampleSize: 35,
+        classroomsCount: 4,
+        selectedClassrooms: 1,
         isNormalDistributed: true,
+        unit: "ห้องเรียน (Classroom Unit)",
         normalityTest: "shapiro_wilk"
       }));
+    } else {
+      p.samplingMetadata.type = p.samplingMetadata.type || "cluster_random";
+      p.samplingMetadata.populationSize = p.samplingMetadata.populationSize || 120;
+      p.samplingMetadata.sampleSize = p.samplingMetadata.sampleSize || 35;
+      p.samplingMetadata.classroomsCount = p.samplingMetadata.classroomsCount || 4;
+      p.samplingMetadata.selectedClassrooms = p.samplingMetadata.selectedClassrooms || 1;
+      if (p.samplingMetadata.isNormalDistributed === undefined) p.samplingMetadata.isNormalDistributed = true;
     }
+    p.samplingMethod = p.samplingMetadata.type;
     if (!p.experimentalInstruments) {
       p.experimentalInstruments = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERIMENTAL_INSTRUMENTS || []));
     }
@@ -429,6 +439,42 @@
     }, 3200);
   }
 
+  // --- Formal Academic Narrative Generator for Population & Sampling ---
+  function generateSamplingNarrative(proj, methodType, popCount, classCount, sampleCount, selClassCount) {
+    const p = proj || {};
+    const meta = p.contextMeta || {};
+    const school = meta.schoolName || p.schoolName || p.school || "โรงเรียนเปรมติณสูลานนท์";
+    const affil = meta.affiliation || p.affiliation || "องค์การบริหารส่วนจังหวัดขอนแก่น";
+    const targetGrade = p.D || "นักเรียนชั้นมัธยมศึกษาปีที่ 4";
+    const year = meta.academicYear || "2569";
+    const sem = meta.semester || "1";
+
+    const popN = Number(popCount) || 120;
+    const cCount = Number(classCount) || 4;
+    const sN = Number(sampleCount) || 35;
+    const selC = Number(selClassCount) || 1;
+
+    let popText = "";
+    let sampleText = "";
+
+    if (methodType === "population") {
+      popText = `ประชากรที่ใช้ในการวิจัยครั้งนี้ เป็น${targetGrade} ${school} สังกัด${affil} ที่กำลังศึกษาอยู่ในภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${cCount} ห้องเรียน รวมทั้งสิ้น ${popN} คน`;
+      sampleText = `กลุ่มเป้าหมายที่ใช้ในการวิจัยครั้งนี้ คือประชากรทั้งหมด ได้แก่ ${targetGrade} ${school} สังกัด${affil} ภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${cCount} ห้องเรียน รวมทั้งสิ้น ${popN} คน เนื่องจากสถานศึกษาเป็นโรงเรียนขนาดที่มีประชากรจำนวนจำกัด ผู้วิจัยจึงศึกษาจากประชากรทั้งหมดโดยไม่มีการสุ่มตัวอย่าง`;
+    } else if (methodType === "purposive") {
+      popText = `ประชากรที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} ${school} สังกัด${affil} ที่กำลังศึกษาอยู่ในภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${cCount} ห้องเรียน รวมทั้งสิ้น ${popN} คน`;
+      sampleText = `กลุ่มตัวอย่างที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} ${school} สังกัด${affil} ภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${selC} ห้องเรียน รวมทั้งสิ้น ${sN} คน ซึ่งได้มาโดยการเลือกแบบเจาะจง (Purposive Sampling) เนื่องจากเป็นห้องเรียนที่มีปัญหาผลสัมฤทธิ์และทักษะการเรียนรู้ต่ำกว่าเกณฑ์เป้าหมายของสถานศึกษา`;
+    } else if (methodType === "simple_random") {
+      popText = `ประชากรที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} ${school} สังกัด${affil} ที่กำลังศึกษาอยู่ในภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${cCount} ห้องเรียน รวมทั้งสิ้น ${popN} คน`;
+      sampleText = `กลุ่มตัวอย่างที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} ${school} สังกัด${affil} ภาคเรียนที่ ${sem} ปีการศึกษา ${year} รวมทั้งสิ้น ${sN} คน ซึ่งได้มาโดยวิธีการสุ่มอย่างง่าย (Simple Random Sampling) โดยใช้รายชื่อนักเรียนทั้งหมดเป็นกรอบการสุ่ม (Sampling Frame) ด้วยการจับสลากแบบไม่คืนที่`;
+    } else {
+      // cluster_random
+      popText = `ประชากรที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} ${school} สังกัด${affil} ที่กำลังศึกษาอยู่ในภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${cCount} ห้องเรียน รวมทั้งสิ้น ${popN} คน ซึ่งจัดห้องเรียนแบบคละความสามารถ (Heterogeneous Classroom)`;
+      sampleText = `กลุ่มตัวอย่างที่ใช้ในการวิจัยครั้งนี้ ได้แก่ ${targetGrade} (ห้อง ม.4/1) ${school} สังกัด${affil} ภาคเรียนที่ ${sem} ปีการศึกษา ${year} จำนวน ${selC} ห้องเรียน รวมทั้งสิ้น ${sN} คน ซึ่งได้มาโดยการสุ่มแบบกลุ่ม (Cluster Random Sampling) โดยใช้ห้องเรียนเป็นหน่วยในการสุ่ม (Sampling Unit) ด้วยวิธีการจับสลาก`;
+    }
+
+    return { populationText: popText, sampleText: sampleText };
+  }
+
   // --- Navigation & View Switching ---
   window.ROAD_APP = {
     toggleTheme() {
@@ -499,6 +545,10 @@
     },
 
     updateSamplingMetadata(field, val) {
+      if (state.showWizardModal) {
+        if (field === "type") return this.updateWizardSamplingMethod(val);
+        return this.updateWizardSamplingNumber(field, val);
+      }
       const proj = getActiveProject();
       if (!proj.samplingMetadata) {
         proj.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA || { type: "cluster_random" }));
@@ -2107,19 +2157,21 @@
 
     // --- Research Wizard (10 Steps) Actions ---
     openWizardModal(step = 1) {
-      const proj = getActiveProject();
-      state.wizardStep = Number(step) || 1;
+      const proj = getActiveProject() || {};
+      state.wizardStep = Math.max(1, Math.min(10, Number(step) || 1));
       const bShort = proj.B_short || proj.B || "นวัตกรรม";
       const c1 = (proj.C_list && proj.C_list[0]) || "การคิดวิเคราะห์";
       const c2 = (proj.C_list && proj.C_list[1]) || "";
       const crit = proj.efficiencyCriterion || "80/80";
-      const dTarget = proj.D || "นักเรียนกลุ่มเป้าหมาย";
+      const dTarget = proj.D || "นักเรียนชั้นมัธยมศึกษาปีที่ 4";
+      const school = (proj.contextMeta && proj.contextMeta.schoolName) || proj.schoolName || proj.school || "โรงเรียนเปรมติณสูลานนท์";
+      const affil = (proj.contextMeta && proj.contextMeta.affiliation) || proj.affiliation || "องค์การบริหารส่วนจังหวัดขอนแก่น";
 
       const defaultObjectives = [
         `1. เพื่อศึกษาสภาพปัญหา ข้อมูลพื้นฐาน และความต้องการจำเป็นในการพัฒนา${bShort} ${dTarget} (ระยะที่ 1: R1)`,
         `2. เพื่อสร้าง พัฒนา และหาประสิทธิภาพของ${bShort} ${dTarget} ให้มีประสิทธิภาพตามเกณฑ์มาตรฐาน ${crit} (ระยะที่ 2: D1)`,
         `3. เพื่อทดลองใช้${bShort} กับกลุ่มตัวอย่างจริง โดยเปรียบเทียบ${c1} ก่อนและหลังเรียน และหาดัชนีประสิทธิผล (E.I.) (ระยะที่ 3: R2)`,
-        `4. เพื่อประเมินความพึงพอใจของ${dTarget} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort} และปรับปรุงเป็นฉบับสมบูรณ์ (ระยะที่ 4: D2)`
+        `4. เพื่อประเมินความพึงพอใจของ${dTarget} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort} และปรับปรุงเป็นคู่มือฉบับสมบูรณ์ (ระยะที่ 4: D2)`
       ];
 
       const defaultHypotheses = [
@@ -2127,24 +2179,49 @@
         ...(c2 ? [`2. ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c2} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05`] : [])
       ];
 
+      const samplingMeta = proj.samplingMetadata || {
+        type: "cluster_random",
+        populationSize: 120,
+        sampleSize: 35,
+        classroomsCount: 4,
+        selectedClassrooms: 1,
+        isNormalDistributed: true,
+        unit: "ห้องเรียน (Classroom Unit)",
+        normalityTest: "shapiro_wilk"
+      };
+
+      const defaultNarrative = generateSamplingNarrative(
+        proj,
+        samplingMeta.type || "cluster_random",
+        samplingMeta.populationSize || 120,
+        samplingMeta.classroomsCount || 4,
+        samplingMeta.sampleSize || 35,
+        samplingMeta.selectedClassrooms || 1
+      );
+
       state.wizardData = {
-        step1_title: window.ROAD_GENERATOR.composeFullTitle(proj),
+        step1_title: proj.title || window.ROAD_GENERATOR.composeFullTitle(proj),
         step1_keywords: `${proj.B_short || proj.B}, ${(proj.C_list || []).join(", ")}, การวิจัยและพัฒนา (R&D)`,
-        step2_problem: `นักเรียนขาดทักษะ${(proj.C_list && proj.C_list[0]) || 'การคิดวิเคราะห์'} และมีผลสัมฤทธิ์ทางการเรียนต่ำกว่าเกณฑ์เป้าหมายของสถานศึกษา อีกทั้งการจัดการเรียนรู้แบบเดิมเน้นการบรรยาย ขาดการลงมือปฏิบัติจริง`,
-        step2_context: `${proj.schoolName || 'โรงเรียน'} สังกัด ${proj.affiliation || 'สพฐ.'} ผู้เรียนระดับ ${proj.D}`,
+        step2_problem: `ผู้เรียนยังขาดทักษะ${(proj.C_list && proj.C_list[0]) || 'การคิดวิเคราะห์'} และมีผลสัมฤทธิ์ทางการเรียนต่ำกว่าเกณฑ์เป้าหมายของสถานศึกษา อีกทั้งการจัดการเรียนรู้เดิมเน้นการบรรยาย ขาดการลงมือปฏิบัติจริง และไม่มีเครื่องมือช่วยให้ข้อมูลสะท้อนกลับรายบุคคลอย่างทันท่วงที`,
+        step2_context: `${school} สังกัด ${affil} ผู้เรียนระดับ ${dTarget}`,
         step3_obj: defaultObjectives.join("\n"),
         step4_hypo: defaultHypotheses.join("\n"),
-        step5_population: proj.population || "นักเรียนทั้งหมดในสถานศึกษา",
-        step5_sample: proj.sample || "นักเรียนกลุ่มตัวอย่าง จำนวน 1 ห้องเรียน สุ่มแบบกลุ่ม (Cluster Random Sampling)",
-        step6_innovation: proj.B,
-        step6_innovation_short: proj.B_short,
-        step6_steps: (proj.B_steps || []).join("\n"),
-        step6_independent: `นวัตกรรม ${proj.B_short}`,
+        step5_samplingMethod: samplingMeta.type || "cluster_random",
+        step5_popSize: samplingMeta.populationSize || 120,
+        step5_classroomsCount: samplingMeta.classroomsCount || 4,
+        step5_sampleSize: samplingMeta.sampleSize || 35,
+        step5_selectedClassrooms: samplingMeta.selectedClassrooms || 1,
+        step5_population: proj.population || defaultNarrative.populationText,
+        step5_sample: proj.sample || defaultNarrative.sampleText,
+        step6_innovation: proj.B || "รูปแบบการจัดการเรียนรู้เชิงรุกผสานปัญญาประดิษฐ์",
+        step6_innovation_short: proj.B_short || "รูปแบบ PBL-AI Reflective Model",
+        step6_steps: (proj.B_steps && proj.B_steps.length > 0) ? proj.B_steps.join("\n") : (window.ROAD_DATA.RESEARCH_WIZARD_STEPS[5].sample.step6_steps || ""),
+        step6_independent: `นวัตกรรม ${proj.B_short || 'รูปแบบที่พัฒนาขึ้น'}`,
         step6_dependent: (proj.C_list || []).join(", "),
-        step7_tools: `- ${proj.B_short}\n- แผนการจัดการเรียนรู้\n- แบบทดสอบวัด${(proj.C_list && proj.C_list[0]) || 'ผลสัมฤทธิ์'}\n- แบบสอบถามความพึงพอใจ`,
-        step7_quality: "IOC โดยผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.50), ความยากง่าย (p) 0.20-0.80, อำนาจจำแนก (r) >= 0.20, ความเชื่อมั่น Cronbach's Alpha >= 0.80",
-        step8_stats: `1. ค่าเฉลี่ย (Mean) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)\n2. ประสิทธิภาพนวัตกรรม E1/E2 ตามเกณฑ์ ${proj.efficiencyCriterion}\n3. ดัชนีประสิทธิผล (E.I.) เกณฑ์ >= 0.50\n4. สถิติทดสอบสมมติฐาน t-test for Dependent Samples (p < .05)`,
-        step9_impact: `1. ผู้เรียนมี${(proj.C_list || []).join(" และ ")}สูงขึ้นอย่างมีนัยสำคัญ\n2. ครูได้นวัตกรรมต้นแบบที่ผ่านการตรวจสอบเชิงประจักษ์\n3. ใช้เป็นผลงานทางวิชาการตามเกณฑ์ วPA ก.ค.ศ.`
+        step7_tools: `- ${proj.B_short || 'คู่มือการใช้นวัตกรรม'}\n- แผนการจัดการเรียนรู้ 6 แผน (18 ชม.)\n- แบบทดสอบวัด${(proj.C_list && proj.C_list[0]) || 'ผลสัมฤทธิ์'}\n- แบบสอบถามความพึงพอใจ`,
+        step7_quality: "IOC โดยผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.50), ความยากง่าย (p) 0.20-0.80, อำนาจจำแนก (r) >= 0.20, ความเชื่อมั่นแบบทดสอบ KR-20 >= 0.80, ความเชื่อมั่นแบบสอบถาม Cronbach's Alpha >= 0.85",
+        step8_stats: `1. ค่าเฉลี่ย (x̄) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)\n2. ประสิทธิภาพนวัตกรรม E1/E2 ตามเกณฑ์ ${proj.efficiencyCriterion || '80/80'}\n3. ดัชนีประสิทธิผล (E.I.) เกณฑ์ >= 0.50\n4. สถิติทดสอบสมมติฐาน Dependent Samples t-test (p < .05)\n5. การวิเคราะห์ขนาดอิทธิพล (Cohen's d)`,
+        step9_impact: `1. ผู้เรียนมี${(proj.C_list || []).join(" และ ")}สูงขึ้นอย่างมีนัยสำคัญทางสถิติ\n2. ครูได้นวัตกรรมต้นแบบที่ผ่านการตรวจสอบเชิงประจักษ์ตามเกณฑ์ วPA ก.ค.ศ.\n3. โรงเรียนเปรมติณสูลานนท์และ อบจ.ขอนแก่น มีนวัตกรรมต้นแบบพร้อมขยายผลสู่โรงเรียนในสังกัดและเผยแพร่ในวารสาร TCI`
       };
       state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
       state.showWizardModal = true;
@@ -2157,52 +2234,305 @@
     },
 
     setWizardStep(step) {
-      state.wizardStep = Math.max(1, Math.min(10, Number(step)));
+      // Auto-save current wizard values into active project before switching
+      const proj = getActiveProject();
+      if (proj && state.wizardData) {
+        const w = state.wizardData;
+        if (w.step5_population) proj.population = w.step5_population;
+        if (w.step5_sample) proj.sample = w.step5_sample;
+        if (w.step5_samplingMethod) {
+          proj.samplingMethod = w.step5_samplingMethod;
+          if (proj.samplingMetadata) proj.samplingMetadata.type = w.step5_samplingMethod;
+        }
+        if (w.step1_title) proj.title = w.step1_title;
+        if (w.step6_innovation) proj.B = w.step6_innovation;
+        if (w.step6_innovation_short) proj.B_short = w.step6_innovation_short;
+        saveProjects();
+      }
+      state.wizardStep = Math.max(1, Math.min(10, Number(step) || 1));
       state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
       renderApp();
     },
 
     updateWizardField(field, val) {
+      if (!state.wizardData) state.wizardData = {};
       state.wizardData[field] = val;
+      const proj = getActiveProject();
+      if (proj) {
+        if (field === "step1_title") proj.title = val;
+        if (field === "step5_population") proj.population = val;
+        if (field === "step5_sample") proj.sample = val;
+        if (field === "step6_innovation") proj.B = val;
+        if (field === "step6_innovation_short") proj.B_short = val;
+      }
       state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
     },
 
-    applyWizardSample(stepNum) {
-      const stepObj = window.ROAD_DATA.RESEARCH_WIZARD_STEPS.find(s => s.step === stepNum);
-      if (stepObj && stepObj.sample) {
-        Object.assign(state.wizardData, stepObj.sample);
-        state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
-        renderApp();
-        showToast(`ใส่ตัวอย่างมาตรฐานของ อ.ชวลิต ในขั้นตอนที่ ${stepNum} เรียบร้อยแล้ว`);
+    updateWizardSamplingMethod(methodId) {
+      const proj = getActiveProject();
+      if (!proj.samplingMetadata) {
+        proj.samplingMetadata = {
+          type: methodId,
+          populationSize: 120,
+          sampleSize: 35,
+          classroomsCount: 4,
+          selectedClassrooms: 1,
+          isNormalDistributed: true,
+          unit: "ห้องเรียน (Classroom Unit)",
+          normalityTest: "shapiro_wilk"
+        };
+      } else {
+        proj.samplingMetadata.type = methodId;
       }
+      proj.samplingMethod = methodId;
+      if (!state.wizardData) state.wizardData = {};
+      state.wizardData.step5_samplingMethod = methodId;
+
+      const popSize = Number(state.wizardData.step5_popSize) || proj.samplingMetadata.populationSize || 120;
+      const classCount = Number(state.wizardData.step5_classroomsCount) || proj.samplingMetadata.classroomsCount || 4;
+      const sampleSize = Number(state.wizardData.step5_sampleSize) || proj.samplingMetadata.sampleSize || 35;
+      const selClassCount = Number(state.wizardData.step5_selectedClassrooms) || proj.samplingMetadata.selectedClassrooms || 1;
+
+      const narrative = generateSamplingNarrative(proj, methodId, popSize, classCount, sampleSize, selClassCount);
+      state.wizardData.step5_population = narrative.populationText;
+      state.wizardData.step5_sample = narrative.sampleText;
+      proj.population = narrative.populationText;
+      proj.sample = narrative.sampleText;
+
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      saveProjects();
+      renderApp();
+
+      const mName = methodId === 'cluster_random' ? 'การสุ่มแบบกลุ่ม (Cluster Random)' :
+                    methodId === 'simple_random' ? 'การสุ่มอย่างง่าย (Simple Random)' :
+                    methodId === 'purposive' ? 'การเลือกแบบเจาะจง (Purposive)' : 'ประชากรทั้งหมด (Census)';
+      showToast(`ตั้งค่าวิธีการสุ่มเป็น "${mName}" และสร้างข้อความวิจัยเรียบร้อยแล้ว`, (methodId === 'purposive' || methodId === 'population') ? 'warn' : 'ok');
+    },
+
+    updateWizardSamplingNumber(field, val) {
+      const numVal = Math.max(1, Number(val) || 1);
+      const proj = getActiveProject();
+      if (!proj.samplingMetadata) {
+        proj.samplingMetadata = {
+          type: (state.wizardData && state.wizardData.step5_samplingMethod) || "cluster_random",
+          populationSize: 120,
+          sampleSize: 35,
+          classroomsCount: 4,
+          selectedClassrooms: 1,
+          isNormalDistributed: true,
+          unit: "ห้องเรียน (Classroom Unit)",
+          normalityTest: "shapiro_wilk"
+        };
+      }
+      proj.samplingMetadata[field] = numVal;
+      if (!state.wizardData) state.wizardData = {};
+
+      if (field === "populationSize") state.wizardData.step5_popSize = numVal;
+      if (field === "classroomsCount") state.wizardData.step5_classroomsCount = numVal;
+      if (field === "sampleSize") state.wizardData.step5_sampleSize = numVal;
+      if (field === "selectedClassrooms") state.wizardData.step5_selectedClassrooms = numVal;
+
+      const methodId = state.wizardData.step5_samplingMethod || proj.samplingMetadata.type || "cluster_random";
+      const popSize = Number(state.wizardData.step5_popSize) || proj.samplingMetadata.populationSize || 120;
+      const classCount = Number(state.wizardData.step5_classroomsCount) || proj.samplingMetadata.classroomsCount || 4;
+      const sampleSize = Number(state.wizardData.step5_sampleSize) || proj.samplingMetadata.sampleSize || 35;
+      const selClassCount = Number(state.wizardData.step5_selectedClassrooms) || proj.samplingMetadata.selectedClassrooms || 1;
+
+      const narrative = generateSamplingNarrative(proj, methodId, popSize, classCount, sampleSize, selClassCount);
+      state.wizardData.step5_population = narrative.populationText;
+      state.wizardData.step5_sample = narrative.sampleText;
+      proj.population = narrative.populationText;
+      proj.sample = narrative.sampleText;
+
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      saveProjects();
+      renderApp();
+    },
+
+    autoGenerateSamplingNarrative() {
+      const proj = getActiveProject();
+      if (!state.wizardData) state.wizardData = {};
+      const methodId = state.wizardData.step5_samplingMethod || (proj.samplingMetadata && proj.samplingMetadata.type) || "cluster_random";
+      const popSize = Number(state.wizardData.step5_popSize) || (proj.samplingMetadata && proj.samplingMetadata.populationSize) || 120;
+      const classCount = Number(state.wizardData.step5_classroomsCount) || (proj.samplingMetadata && proj.samplingMetadata.classroomsCount) || 4;
+      const sampleSize = Number(state.wizardData.step5_sampleSize) || (proj.samplingMetadata && proj.samplingMetadata.sampleSize) || 35;
+      const selClassCount = Number(state.wizardData.step5_selectedClassrooms) || (proj.samplingMetadata && proj.samplingMetadata.selectedClassrooms) || 1;
+
+      const narrative = generateSamplingNarrative(proj, methodId, popSize, classCount, sampleSize, selClassCount);
+      state.wizardData.step5_population = narrative.populationText;
+      state.wizardData.step5_sample = narrative.sampleText;
+      proj.population = narrative.populationText;
+      proj.sample = narrative.sampleText;
+      if (proj.samplingMetadata) {
+        proj.samplingMetadata.type = methodId;
+        proj.samplingMetadata.populationSize = popSize;
+        proj.samplingMetadata.sampleSize = sampleSize;
+        proj.samplingMetadata.classroomsCount = classCount;
+        proj.samplingMetadata.selectedClassrooms = selClassCount;
+      }
+      proj.samplingMethod = methodId;
+
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      saveProjects();
+      renderApp();
+      showToast("⚡ สร้างข้อความทางการสำหรับประชากรและกลุ่มตัวอย่างสำเร็จ", "ok");
+    },
+
+    applyWizardSample(stepNum) {
+      const proj = getActiveProject() || {};
+      const stepObj = (window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).find(s => s.step === stepNum);
+      const school = (proj.contextMeta && proj.contextMeta.schoolName) || proj.schoolName || proj.school || "โรงเรียนเปรมติณสูลานนท์";
+      const affil = (proj.contextMeta && proj.contextMeta.affiliation) || proj.affiliation || "องค์การบริหารส่วนจังหวัดขอนแก่น";
+      
+      if (!state.wizardData) state.wizardData = {};
+
+      if (stepNum === 1) {
+        state.wizardData.step1_title = (stepObj && stepObj.sample && stepObj.sample.step1_title) ||
+          `การพัฒนารูปแบบการจัดการเรียนรู้เชิงรุกผสานปัญญาประดิษฐ์ ตามแนวคิดการจัดการเรียนรู้แบบใช้ปัญหาเป็นฐานร่วมกับการสะท้อนคิด เพื่อพัฒนาความสามารถในการแก้ปัญหาที่ซับซ้อนและผลสัมฤทธิ์ทางการเรียน สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 4 ${school} สังกัด${affil}`;
+        state.wizardData.step1_keywords = (stepObj && stepObj.sample && stepObj.sample.step1_keywords) ||
+          "รูปแบบ PBL-AI Reflective Model, การแก้ปัญหาที่ซับซ้อน, ผลสัมฤทธิ์ทางการเรียน, การวิจัยและพัฒนา (R&D)";
+        if (proj) proj.title = state.wizardData.step1_title;
+      } else if (stepNum === 2) {
+        state.wizardData.step2_problem = (stepObj && stepObj.sample && (stepObj.sample.step2_problem || stepObj.sample.problemStatement)) ||
+          "ผู้เรียนยังขาดทักษะการคิดวิเคราะห์และการแก้ปัญหาอย่างเป็นระบบในสถานการณ์ซับซ้อน โดยผลการประเมินพบว่าคะแนนเฉลี่ยต่ำกว่าเกณฑ์ร้อยละ 60 การจัดการเรียนรู้เดิมเน้นการบรรยาย ขาดการลงมือปฏิบัติจริง และไม่มีเครื่องมือช่วยให้ข้อมูลสะท้อนกลับรายบุคคลอย่างทันท่วงที";
+        state.wizardData.step2_context = (stepObj && stepObj.sample && (stepObj.sample.step2_context || stepObj.sample.schoolContext)) ||
+          `${school} สังกัด${affil} ผู้เรียนระดับชั้นมัธยมศึกษาปีที่ 4`;
+      } else if (stepNum === 3) {
+        state.wizardData.step3_obj = (stepObj && stepObj.sample && stepObj.sample.step3_obj) ||
+          "1. เพื่อศึกษาสภาพปัญหา ข้อมูลพื้นฐาน และความต้องการจำเป็นในการพัฒนารูปแบบการจัดการเรียนรู้ สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 4 (ระยะที่ 1: R1)\n2. เพื่อสร้าง พัฒนา และหาประสิทธิภาพของรูปแบบการจัดการเรียนรู้ ให้มีประสิทธิภาพตามเกณฑ์มาตรฐาน 80/80 (ระยะที่ 2: D1)\n3. เพื่อทดลองใช้รูปแบบการจัดการเรียนรู้กับกลุ่มตัวอย่างจริง โดยเปรียบเทียบผลสัมฤทธิ์ทางการเรียนและความสามารถในการแก้ปัญหาที่ซับซ้อนก่อนและหลังเรียน และหาดัชนีประสิทธิผล (E.I.) (ระยะที่ 3: R2)\n4. เพื่อประเมินความพึงพอใจของนักเรียนที่มีต่อการจัดการเรียนรู้ด้วยรูปแบบที่พัฒนาขึ้น และปรับปรุงเป็นคู่มือฉบับสมบูรณ์ (ระยะที่ 4: D2)";
+      } else if (stepNum === 4) {
+        state.wizardData.step4_hypo = (stepObj && stepObj.sample && stepObj.sample.step4_hypo) ||
+          "1. นักเรียนชั้นมัธยมศึกษาปีที่ 4 ที่ได้รับการจัดการเรียนรู้ด้วยรูปแบบที่พัฒนาขึ้น มีคะแนนผลสัมฤทธิ์ทางการเรียนหลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05\n2. นักเรียนชั้นมัธยมศึกษาปีที่ 4 ที่ได้รับการจัดการเรียนรู้ด้วยรูปแบบที่พัฒนาขึ้น มีคะแนนความสามารถในการแก้ปัญหาที่ซับซ้อนหลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05";
+      } else if (stepNum === 5) {
+        state.wizardData.step5_samplingMethod = "cluster_random";
+        state.wizardData.step5_popSize = 120;
+        state.wizardData.step5_classroomsCount = 4;
+        state.wizardData.step5_sampleSize = 35;
+        state.wizardData.step5_selectedClassrooms = 1;
+        
+        const narrative = generateSamplingNarrative(proj, "cluster_random", 120, 4, 35, 1);
+        state.wizardData.step5_population = narrative.populationText;
+        state.wizardData.step5_sample = narrative.sampleText;
+        
+        proj.samplingMetadata = {
+          type: "cluster_random",
+          populationSize: 120,
+          sampleSize: 35,
+          classroomsCount: 4,
+          selectedClassrooms: 1,
+          isNormalDistributed: true,
+          unit: "ห้องเรียน (Classroom Unit)",
+          normalityTest: "shapiro_wilk"
+        };
+        proj.population = narrative.populationText;
+        proj.sample = narrative.sampleText;
+        proj.samplingMethod = "cluster_random";
+        saveProjects();
+      } else if (stepNum === 6) {
+        state.wizardData.step6_innovation = (stepObj && stepObj.sample && stepObj.sample.step6_innovation) ||
+          "รูปแบบการจัดการเรียนรู้เชิงรุกผสานปัญญาประดิษฐ์ ตามแนวคิดการจัดการเรียนรู้แบบใช้ปัญหาเป็นฐานร่วมกับการสะท้อนคิด (PBL-AI Reflective Model)";
+        state.wizardData.step6_innovation_short = "รูปแบบ PBL-AI Reflective Model";
+        state.wizardData.step6_steps = (stepObj && stepObj.sample && stepObj.sample.step6_steps) ||
+          "ขั้นที่ 1 ระบุสถานการณ์ปัญหาท้าทาย (Problem Identification)\nขั้นที่ 2 แสวงหาความรู้และวิเคราะห์ด้วย AI Co-Pilot (Inquiry & AI Exploration)\nขั้นที่ 3 ออกแบบแนวทางแก้ไขและลงมือปฏิบัติ (Collaborative Solution Design)\nขั้นที่ 4 นำเสนอผลงานและสะท้อนคิดพิจารณาผล (Showcase & Reflection)\nขั้นที่ 5 ประเมินและขยายผลสู่ชีวิตจริง (Authentic Evaluation & Application)";
+        state.wizardData.step6_dependent = (stepObj && stepObj.sample && stepObj.sample.step6_dependent) ||
+          "ความสามารถในการแก้ปัญหาที่ซับซ้อน, ผลสัมฤทธิ์ทางการเรียน";
+        if (proj) {
+          proj.B = state.wizardData.step6_innovation;
+          proj.B_short = state.wizardData.step6_innovation_short;
+          proj.B_steps = state.wizardData.step6_steps.split("\n").map(s => s.trim()).filter(Boolean);
+          proj.C_list = state.wizardData.step6_dependent.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+        }
+      } else if (stepNum === 7) {
+        state.wizardData.step7_tools = (stepObj && stepObj.sample && stepObj.sample.step7_tools) ||
+          "- รูปแบบการจัดการเรียนรู้เชิงรุกผสาน AI (คู่มือการใช้และแผนการสอน 6 แผน 18 ชม.)\n- แบบทดสอบวัดผลสัมฤทธิ์ทางการเรียน ชนิดปรนัย 4 ตัวเลือก จำนวน 40 ข้อ\n- แบบประเมินความสามารถในการแก้ปัญหาที่ซับซ้อนตามสภาพจริง (Rubric 4 ระดับ)\n- แบบสอบถามความพึงพอใจของนักเรียน แบบมาตราส่วนประมาณค่า 5 ระดับ (Likert Scale)";
+        state.wizardData.step7_quality = (stepObj && stepObj.sample && stepObj.sample.step7_quality) ||
+          "ความเที่ยงตรงเชิงเนื้อหา IOC โดยผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.50), ความยากง่าย (p) 0.20-0.80, อำนาจจำแนก (r) >= 0.20, ความเชื่อมั่นแบบทดสอบ KR-20 >= 0.80, ความเชื่อมั่นแบบสอบถาม Cronbach's Alpha >= 0.85";
+      } else if (stepNum === 8) {
+        state.wizardData.step8_stats = (stepObj && stepObj.sample && stepObj.sample.step8_stats) ||
+          "1. ค่าเฉลี่ย (x̄) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)\n2. ประสิทธิภาพของกระบวนการและผลลัพธ์ (E1/E2) ตามเกณฑ์ 80/80\n3. ดัชนีประสิทธิผล (Effectiveness Index: E.I.) ตามเกณฑ์ >= 0.50\n4. สถิติทดสอบสมมติฐาน Dependent Samples t-test (p < .05)\n5. การวิเคราะห์ขนาดอิทธิพล (Effect Size: Cohen's d)";
+      } else if (stepNum === 9) {
+        state.wizardData.step9_impact = (stepObj && stepObj.sample && stepObj.sample.step9_impact) ||
+          `1. นักเรียนชั้นมัธยมศึกษาปีที่ 4 มีความสามารถในการแก้ปัญหาที่ซับซ้อนและผลสัมฤทธิ์ทางการเรียนสูงขึ้นอย่างมีนัยสำคัญทางสถิติ\n2. ครูผู้สอนได้คู่มือและแผนการจัดการเรียนรู้เชิงรุกผสาน AI ที่มีประสิทธิภาพผ่านเกณฑ์ วPA ก.ค.ศ. ด้านที่ 1 และ 2\n3. ${school} และ ${affil} มีนวัตกรรมต้นแบบพร้อมขยายผลสู่โรงเรียนในสังกัดและเผยแพร่ในวารสาร TCI`;
+      }
+
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      saveProjects();
+      renderApp();
+      showToast(`เติมข้อมูลตัวอย่างมาตรฐานของ อ.ชวลิต ในขั้นตอนที่ ${stepNum} เรียบร้อยแล้ว`, "ok");
+    },
+
+    saveWizardStep() {
+      const proj = getActiveProject();
+      if (proj && state.wizardData) {
+        const w = state.wizardData;
+        if (w.step1_title) proj.title = w.step1_title;
+        if (w.step5_population) proj.population = w.step5_population;
+        if (w.step5_sample) proj.sample = w.step5_sample;
+        if (w.step5_samplingMethod) {
+          proj.samplingMethod = w.step5_samplingMethod;
+          if (!proj.samplingMetadata) proj.samplingMetadata = {};
+          proj.samplingMetadata.type = w.step5_samplingMethod;
+        }
+        if (proj.samplingMetadata) {
+          if (w.step5_popSize) proj.samplingMetadata.populationSize = Number(w.step5_popSize);
+          if (w.step5_sampleSize) proj.samplingMetadata.sampleSize = Number(w.step5_sampleSize);
+          if (w.step5_classroomsCount) proj.samplingMetadata.classroomsCount = Number(w.step5_classroomsCount);
+          if (w.step5_selectedClassrooms) proj.samplingMetadata.selectedClassrooms = Number(w.step5_selectedClassrooms);
+        }
+        if (w.step6_innovation) proj.B = w.step6_innovation;
+        if (w.step6_innovation_short) proj.B_short = w.step6_innovation_short;
+        if (w.step6_steps) proj.B_steps = w.step6_steps.split("\n").map(s => s.trim()).filter(Boolean);
+        if (w.step6_dependent) proj.C_list = w.step6_dependent.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+        saveProjects();
+      }
+      state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
+      renderApp();
+      showToast("💾 บันทึกข้อมูลโครงร่างวิจัยเรียบร้อยแล้ว", "ok");
     },
 
     completeWizardAndCreate() {
-      const w = state.wizardData;
+      const w = state.wizardData || {};
       const proj = getActiveProject();
       
-      if (w.step6_innovation) proj.B = w.step6_innovation;
-      if (w.step6_innovation_short) proj.B_short = w.step6_innovation_short;
-      if (w.step6_steps) {
-        proj.B_steps = w.step6_steps.split("\n").map(s => s.trim()).filter(Boolean);
+      if (proj) {
+        if (w.step1_title) proj.title = w.step1_title;
+        if (w.step6_innovation) proj.B = w.step6_innovation;
+        if (w.step6_innovation_short) proj.B_short = w.step6_innovation_short;
+        if (w.step6_steps) {
+          proj.B_steps = w.step6_steps.split("\n").map(s => s.trim()).filter(Boolean);
+        }
+        if (w.step6_dependent) {
+          proj.C_list = w.step6_dependent.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+        }
+        if (w.step5_population) proj.population = w.step5_population;
+        if (w.step5_sample) proj.sample = w.step5_sample;
+        if (w.step5_samplingMethod) {
+          proj.samplingMethod = w.step5_samplingMethod;
+          if (!proj.samplingMetadata) proj.samplingMetadata = {};
+          proj.samplingMetadata.type = w.step5_samplingMethod;
+        }
+        if (proj.samplingMetadata) {
+          if (w.step5_popSize) proj.samplingMetadata.populationSize = Number(w.step5_popSize);
+          if (w.step5_sampleSize) proj.samplingMetadata.sampleSize = Number(w.step5_sampleSize);
+          if (w.step5_classroomsCount) proj.samplingMetadata.classroomsCount = Number(w.step5_classroomsCount);
+          if (w.step5_selectedClassrooms) proj.samplingMetadata.selectedClassrooms = Number(w.step5_selectedClassrooms);
+        }
+        
+        proj.status = "outlined";
+        proj.progress = 95;
+        proj.updatedAt = new Date().toISOString();
+        
+        recordAudit("PROJECT_CREATE", `สร้างและซิงค์โครงร่าง 5 บทผ่าน Research Wizard: ${proj.label || proj.B_short || proj.title}`);
+        saveProjects();
       }
-      if (w.step6_dependent) {
-        proj.C_list = w.step6_dependent.split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
-      }
-      if (w.step5_population) proj.population = w.step5_population;
-      if (w.step5_sample) proj.sample = w.step5_sample;
-      
-      proj.status = "outlined";
-      proj.progress = 95;
-      proj.updatedAt = new Date().toISOString();
-      
-      recordAudit("PROJECT_CREATE", `สร้างและซิงค์โครงร่าง 5 บทผ่าน Research Wizard: ${proj.label || proj.B_short}`);
+
       state.showWizardModal = false;
       state.studioTab = "chapters";
-      saveProjects();
       renderApp();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      showToast("สร้างและตรวจสอบโครงร่างการวิจัย 5 บทเสร็จสมบูรณ์เรียบร้อยแล้ว!", "ok");
+      if (typeof window.scrollTo === "function") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      showToast("สร้างและตรวจทานโครงร่างการวิจัย 5 บทเสร็จสมบูรณ์เรียบร้อยแล้ว!", "ok");
     },
 
     // --- Research Workspace & Project Portfolio Actions ---
@@ -7009,9 +7339,28 @@
 
   // --- Research Wizard 10-Step Interactive Modal ---
   function renderResearchWizardModal() {
-    const curStepNum = state.wizardStep;
+    const proj = getActiveProject() || {};
+    if (!proj.samplingMetadata) {
+      proj.samplingMetadata = {
+        type: "cluster_random",
+        populationSize: 120,
+        sampleSize: 35,
+        classroomsCount: 4,
+        selectedClassrooms: 1,
+        isNormalDistributed: true,
+        unit: "ห้องเรียน (Classroom Unit)",
+        normalityTest: "shapiro_wilk"
+      };
+    }
+    const curStepNum = Math.max(1, Math.min(10, Number(state.wizardStep) || 1));
     const curStepObj = (window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).find(s => s.step === curStepNum) || (window.ROAD_DATA.RESEARCH_WIZARD_STEPS || [])[0];
     const w = state.wizardData || {};
+
+    const currentSamplingType = w.step5_samplingMethod || proj.samplingMetadata?.type || "cluster_random";
+    const popSize = w.step5_popSize !== undefined ? w.step5_popSize : (proj.samplingMetadata?.populationSize || 120);
+    const classroomsCount = w.step5_classroomsCount !== undefined ? w.step5_classroomsCount : (proj.samplingMetadata?.classroomsCount || 4);
+    const sampleSize = w.step5_sampleSize !== undefined ? w.step5_sampleSize : (proj.samplingMetadata?.sampleSize || 35);
+    const selectedClassrooms = w.step5_selectedClassrooms !== undefined ? w.step5_selectedClassrooms : (proj.samplingMetadata?.selectedClassrooms || 1);
 
     return `
       <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -7028,19 +7377,24 @@
                 <div class="text-xs text-slate-500">ขั้นตอนที่ ${curStepNum} จาก 10: ${escapeHtml(curStepObj.title)}</div>
               </div>
             </div>
-            <button onclick="ROAD_APP.closeWizardModal()" class="w-8 h-8 rounded-full neu-squircle flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer font-bold">
+            <button type="button" onclick="ROAD_APP.closeWizardModal()" class="w-8 h-8 rounded-full neu-squircle flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer font-bold transition">
               ✕
             </button>
           </div>
 
           <!-- Stepper 1-10 Pills Bar -->
           <div class="px-4 py-2.5 bg-slate-100/70 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs">
-            ${(window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).map(s => `
-              <button onclick="ROAD_APP.setWizardStep(${s.step})" class="px-2.5 py-1 rounded-lg shrink-0 font-bold transition flex items-center gap-1 cursor-pointer ${s.step === curStepNum ? 'bg-blue-600 text-white shadow-sm' : s.step < curStepNum ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'neu-squircle text-slate-600 dark:text-slate-400'}">
-                <span>${s.step < curStepNum ? '✔' : s.step}</span>
-                <span class="hidden md:inline">${s.step}. ${s.title.split(' ')[1]}</span>
-              </button>
-            `).join("")}
+            ${(window.ROAD_DATA.RESEARCH_WIZARD_STEPS || []).map(s => {
+              const isCur = s.step === curStepNum;
+              const isPast = s.step < curStepNum;
+              const titlePart = (s.title && s.title.split(' ')[1]) || s.title || `ขั้นที่ ${s.step}`;
+              return `
+                <button type="button" onclick="ROAD_APP.setWizardStep(${s.step})" class="px-2.5 py-1 rounded-lg shrink-0 font-bold transition flex items-center gap-1 cursor-pointer ${isCur ? 'bg-blue-600 text-white shadow-sm' : isPast ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-200' : 'neu-squircle text-slate-600 dark:text-slate-400 hover:text-slate-900'}">
+                  <span>${isPast ? '✔' : s.step}</span>
+                  <span class="hidden md:inline">${s.step}. ${escapeHtml(titlePart)}</span>
+                </button>
+              `;
+            }).join("")}
           </div>
 
           <!-- Wizard Body: Advice & Form Fields -->
@@ -7052,10 +7406,10 @@
                   <span>💡 คำแนะนำเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</span>
                 </div>
                 <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  ${escapeHtml(curStepObj.advice)}
+                  ${escapeHtml(curStepObj.advice || curStepObj.tip || curStepObj.subtitle || '')}
                 </p>
               </div>
-              <button onclick="ROAD_APP.applyWizardSample(${curStepNum})" class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer">
+              <button type="button" onclick="ROAD_APP.applyWizardSample(${curStepNum})" class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer transition">
                 <span>✨ ตัวอย่างมาตรฐาน 1-Click</span>
               </button>
             </div>
@@ -7107,23 +7461,171 @@
               ` : ""}
 
               ${curStepNum === 5 ? `
-                <div class="space-y-3">
-                  <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ระเบียบวิธีเลือกกลุ่มตัวอย่าง (Sampling Method):</label>
-                    <select onchange="ROAD_APP.updateSamplingMetadata('type', this.value)" class="w-full neu-input-pill px-4 py-2 text-xs font-bold text-slate-800 dark:text-white cursor-pointer">
-                      <option value="cluster_random" ${(proj.samplingMetadata?.type || 'cluster_random') === 'cluster_random' ? 'selected' : ''}>สุ่มแบบกลุ่ม (Cluster Random Sampling) - ใช้ห้องเรียนเป็นหน่วยสุ่ม (แนะนำสำหรับ วPA)</option>
-                      <option value="simple_random" ${proj.samplingMetadata?.type === 'simple_random' ? 'selected' : ''}>สุ่มอย่างง่าย (Simple Random Sampling) - มีกรอบประชากรและสุ่มรายคน</option>
-                      <option value="purposive" ${proj.samplingMetadata?.type === 'purposive' ? 'selected' : ''}>เลือกแบบเจาะจง (Purposive Sampling) - ⚠️ ห้ามใช้ t-test อ้างอิงประชากร</option>
-                      <option value="population" ${proj.samplingMetadata?.type === 'population' ? 'selected' : ''}>ศึกษาจากประชากรทั้งหมด (Population) - ⚠️ ใช้สถิติบรรยาย ไม่ต้องทดสอบ t-test</option>
-                    </select>
+                <div class="space-y-4">
+                  <!-- Sampling Method Selector: 4 Interactive Cards -->
+                  <div class="space-y-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <span>🎲 วิธีการได้มาซึ่งกลุ่มตัวอย่าง (Sampling Method):</span>
+                        <span class="text-[11px] font-normal text-slate-500">(เลือก 1 วิธีตามบริบทจริงของชั้นเรียน)</span>
+                      </label>
+                      <button type="button" onclick="ROAD_APP.applyWizardSample(5)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm cursor-pointer transition">
+                        <span>✨ เติมข้อมูลตัวอย่างมาตรฐาน (ขั้นที่ 5)</span>
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <!-- 1. Cluster Random -->
+                      <div onclick="ROAD_APP.updateWizardSamplingMethod('cluster_random')" class="p-3 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${currentSamplingType === 'cluster_random' ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-slate-900'}">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <input type="radio" name="wizard_sampling_type" value="cluster_random" ${currentSamplingType === 'cluster_random' ? 'checked' : ''} onchange="ROAD_APP.updateWizardSamplingMethod('cluster_random')" class="cursor-pointer text-blue-600" />
+                              <span>การสุ่มแบบกลุ่ม (Cluster Random)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ใช้ห้องเรียนเป็นหน่วยสุ่ม (Classroom Unit) สุ่มยกห้อง เหมาะกับโรงเรียนขนาดกลาง-ใหญ่</div>
+                          </div>
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">วPA แนะนำ ⭐</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">✅ อนุญาตให้ใช้ Dependent t-test</div>
+                      </div>
+
+                      <!-- 2. Simple Random -->
+                      <div onclick="ROAD_APP.updateWizardSamplingMethod('simple_random')" class="p-3 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${currentSamplingType === 'simple_random' ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-slate-900'}">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <input type="radio" name="wizard_sampling_type" value="simple_random" ${currentSamplingType === 'simple_random' ? 'checked' : ''} onchange="ROAD_APP.updateWizardSamplingMethod('simple_random')" class="cursor-pointer text-blue-600" />
+                              <span>การสุ่มอย่างง่าย (Simple Random)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">สุ่มรายบุคคลจากกรอบรายชื่อประชากรทั้งหมด มีโอกาสเท่าเทียมกัน</div>
+                          </div>
+                        </div>
+                        <div class="mt-2 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">✅ อนุญาตให้ใช้ t-test อ้างอิง</div>
+                      </div>
+
+                      <!-- 3. Purposive -->
+                      <div onclick="ROAD_APP.updateWizardSamplingMethod('purposive')" class="p-3 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${currentSamplingType === 'purposive' ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700 bg-white dark:bg-slate-900'}">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <input type="radio" name="wizard_sampling_type" value="purposive" ${currentSamplingType === 'purposive' ? 'checked' : ''} onchange="ROAD_APP.updateWizardSamplingMethod('purposive')" class="cursor-pointer text-amber-600" />
+                              <span>การเลือกแบบเจาะจง (Purposive)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">เลือกตามเกณฑ์เฉพาะ เช่น ห้องที่มีปัญหาผลสัมฤทธิ์ต่ำกว่าเกณฑ์</div>
+                          </div>
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 shrink-0">มีข้อจำกัด ⚠️</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-amber-700 dark:text-amber-400 font-semibold">⚠️ ห้ามใช้ t-test (ใช้สถิติบรรยาย + E.I.)</div>
+                      </div>
+
+                      <!-- 4. Population (Census) -->
+                      <div onclick="ROAD_APP.updateWizardSamplingMethod('population')" class="p-3 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${currentSamplingType === 'population' ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700 bg-white dark:bg-slate-900'}">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <input type="radio" name="wizard_sampling_type" value="population" ${currentSamplingType === 'population' ? 'checked' : ''} onchange="ROAD_APP.updateWizardSamplingMethod('population')" class="cursor-pointer text-rose-600" />
+                              <span>ใช้ประชากรทั้งหมด (Census)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ศึกษาทุกคนในระดับชั้น สำหรับโรงเรียนขนาดเล็กที่มีเพียง 1 ห้องเรียน</div>
+                          </div>
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 shrink-0">ประชากร 🛑</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-rose-700 dark:text-rose-400 font-semibold">🛑 ข้อมูลพารามิเตอร์ ไม่ต้องทดสอบ t-test</div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ประชากรเป้าหมาย (Population):</label>
-                    <input type="text" value="${escapeHtml(w.step5_population || '')}" oninput="ROAD_APP.updateWizardField('step5_population', this.value)" class="w-full neu-input-pill px-4 py-2.5 text-sm text-slate-800 dark:text-white" />
+
+                  <!-- Real-time Methodological Guardrail Alert -->
+                  ${currentSamplingType === 'purposive' ? `
+                    <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 space-y-2">
+                      <div class="flex items-start gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                          <div>คำเตือนเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</div>
+                          <div class="text-[11px] font-normal text-amber-900 dark:text-amber-200 mt-0.5 leading-relaxed">
+                            การเลือกแบบเจาะจง (Purposive Sampling) ไม่มี Sampling Error ขัดต่อข้อตกลงเบื้องต้นของสถิติอนุมาน ระบบจะปรับแผนสถิติเป็น <b>"สถิติบรรยาย (x̄, S.D., ร้อยละ) ร่วมกับดัชนีประสิทธิผล (E.I.)"</b> และตัดการทดสอบ t-test ออกจากเล่มวิจัยโดยอัตโนมัติ
+                          </div>
+                        </div>
+                      </div>
+                      <div class="pt-1 flex items-center gap-2">
+                        <button type="button" onclick="ROAD_APP.updateWizardSamplingMethod('cluster_random')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer transition">
+                          <span>🔄 1-Click: สลับเป็นสุ่มแบบกลุ่ม (Cluster Random Sampling) เพื่อให้ใช้ t-test ได้</span>
+                        </button>
+                      </div>
+                    </div>
+                  ` : currentSamplingType === 'population' ? `
+                    <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 space-y-2">
+                      <div class="flex items-start gap-2 text-xs font-bold text-rose-800 dark:text-rose-300">
+                        <span class="text-base">🛑</span>
+                        <div>
+                          <div>คำแนะนำเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</div>
+                          <div class="text-[11px] font-normal text-rose-900 dark:text-rose-200 mt-0.5 leading-relaxed">
+                            การศึกษาจากประชากรทั้งหมด ข้อมูลที่ได้คือค่าจริงของประชากร (Parameters: μ, σ) ไม่มีความคลาดเคลื่อนจากการสุ่มตัวอย่าง จึงไม่ต้องและไม่สามารถทดสอบ t-test ได้ ระบบจะรายงานด้วย ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน ร้อยละ และดัชนีประสิทธิผล E.I.
+                          </div>
+                        </div>
+                      </div>
+                      <div class="pt-1 flex items-center gap-2">
+                        <button type="button" onclick="ROAD_APP.updateWizardSamplingMethod('cluster_random')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer transition">
+                          <span>🔄 1-Click: สลับเป็นสุ่มแบบกลุ่ม (Cluster Random Sampling)</span>
+                        </button>
+                      </div>
+                    </div>
+                  ` : `
+                    <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                      <span>✅</span>
+                      <span><b>ถูกต้องตามหลักวิธีวิทยา:</b> วิธีการสุ่มแบบความน่าจะเป็นนี้รองรับการทดสอบสมมติฐานด้วย Dependent Samples t-test พร้อมรายงานขนาดอิทธิพล (Cohen's d)</span>
+                    </div>
+                  `}
+
+                  <!-- Numeric Input Matrix: Population & Sample Size Controls -->
+                  <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                      <span class="flex items-center gap-1.5">
+                        <span>🔢</span>
+                        <span>กำหนดจำนวนตัวเลขประชากรและกลุ่มตัวอย่าง:</span>
+                      </span>
+                      <button type="button" onclick="ROAD_APP.autoGenerateSamplingNarrative()" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm cursor-pointer transition">
+                        <span>⚡ สร้างข้อความทางการอัตโนมัติ</span>
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">ประชากรทั้งหมด (คน):</label>
+                        <input type="number" min="1" max="5000" value="${escapeHtml(popSize)}" onchange="ROAD_APP.updateWizardSamplingNumber('populationSize', this.value)" class="w-full neu-input-pill px-3 py-1.5 font-bold text-center text-slate-800 dark:text-white" />
+                      </div>
+                      <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">จำนวนห้องประชากร (ห้อง):</label>
+                        <input type="number" min="1" max="50" value="${escapeHtml(classroomsCount)}" onchange="ROAD_APP.updateWizardSamplingNumber('classroomsCount', this.value)" class="w-full neu-input-pill px-3 py-1.5 font-bold text-center text-slate-800 dark:text-white" />
+                      </div>
+                      <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">กลุ่มตัวอย่าง n (คน):</label>
+                        <input type="number" min="1" max="1000" value="${escapeHtml(sampleSize)}" onchange="ROAD_APP.updateWizardSamplingNumber('sampleSize', this.value)" class="w-full neu-input-pill px-3 py-1.5 font-bold text-center text-slate-800 dark:text-white" />
+                      </div>
+                      <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">ห้องที่สุ่มได้ (ห้อง):</label>
+                        <input type="number" min="1" max="20" value="${escapeHtml(selectedClassrooms)}" onchange="ROAD_APP.updateWizardSamplingNumber('selectedClassrooms', this.value)" class="w-full neu-input-pill px-3 py-1.5 font-bold text-center text-slate-800 dark:text-white" />
+                      </div>
+                    </div>
                   </div>
-                  <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">กลุ่มตัวอย่างและวิธีการสุ่ม (Sample & Sampling Method):</label>
-                    <textarea rows="3" oninput="ROAD_APP.updateWizardField('step5_sample', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_sample || '')}</textarea>
+
+                  <!-- Textarea 1: Population Description -->
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ประชากรเป้าหมายฉบับทางการ (Population Description):</label>
+                      <span class="text-[10px] text-slate-400">ใช้ในบทที่ 1, บทที่ 3 (หัวข้อ 3.2.1) และตารางวิจัย</span>
+                    </div>
+                    <textarea rows="3" oninput="ROAD_APP.updateWizardField('step5_population', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-xs sm:text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_population || '')}</textarea>
+                  </div>
+
+                  <!-- Textarea 2: Sample Description & Sampling Method -->
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-bold text-slate-700 dark:text-slate-300">กลุ่มตัวอย่างและวิธีการสุ่มฉบับทางการ (Sample & Sampling Method):</label>
+                      <span class="text-[10px] text-slate-400">ใช้ในบทที่ 1, บทที่ 3 (หัวข้อ 3.2.2) และการรายงานสถิติ</span>
+                    </div>
+                    <textarea rows="4" oninput="ROAD_APP.updateWizardField('step5_sample', this.value)" class="w-full neu-input-pill rounded-xl p-3 text-xs sm:text-sm text-slate-800 dark:text-white leading-relaxed">${escapeHtml(w.step5_sample || '')}</textarea>
                   </div>
                 </div>
               ` : ""}
@@ -7175,17 +7677,47 @@
               ` : ""}
 
               ${curStepNum === 10 ? `
-                <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 space-y-3">
-                  <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
-                    <span>🎉</span>
-                    <span>พร้อมสร้างโครงร่างวิจัยและรายงาน 5 บทแล้ว!</span>
+                <div class="space-y-4">
+                  <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-50 via-teal-50 to-sky-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-sky-950/40 border-2 border-emerald-300 dark:border-emerald-700 space-y-3">
+                    <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                      <span class="text-xl">🎉</span>
+                      <span>พร้อมสร้างโครงร่างวิจัยและรายงาน 5 บทฉบับสมบูรณ์แล้ว!</span>
+                    </div>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      ระบบได้รวบรวมข้อมูลตั้งต้นทั้ง 9 ขั้นตอน พร้อมตรวจทานความสอดคล้องตามเกณฑ์ วPA และหลักการวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง เมื่อคุณกดยืนยัน ระบบจะสร้างรายงานวิจัย 5 บท ตารางความสอดคล้อง 360° และชุดสถิติพร้อมนำเข้า Studio ทันที
+                    </p>
                   </div>
-                  <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                    ระบบได้รวบรวมข้อมูลตั้งต้นทั้ง 9 ขั้นตอน พร้อมตรวจทานความสอดคล้องตามเกณฑ์ วPA และหลักการวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง เมื่อคุณกดยืนยัน ระบบจะสร้างรายงานวิจัย 5 บท ตารางความสอดคล้อง 360° และชุดสถิติพร้อมส่งออก Microsoft Word ให้ทันที
-                  </p>
+
+                  <!-- Executive Blueprint Summary Grid -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
+                      <div class="font-bold text-slate-500 text-[11px]">📌 1. ชื่อเรื่องวิจัยและกลุ่มเป้าหมาย (ABCD):</div>
+                      <div class="font-semibold text-slate-900 dark:text-white line-clamp-3">${escapeHtml(w.step1_title || proj.title || 'โครงร่างการวิจัย')}</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
+                      <div class="font-bold text-slate-500 text-[11px]">⚙️ 2. นวัตกรรมและตัวแปรตาม:</div>
+                      <div class="font-semibold text-slate-900 dark:text-white">${escapeHtml(w.step6_innovation_short || w.step6_innovation || proj.B_short || proj.B || '-')}</div>
+                      <div class="text-[11px] text-slate-500">ตัวแปรตาม: ${escapeHtml(w.step6_dependent || (proj.C_list || []).join(", ") || '-')}</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
+                      <div class="font-bold text-slate-500 text-[11px]">👥 3. ประชากรและกลุ่มตัวอย่าง:</div>
+                      <div class="text-slate-700 dark:text-slate-300">
+                        วิธีสุ่ม: <b>${escapeHtml(currentSamplingType === 'cluster_random' ? 'Cluster Random Sampling' : currentSamplingType === 'simple_random' ? 'Simple Random Sampling' : currentSamplingType === 'purposive' ? 'Purposive Sampling' : 'Census / Population')}</b><br/>
+                        ประชากร: <b>${escapeHtml(popSize)} คน (${escapeHtml(classroomsCount)} ห้อง)</b> | กลุ่มตัวอย่าง: <b>${escapeHtml(sampleSize)} คน (${escapeHtml(selectedClassrooms)} ห้อง)</b>
+                      </div>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-1">
+                      <div class="font-bold text-slate-500 text-[11px]">📊 4. สถิติและเกณฑ์มาตรฐาน:</div>
+                      <div class="text-slate-700 dark:text-slate-300">
+                        เกณฑ์ประสิทธิภาพ: <b>E1/E2 ${escapeHtml(proj.efficiencyCriterion || '80/80')}</b> | ดัชนีประสิทธิผล: <b>E.I. ≥ 0.50</b><br/>
+                        สถิติทดสอบ: <b>${escapeHtml(currentSamplingType === 'purposive' || currentSamplingType === 'population' ? 'สถิติบรรยาย (x̄, S.D., E.I.)' : 'Dependent Samples t-test + Cohen\'s d')}</b>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="pt-2">
-                    <button onclick="ROAD_APP.completeWizardAndCreate()" class="w-full py-3.5 neu-btn-emerald text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md">
-                      <span>🚀 ยืนยันสร้างโครงร่าง 5 บทและนำเข้า Studio ทันที</span>
+                    <button type="button" onclick="ROAD_APP.completeWizardAndCreate()" class="w-full py-3.5 neu-btn-emerald text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition">
+                      <span>🚀 ยืนยันสร้างโครงร่าง 5 บทและไปที่รายงาน 5 บท</span>
                     </button>
                   </div>
                 </div>
@@ -7195,26 +7727,31 @@
 
           <!-- Wizard Footer Controls -->
           <div class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-            <div class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
-              <span>💾</span>
-              <span>บันทึกอัตโนมัติแล้วเมื่อ: <b>${escapeHtml(state.lastSavedTimestamp || 'เพิ่งเริ่ม')}</b></span>
+            <div class="flex items-center gap-3">
+              <div class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                <span>💾</span>
+                <span>บันทึกอัตโนมัติ: <b>${escapeHtml(state.lastSavedTimestamp || 'เพิ่งเริ่ม')}</b></span>
+              </div>
+              <button type="button" onclick="ROAD_APP.saveWizardStep()" class="px-3 py-1.5 neu-squircle hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1 transition">
+                <span>💾 บันทึก</span>
+              </button>
             </div>
 
             <div class="flex items-center gap-2">
               ${curStepNum > 1 ? `
-                <button onclick="ROAD_APP.setWizardStep(${curStepNum - 1})" class="px-4 py-2 neu-squircle text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                <button type="button" onclick="ROAD_APP.setWizardStep(${curStepNum - 1})" class="px-4 py-2 neu-squircle text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer transition">
                   ← ย้อนกลับ
                 </button>
               ` : ""}
 
               ${curStepNum < 10 ? `
-                <button onclick="ROAD_APP.setWizardStep(${curStepNum + 1})" class="px-5 py-2 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer">
+                <button type="button" onclick="ROAD_APP.setWizardStep(${curStepNum + 1})" class="px-5 py-2 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-sm">
                   <span>ถัดไป</span>
                   <span>➔</span>
                 </button>
               ` : `
-                <button onclick="ROAD_APP.completeWizardAndCreate()" class="px-5 py-2 neu-btn-emerald text-xs font-bold cursor-pointer">
-                  ✔ สร้างโครงร่าง 5 บท
+                <button type="button" onclick="ROAD_APP.completeWizardAndCreate()" class="px-5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-md">
+                  <span>✔ สร้างโครงร่าง 5 บท</span>
                 </button>
               `}
             </div>
