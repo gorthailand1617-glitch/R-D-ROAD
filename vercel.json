@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/app", "destination": "/index.html?view=studio" },
+    { "source": "/studio", "destination": "/index.html?view=studio" },
+    { "source": "/login", "destination": "/index.html?view=login" },
+    { "source": "/signup", "destination": "/index.html?view=signup" },
+    { "source": "/admin", "destination": "/index.html?view=admin" },
+    { "source": "/slides", "destination": "/index.html?view=slides" }
+  ]
+}

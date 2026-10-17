@@ -1,0 +1,9 @@
+{
+  "name": "road-nextgen-studio",
+  "version": "2.0.0",
+  "description": "ROAD Next-Gen: Report Outline Assistant for Development & AI Research Studio",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
