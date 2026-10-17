@@ -52,6 +52,7 @@
     rememberMe: true,
     studioTab: "workspace", // "workspace" | "advisor" | "abcd" | "chapters" | "diagrams" | "matrix" | "statlab" | "ai"
     activeChapterFilter: 0, // 0 = All 5 chapters, 1..5 = specific chapter
+    showReviewCenter: false, // Collapsible on iPad/tablet for 100% full-width reading
     slideIndex: 0,
     members: [],
     cohorts: [],
@@ -385,7 +386,7 @@
   }
 
   function getActiveProject() {
-    return state.projects.find(p => p.id === state.activeProjectId) || state.projects[0];
+    return (state.projects && state.projects.find(p => p.id === state.activeProjectId)) || (state.projects && state.projects[0]) || window.ROAD_DATA.MASTER_DEMO_PROJECT;
   }
 
   function showToast(msg, kind = "ok") {
@@ -401,8 +402,8 @@
     el.innerHTML = `<span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${kind === "ok" ? "bg-blue-600" : kind === "warn" ? "bg-amber-500" : "bg-rose-600"}">${kind === "ok" ? "✔" : kind === "warn" ? "!" : "✕"}</span><span>${escapeHtml(msg)}</span>`;
     container.appendChild(el);
     setTimeout(() => {
-      el.style.opacity = "0";
-      setTimeout(() => el.remove(), 300);
+      if (el && el.style) el.style.opacity = "0";
+      setTimeout(() => el && typeof el.remove === "function" && el.remove(), 300);
     }, 3200);
   }
 
@@ -429,12 +430,68 @@
       state.view = v;
       if (v === "slides") state.slideIndex = 0;
       renderApp();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof window.scrollTo === "function") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     },
 
     setStudioTab(tab) {
+      if (tab === "wizard") {
+        this.openWizardModal(1);
+        return;
+      }
       state.studioTab = tab;
       renderApp();
+    },
+
+    getActiveProject() {
+      return getActiveProject();
+    },
+
+    saveProjects() {
+      saveProjects();
+    },
+
+    renderLiveTitleBar() {
+      renderLiveTitleBar();
+    },
+
+    renderApp() {
+      renderApp();
+    },
+
+    toggleReviewCenter() {
+      state.showReviewCenter = !state.showReviewCenter;
+      renderApp();
+    },
+
+    handleQuickExport(val) {
+      if (!val) return;
+      if (val === "full_manuscript") return this.exportFullManuscript();
+      if (val === "front_matter") return this.exportFrontMatter();
+      if (val === "expert_kit") return this.exportExpertKit();
+      if (val === "back_matter") return this.exportBackMatter();
+      if (val === "appendix") return this.exportAppendix();
+      if (val === "print") return window.print();
+      if (val === "json") return this.exportJson();
+    },
+
+    updateSamplingMetadata(field, val) {
+      const proj = getActiveProject();
+      if (!proj.samplingMetadata) {
+        proj.samplingMetadata = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_SAMPLING_METADATA || { type: "cluster_random" }));
+      }
+      proj.samplingMetadata[field] = val;
+      if (field === "type") {
+        this.updateSamplingType(val);
+      } else {
+        saveProjects();
+        renderApp();
+      }
+    },
+
+    setAiOutput(val) {
+      state.aiOutput = val;
     },
 
     setChapterFilter(num) {
@@ -2030,14 +2087,31 @@
     openWizardModal(step = 1) {
       const proj = getActiveProject();
       state.wizardStep = Number(step) || 1;
-      const tmpl = window.ROAD_DATA.SYNTAX_TEMPLATES[proj.modelId] || window.ROAD_DATA.SYNTAX_TEMPLATES.rd_4step;
+      const bShort = proj.B_short || proj.B || "นวัตกรรม";
+      const c1 = (proj.C_list && proj.C_list[0]) || "การคิดวิเคราะห์";
+      const c2 = (proj.C_list && proj.C_list[1]) || "";
+      const crit = proj.efficiencyCriterion || "80/80";
+      const dTarget = proj.D || "นักเรียนกลุ่มเป้าหมาย";
+
+      const defaultObjectives = [
+        `1. เพื่อศึกษาสภาพปัญหา ข้อมูลพื้นฐาน และความต้องการจำเป็นในการพัฒนา${bShort} ${dTarget} (ระยะที่ 1: R1)`,
+        `2. เพื่อสร้าง พัฒนา และหาประสิทธิภาพของ${bShort} ${dTarget} ให้มีประสิทธิภาพตามเกณฑ์มาตรฐาน ${crit} (ระยะที่ 2: D1)`,
+        `3. เพื่อทดลองใช้${bShort} กับกลุ่มตัวอย่างจริง โดยเปรียบเทียบ${c1} ก่อนและหลังเรียน และหาดัชนีประสิทธิผล (E.I.) (ระยะที่ 3: R2)`,
+        `4. เพื่อประเมินความพึงพอใจของ${dTarget} ที่มีต่อการจัดการเรียนรู้ด้วย${bShort} และปรับปรุงเป็นฉบับสมบูรณ์ (ระยะที่ 4: D2)`
+      ];
+
+      const defaultHypotheses = [
+        `1. ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05`,
+        ...(c2 ? [`2. ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วย${bShort} มีคะแนน${c2} หลังเรียนสูงกว่าก่อนเรียน อย่างมีนัยสำคัญทางสถิติที่ระดับ .05`] : [])
+      ];
+
       state.wizardData = {
         step1_title: window.ROAD_GENERATOR.composeFullTitle(proj),
         step1_keywords: `${proj.B_short || proj.B}, ${(proj.C_list || []).join(", ")}, การวิจัยและพัฒนา (R&D)`,
         step2_problem: `นักเรียนขาดทักษะ${(proj.C_list && proj.C_list[0]) || 'การคิดวิเคราะห์'} และมีผลสัมฤทธิ์ทางการเรียนต่ำกว่าเกณฑ์เป้าหมายของสถานศึกษา อีกทั้งการจัดการเรียนรู้แบบเดิมเน้นการบรรยาย ขาดการลงมือปฏิบัติจริง`,
         step2_context: `${proj.schoolName || 'โรงเรียน'} สังกัด ${proj.affiliation || 'สพฐ.'} ผู้เรียนระดับ ${proj.D}`,
-        step3_obj: tmpl.objectives(proj).join("\n"),
-        step4_hypo: tmpl.hypotheses(proj).join("\n"),
+        step3_obj: defaultObjectives.join("\n"),
+        step4_hypo: defaultHypotheses.join("\n"),
         step5_population: proj.population || "นักเรียนทั้งหมดในสถานศึกษา",
         step5_sample: proj.sample || "นักเรียนกลุ่มตัวอย่าง จำนวน 1 ห้องเรียน สุ่มแบบกลุ่ม (Cluster Random Sampling)",
         step6_innovation: proj.B,
@@ -3150,7 +3224,9 @@
         title: "สรุปผลการวิจัยและการอภิปรายผลสำคัญ",
         body: `
           <div class="text-left space-y-3 bg-slate-800/90 p-6 rounded-2xl border border-slate-700 text-base leading-relaxed">
-            ${gen.chapters[4].sections[0].content.map(item => `<p>• ${escapeHtml(item)}</p>`).join("")}
+            ${Array.isArray(gen.chapters && gen.chapters[4] && gen.chapters[4].sections && gen.chapters[4].sections[0] && gen.chapters[4].sections[0].content)
+              ? gen.chapters[4].sections[0].content.map(item => `<p>• ${escapeHtml(item)}</p>`).join("")
+              : (gen.chapters && gen.chapters[4] && gen.chapters[4].sections && gen.chapters[4].sections[0] && gen.chapters[4].sections[0].content) || "<p>• สรุปผลการวิจัยและการอภิปรายผลสำคัญตามวัตถุประสงค์ 4 ระยะ</p>"}
           </div>
         `
       }
@@ -3193,100 +3269,94 @@
 
     return `
       <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col gap-6 relative z-10">
-        <!-- Project Switcher & Export Action Bar (3D Soft Neumorphic Card) -->
-        <div class="neu-card p-5 flex flex-col gap-4 print:hidden">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">📂 โครงการวิจัย:</span>
-              <select onchange="ROAD_APP.selectProject(this.value)" class="px-4 py-2 neu-input-pill text-xs sm:text-sm font-bold text-slate-800 dark:text-white cursor-pointer max-w-[240px] truncate">
-                ${state.projects.map(p => `<option value="${p.id}" ${p.id === proj.id ? 'selected' : ''}>${escapeHtml(p.label || p.B_short || p.B)}</option>`).join("")}
+        <!-- Project Switcher & Compact Action Bar (3D Soft Neumorphic Card) -->
+        <div class="neu-card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2.5 print:hidden">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 hidden sm:inline">📂 โครงการ:</span>
+            <select onchange="ROAD_APP.selectProject(this.value)" class="px-3 py-2 neu-input-pill text-xs sm:text-sm font-bold text-slate-800 dark:text-white cursor-pointer max-w-[210px] sm:max-w-[280px] truncate min-h-[40px]" data-tooltip="สลับโครงการวิจัยที่ต้องการทำงาน" title="สลับโครงการวิจัย">
+              ${state.projects.map(p => `<option value="${p.id}" ${p.id === proj.id ? 'selected' : ''}>${escapeHtml(p.label || p.B_short || p.B)}</option>`).join("")}
+            </select>
+
+            <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" class="px-3 py-2 neu-squircle text-sky-700 dark:text-sky-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 min-h-[40px]">
+              <span>⚙️ บริบท/ผชช.</span>
+            </button>
+
+            <button onclick="ROAD_APP.createBlankProject()" data-tooltip="สร้างโครงร่างวิจัยว่างเปล่าใหม่ตั้งแต่ต้น" title="สร้างโครงร่างวิจัยว่างเปล่าใหม่" class="px-3 py-2 neu-squircle text-slate-600 dark:text-slate-300 text-xs font-bold cursor-pointer min-h-[40px]">
+              <span>+ โครงร่างว่าง</span>
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- ✨ ตัวอย่าง 1-Click Presets -->
+            <div class="dropdown relative inline-block">
+              <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" data-tooltip="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" title="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" class="px-3 py-2 neu-input-pill text-xs font-bold text-emerald-800 dark:text-emerald-300 cursor-pointer min-h-[40px] bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800">
+                <option value="">✨ ตัวอย่าง 1-Click ▾</option>
+                ${window.ROAD_DATA.PRESETS.map(pr => `<option value="${pr.id}">${escapeHtml(pr.label)}</option>`).join("")}
               </select>
-              <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-sm" title="เปิดตัวช่วยจัดทำโครงร่าง 10 ขั้นตอนตามสูตร อ.ชวลิต">
-                <span>🧭 Wizard 10 ขั้น</span>
-              </button>
-              <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-btn-primary text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-sm" title="ป้อนข้อมูลและกำหนดค่า A B C D ได้อย่างอิสระ">
-                <span>✏️ ป้อน ABCD</span>
-              </button>
-              <button onclick="ROAD_APP.openAbcdModal('parse')" class="px-3 py-2 neu-squircle text-emerald-700 dark:text-emerald-300 text-xs font-bold cursor-pointer flex items-center gap-1" title="วางชื่อเรื่องภาษาไทยแล้วแยกลง A B C D ทันที">
-                <span>⚡ วางชื่อเรื่องแยก ABCD</span>
-              </button>
-              <button onclick="ROAD_APP.createBlankProject()" class="px-3 py-2 neu-squircle text-blue-600 dark:text-sky-300 text-xs font-bold cursor-pointer" title="เริ่มต้นสร้างงานวิจัยใหม่แบบว่างเปล่า">
-                <span>+ โครงร่างว่าง</span>
-              </button>
-              <button onclick="ROAD_APP.openContextMetaModal('context')" class="px-3 py-2 neu-squircle text-sky-700 dark:text-sky-300 text-xs font-bold cursor-pointer flex items-center gap-1" title="กำหนดข้อมูลบริบทผู้วิจัย สถานศึกษา แผนการจัดการเรียนรู้ 6 แผน และรายชื่อคณะผู้เชี่ยวชาญ 5 ท่าน">
-                <span>⚙️ บริบท & ผู้เชี่ยวชาญ</span>
-              </button>
-
-              <div class="dropdown relative inline-block">
-                <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" class="px-3 py-2 neu-input-pill text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
-                  <option value="">✨ ตัวอย่างสำเร็จรูป (Presets)...</option>
-                  ${window.ROAD_DATA.PRESETS.map(pr => `<option value="${pr.id}">${escapeHtml(pr.label)}</option>`).join("")}
-                </select>
-              </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5">
-              <button onclick="ROAD_APP.exportFullManuscript()" class="px-4 py-2.5 neu-btn-primary text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-md" title="ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (All-in-One .doc)">
-                🏆 เล่มวิจัยสมบูรณ์ (.doc)
-              </button>
-              <button onclick="ROAD_APP.exportAppendix()" class="px-3.5 py-2 neu-squircle bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs sm:text-sm font-bold cursor-pointer flex items-center gap-1" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ (.doc)">
-                📎 ภาคผนวก & เครื่องมือ (.doc)
-              </button>
-              <button onclick="window.print()" class="px-3.5 py-2 neu-squircle text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold cursor-pointer">
-                🖨️ พิมพ์ A4 / PDF
-              </button>
-              <button onclick="ROAD_APP.exportJson()" class="px-3 py-2 neu-squircle text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer" title="สำรองไฟล์ JSON">
-                💾 JSON
-              </button>
+            <!-- 📥 ส่งออกด่วน Dropdown -->
+            <div class="dropdown relative inline-block">
+              <select onchange="if(this.value){ROAD_APP.handleQuickExport(this.value); this.value='';}" data-tooltip="ส่งออกเอกสารวิจัยฉบับสมบูรณ์ Word, พิมพ์ PDF หรือสำรอง JSON" title="ส่งออกเอกสารวิจัยด่วน" class="px-3 py-2 neu-btn-primary text-xs font-bold cursor-pointer min-h-[40px]">
+                <option value="" class="text-slate-900 bg-white">📥 ส่งออกด่วน ▾</option>
+                <option value="full_manuscript" class="text-slate-900 bg-white">🏆 เล่มวิจัยสมบูรณ์ All-in-One (.doc)</option>
+                <option value="front_matter" class="text-slate-900 bg-white">📄 ส่วนนำ & บทคัดย่อ (.doc)</option>
+                <option value="expert_kit" class="text-slate-900 bg-white">👥 ชุด 5 ผู้เชี่ยวชาญ + IOC (.doc)</option>
+                <option value="back_matter" class="text-slate-900 bg-white">📚 บรรณานุกรม APA + ประวัติ (.doc)</option>
+                <option value="appendix" class="text-slate-900 bg-white">📎 ภาคผนวก ก–ง (.doc)</option>
+                <option value="print" class="text-slate-900 bg-white">🖨️ พิมพ์ A4 / บันทึก PDF</option>
+                <option value="json" class="text-slate-900 bg-white">💾 สำรองไฟล์ JSON</option>
+              </select>
             </div>
-          </div>
-
-          <!-- Live Full Title Banner (Supports Color-Coded Badges) -->
-          <div class="neu-input-pill rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex-1">
-              <div class="flex items-center justify-between gap-2 text-xs font-bold text-blue-700 dark:text-sky-300 mb-1.5">
-                <span>📌 ชื่อเรื่องการวิจัย (ประกอบอัตโนมัติตามสูตร ABCD):</span>
-                <button type="button" onclick="ROAD_APP.toggleTitleViewMode()" class="px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800 text-[11px] font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition">
-                  ${state.titleViewMode === 'plain' ? '🏷️ แสดงแบบแยกสี A B C D' : '📝 แสดงแบบข้อความเดียว'}
-                </button>
-              </div>
-              <div id="live-composed-title" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
-                ${state.titleViewMode === 'plain' ? escapeHtml(fullTitle) : window.ROAD_GENERATOR.composeColorCodedTitle(proj)}
-              </div>
-            </div>
-            <div class="flex items-center gap-3 shrink-0">
-              <div class="text-right">
-                <div class="text-[11px] font-semibold text-slate-500">ความสมบูรณ์โครงร่าง</div>
-                <div class="text-lg font-mono font-extrabold ${health.score >= 85 ? 'text-emerald-600' : 'text-amber-600'}">${health.score}%</div>
-              </div>
-              <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-blue-700 dark:text-sky-300 cursor-pointer" title="เปิดตัวช่วยป้อน A B C D">
-                ✏️ แก้ไข ABCD
-              </button>
-              <button onclick="ROAD_APP.copySmartPrompt('title_polish')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer">
-                ✨ Prompt เกลาชื่อ
-              </button>
-            </div>
-          </div>
-
-          <!-- 9 Studio Sub-Navigation Tabs (Including Instruments Blueprint & Workspace) -->
-          <div class="flex flex-wrap gap-2 pt-2">
-            ${[
-              ["workspace", "📁 คลังโครงการวิจัย (Workspace)"],
-              ["advisor", "🧠 AI เลือกชุดวิจัยที่ดีที่สุด"],
-              ["abcd", "1. ปรับแต่งชื่อเรื่อง ABCD & นวัตกรรม"],
-              ["chapters", "2. โครงร่าง 5 บท & Review Center"],
-              ["instruments", "3. ผังแบบทดสอบ, รูบริก & นิยามศัพท์"],
-              ["diagrams", "4. แผนภาพกรอบแนวคิด & ผัง R&D"],
-              ["matrix", "5. ตารางความสอดคล้อง 360°"],
-              ["statlab", "6. ห้องปฏิบัติการสถิติ & ตารางบทที่ 4"],
-              ["ai", "7. AI Co-Pilot เขียนรายบท"]
-            ].map(([key, label]) => `
-              <button onclick="ROAD_APP.setStudioTab('${key}')" class="px-4 py-2.5 text-xs sm:text-sm font-bold transition cursor-pointer ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
-                ${label}
-              </button>
-            `).join("")}
           </div>
         </div>
+
+        <!-- Live Full Title Banner (Supports Color-Coded Badges) -->
+        <div class="neu-input-pill rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center justify-between gap-2 text-xs font-bold text-blue-700 dark:text-sky-300 mb-1.5">
+              <span>📌 ชื่อเรื่องการวิจัย (ประกอบอัตโนมัติตามสูตร ABCD):</span>
+              <button type="button" onclick="ROAD_APP.toggleTitleViewMode()" class="px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800 text-[11px] font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition">
+                ${state.titleViewMode === 'plain' ? '🏷️ แสดงแบบแยกสี A B C D' : '📝 แสดงแบบข้อความเดียว'}
+              </button>
+            </div>
+            <div id="live-composed-title" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
+              ${state.titleViewMode === 'plain' ? escapeHtml(fullTitle) : window.ROAD_GENERATOR.composeColorCodedTitle(proj)}
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="text-right">
+              <div class="text-[11px] font-semibold text-slate-500">ความสมบูรณ์โครงร่าง</div>
+              <div class="text-lg font-mono font-extrabold ${health.score >= 85 ? 'text-emerald-600' : 'text-amber-600'}">${health.score}%</div>
+            </div>
+            <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-blue-700 dark:text-sky-300 cursor-pointer" title="เปิดตัวช่วยป้อน A B C D">
+              ✏️ แก้ไข ABCD
+            </button>
+            <button onclick="ROAD_APP.copySmartPrompt('title_polish')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer">
+              ✨ Prompt เกลาชื่อ
+            </button>
+          </div>
+        </div>
+
+        <!-- Studio Sub-Navigation Tabs (Compact, Academic Symbols & Hover Tooltips) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-2">
+          ${[
+            ["workspace", "📁 คลังวิจัย", "คลังโครงการวิจัยทั้งหมด สลับโครงการ หรือสร้างโครงร่างใหม่"],
+            ["abcd", "🎯 1. ABCD", "ตั้งค่าชื่อเรื่องและแยกองค์ประกอบ ABCD"],
+            ["wizard", "🪄 2. Wizard", "ระบบนำทางออกแบบโครงร่างวิจัย 10 ขั้นตอน"],
+            ["chapters", "📘 3. เล่ม 5 บท", "รายงานการวิจัยฉบับสมบูรณ์ 5 บท ส่วนนำ และภาคผนวก"],
+            ["diagrams", "🧭 4. ผัง R&D", "ตารางดำเนินการวิจัย 4 ระยะ (R1-D2) และผังเชื่อมโยง 360°"],
+            ["instruments", "📐 เครื่องมือ & รูบริก", "ผังสร้างแบบทดสอบ Test Blueprint, เกณฑ์รูบริก 4 ระดับ และนิยามปฏิบัติการ"],
+            ["statlab", "📊 5. StatLab", "ห้องปฏิบัติการสถิติวิจัยและตรวจสอบคุณภาพเครื่องมือ"],
+            ["ai", "🤖 AI Co-Pilot", "AI ช่วยเขียนเนื้อหารายบท เกลาภาษา และวิเคราะห์สังเคราะห์"],
+            ["advisor", "🧠 AI Advisor", "ระบบตรวจสอบ 14 กฎเหล็ก และแนะนำทิศทางวิจัยระดับชาติ"]
+          ].map(([key, label, tip]) => `
+            <button onclick="ROAD_APP.setStudioTab('${key}')" data-tooltip="${tip}" title="${tip}" class="px-3.5 py-2 text-xs sm:text-sm font-bold transition cursor-pointer whitespace-nowrap rounded-xl ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              ${label}
+            </button>
+          `).join("")}
+        </div>
+      </div>
 
         <!-- Active Tab Content -->
         <div class="print-area">
@@ -3860,7 +3930,7 @@
 
   // --- Studio Tab 1: Smart ABCD Builder & Research Design ---
   function renderTabAbcd(proj, health) {
-    const vocab = window.ROAD_DATA.ABCD_SUGGESTIONS;
+    const vocab = window.ROAD_DATA.ABCD_SUGGESTIONS || { A: [], A_CATEGORIES: [], B: [], C1: [], C2: [], D: [] };
     return `
       <div class="grid lg:grid-cols-3 gap-5">
         <!-- Left 2 Columns: ABCD Form & Innovation Steps -->
@@ -4062,10 +4132,10 @@
           <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-4">
             <div class="flex items-center justify-between">
               <h3 class="font-bold text-base text-slate-900 dark:text-white">🩺 ตรวจสอบความสมบูรณ์เชิงวิชาการ</h3>
-              <span class="px-2.5 py-1 rounded-full font-mono text-sm font-bold bg-emerald-100 text-emerald-800">${health.score}/100</span>
+              <span class="px-2.5 py-1 rounded-full font-mono text-sm font-bold bg-emerald-100 text-emerald-800">${(health && (health.score || health.healthScore)) || 100}/100</span>
             </div>
             <div class="space-y-2.5">
-              ${health.checks.map(chk => `
+              ${((health && health.checks) || []).map(chk => `
                 <div class="p-3 rounded-xl border ${chk.ok ? 'border-emerald-200/80 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800/50' : 'border-amber-300 bg-amber-50/60 dark:bg-amber-950/30'} text-xs">
                   <div class="font-bold flex items-center gap-1.5 ${chk.ok ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300'}">
                     <span>${chk.ok ? '✔' : '⚠'}</span>
@@ -4162,78 +4232,78 @@
 
     return `
       <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-        <!-- Left Column: Chapters Content & Editor (lg:col-span-8) -->
-        <div class="lg:col-span-8 flex flex-col gap-5 w-full">
-          <!-- Modular Publication Export Hub Card -->
-          <div class="rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white p-5 sm:p-6 border border-sky-800/40 shadow-lg print:hidden space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="space-y-1">
-                <span class="text-xs font-mono uppercase tracking-wider text-sky-400 font-bold flex items-center gap-1.5">
-                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>MODULAR PUBLICATION EXPORT HUB V2.0</span>
-                </span>
-                <h3 class="text-lg sm:text-xl font-black">🏆 ศูนย์ส่งออกเอกสารวิจัยฉบับสมบูรณ์เพื่อการประเมิน วPA และเผยแพร่</h3>
-                <p class="text-xs text-sky-200">ส่งออกเอกสารวิจัยฉบับสมบูรณ์ 100% แยกเป็นโมดูลมาตรฐาน Word (.doc TH Sarabun PSK 16pt) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง</p>
+        <!-- Left Column: Chapters Content & Editor -->
+        <div class="${state.showReviewCenter ? 'lg:col-span-8' : 'col-span-12'} flex flex-col gap-5 w-full">
+          <!-- Modular Publication Export Hub Banner -->
+          <div class="rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white p-3.5 sm:p-4 border border-sky-800/40 shadow-md print:hidden flex flex-col gap-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base sm:text-lg">🏆</span>
+                <span class="font-extrabold text-xs sm:text-sm text-sky-100">ศูนย์ส่งออกเอกสารวิจัยฉบับสมบูรณ์มาตรฐาน Word (.doc 16pt)</span>
               </div>
-              <button onclick="ROAD_APP.openContextMetaModal()" class="px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-xs font-bold text-sky-200 cursor-pointer flex items-center gap-1.5 transition">
-                <span>⚙️ ข้อมูลบริบท & ผู้เชี่ยวชาญ</span>
+              <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" class="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-[11px] font-bold text-sky-200 cursor-pointer flex items-center gap-1 transition">
+                <span>⚙️ บริบท/ผชช.</span>
               </button>
             </div>
 
-            <!-- 1-Click Export Buttons Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-sky-800/50">
-              <button onclick="ROAD_APP.exportFullManuscript()" class="col-span-2 sm:col-span-3 lg:col-span-1 p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs cursor-pointer shadow-md flex items-center justify-center gap-1.5 text-center transition">
-                <span>🏆 รวมเล่มสมบูรณ์</span>
+            <!-- Compact Export Badges & Chapter Pills Row -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <button onclick="ROAD_APP.exportFullManuscript()" data-tooltip="ดาวน์โหลดรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน All-in-One" title="ดาวน์โหลดรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน All-in-One" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-xs cursor-pointer shadow flex items-center gap-1 shrink-0 transition">
+                <span>🏆 เล่มเต็ม (.doc)</span>
               </button>
-              <button onclick="ROAD_APP.exportFrontMatter()" class="p-2.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
-                <span>📄 ส่วนนำ & บทคัดย่อ</span>
+              <button onclick="ROAD_APP.exportFrontMatter()" data-tooltip="ดาวน์โหลดปกนอก ปกใน บทคัดย่อไทย-อังกฤษ กิตติกรรมประกาศ และสารบัญ" title="ดาวน์โหลดปกนอก ปกใน บทคัดย่อไทย-อังกฤษ กิตติกรรมประกาศ และสารบัญ" class="px-2.5 py-1.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white font-bold text-xs cursor-pointer shrink-0 transition">
+                <span>📄 ส่วนนำ</span>
               </button>
-              <button onclick="ROAD_APP.exportExpertKit()" class="p-2.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition" title="หนังสือเชิญรายบุคคล 5 ฉบับ + แบบประเมิน IOC">
-                <span>👥 ชุด 5 ผู้เชี่ยวชาญ</span>
+              <button onclick="ROAD_APP.exportExpertKit()" data-tooltip="ดาวน์โหลดหนังสือเชิญผู้เชี่ยวชาญรายบุคคล 5 ฉบับ พร้อมแบบประเมิน IOC" title="ดาวน์โหลดหนังสือเชิญผู้เชี่ยวชาญรายบุคคล 5 ฉบับ พร้อมแบบประเมิน IOC" class="px-2.5 py-1.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold text-xs cursor-pointer shrink-0 transition">
+                <span>👥 ชุด IOC (5 ท่าน)</span>
               </button>
-              <button onclick="ROAD_APP.exportBackMatter()" class="p-2.5 rounded-xl bg-teal-700/90 hover:bg-teal-700 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
-                <span>📚 บรรณานุกรม & ประวัติ</span>
+              <button onclick="ROAD_APP.exportBackMatter()" data-tooltip="ดาวน์โหลดบรรณานุกรม APA 7th Edition และประวัติผู้วิจัย" title="ดาวน์โหลดบรรณานุกรม APA 7th Edition และประวัติผู้วิจัย" class="px-2.5 py-1.5 rounded-xl bg-teal-700/90 hover:bg-teal-700 text-white font-bold text-xs cursor-pointer shrink-0 transition">
+                <span>📚 อ้างอิง APA</span>
               </button>
-              <button onclick="ROAD_APP.exportAppendix()" class="p-2.5 rounded-xl bg-blue-700/90 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow flex items-center justify-center gap-1 text-center transition">
-                <span>📎 ภาคผนวก ก–ง</span>
+              <button onclick="ROAD_APP.exportAppendix()" data-tooltip="ดาวน์โหลดภาคผนวก ก-ง พร้อมเครื่องมือวิจัยและผลวิเคราะห์คุณภาพ" title="ดาวน์โหลดภาคผนวก ก-ง พร้อมเครื่องมือวิจัยและผลวิเคราะห์คุณภาพ" class="px-2.5 py-1.5 rounded-xl bg-blue-700/90 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shrink-0 transition">
+                <span>📎 ภาคผนวก ก-ง</span>
               </button>
-            </div>
 
-            <!-- Single Chapter Quick Export Pills -->
-            <div class="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-sky-800/40 text-xs">
-              <span class="text-sky-300 font-bold mr-1 flex items-center gap-1">📘 ดาวน์โหลดแยกรายบท:</span>
+              <div class="h-4 w-px bg-sky-700/60 mx-1 shrink-0"></div>
+
               ${[1, 2, 3, 4, 5].map(n => `
-                <button onclick="ROAD_APP.exportSingleChapter(${n})" class="px-2.5 py-1 rounded-lg bg-sky-900/60 hover:bg-sky-800 text-sky-100 hover:text-white border border-sky-700/50 text-[11px] font-bold cursor-pointer transition shadow-xs flex items-center gap-1" title="ดาวน์โหลดบทที่ ${n} เป็นไฟล์ Word (.doc)">
-                  <span>บทที่ ${n} (.doc)</span>
+                <button onclick="ROAD_APP.exportSingleChapter(${n})" data-tooltip="ดาวน์โหลดเฉพาะบทที่ ${n} เป็นไฟล์ Word (.doc)" title="ดาวน์โหลดเฉพาะบทที่ ${n} เป็นไฟล์ Word (.doc)" class="px-2 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-800 text-sky-100 border border-sky-700/50 text-[11px] font-bold cursor-pointer shrink-0 transition font-mono">
+                  Ch.${n}
                 </button>
               `).join("")}
             </div>
           </div>
 
           <!-- Chapter Filter Bar -->
-          <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5 print:hidden shadow-sm">
-            <div class="flex flex-wrap gap-1.5">
-              <button onclick="ROAD_APP.setChapterFilter(0)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
-                🏆 ทั้งเล่มสมบูรณ์
+          <div class="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 print:hidden shadow-sm">
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <button onclick="ROAD_APP.setChapterFilter(0)" data-tooltip="แสดงเอกสารวิจัยฉบับเต็มทุกส่วน" title="แสดงทั้งหมด" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 ${state.activeChapterFilter === 0 ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                ทั้งหมด
               </button>
-              <button onclick="ROAD_APP.setChapterFilter(-1)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === -1 ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
-                📄 ส่วนนำ & บทคัดย่อ
+              <button onclick="ROAD_APP.setChapterFilter(-1)" data-tooltip="ปก บทคัดย่อ กิตติกรรมประกาศ สารบัญ" title="ส่วนนำ & บทคัดย่อ" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 ${state.activeChapterFilter === -1 ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                ส่วนนำ
               </button>
-              ${gen.chapters.map(c => `
-                <button onclick="ROAD_APP.setChapterFilter(${c.number})" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === c.number ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
-                  บทที่ ${c.number}
+              ${[1, 2, 3, 4, 5].map(n => `
+                <button onclick="ROAD_APP.setChapterFilter(${n})" data-tooltip="แสดงเฉพาะเนื้อหาบทที่ ${n}" title="บทที่ ${n}" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 ${state.activeChapterFilter === n ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                  บท ${n}
                 </button>
               `).join("")}
-              <button onclick="ROAD_APP.setChapterFilter(7)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 7 ? 'bg-teal-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
-                📚 บรรณานุกรม & ประวัติ
+              <button onclick="ROAD_APP.setChapterFilter(7)" data-tooltip="บรรณานุกรม APA 7th และประวัติผู้วิจัย" title="บรรณานุกรม & ประวัติ" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 ${state.activeChapterFilter === 7 ? 'bg-teal-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                อ้างอิง
               </button>
-              <button onclick="ROAD_APP.setChapterFilter(6)" class="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${state.activeChapterFilter === 6 ? 'bg-indigo-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
-                📎 ภาคผนวก ก–ง
+              <button onclick="ROAD_APP.setChapterFilter(6)" data-tooltip="ภาคผนวก ก-ง และเครื่องมือวิจัย" title="ภาคผนวก ก–ง" class="px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 ${state.activeChapterFilter === 6 ? 'bg-indigo-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'}">
+                ภาคผนวก
               </button>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="ROAD_APP.resetCustomSections()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" title="รีเซ็ตเนื้อหากลับเป็นค่าสังเคราะห์เริ่มต้น">🔄 ซิงค์เริ่มต้น</button>
-              <button onclick="ROAD_APP.openContextMetaModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">⚙️ แก้ไขบริบท</button>
+
+            <div class="flex items-center gap-1.5">
+              <!-- Review Center Toggle Button for iPad/Desktop -->
+              <button onclick="ROAD_APP.toggleReviewCenter()" data-tooltip="สลับแสดง/ซ่อนแถบตรวจ 14 กฎเหล็กความสอดคล้อง" title="สลับแสดง/ซ่อนแถบตรวจ 14 กฎเหล็ก" class="px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition flex items-center gap-1.5 ${state.showReviewCenter ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 text-blue-800 dark:text-sky-300' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'}">
+                <span>🛡️ ตรวจ 14 กฎ (${passCount}/${totalCount})</span>
+                <span>${state.showReviewCenter ? '▴' : '▾'}</span>
+              </button>
+
+              <button onclick="ROAD_APP.resetCustomSections()" data-tooltip="รีเซ็ตเนื้อหากลับเป็นค่าสังเคราะห์เริ่มต้น" class="px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" title="รีเซ็ตเนื้อหากลับเป็นค่าสังเคราะห์เริ่มต้น">🔄 ซิงค์</button>
             </div>
           </div>
 
@@ -4503,88 +4573,90 @@
           </div>
         </div>
 
-        <!-- Right Column: Review Center & Consistency Side Panel (lg:col-span-4) -->
-        <div class="lg:col-span-4 w-full flex flex-col gap-5 sticky top-20 print:hidden">
-          <!-- Consistency Health Card -->
-          <div class="neu-card p-5 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                <span>🛡️</span>
-                <span>Review Center</span>
-              </span>
-              <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono ${healthScore >= 85 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
-                ${healthScore}% ผ่านเกณฑ์
-              </span>
+        <!-- Right Column: Review Center & Consistency Side Panel -->
+        ${state.showReviewCenter ? `
+          <div class="lg:col-span-4 w-full flex flex-col gap-5 sticky top-20 print:hidden animate-fade-in">
+            <!-- Consistency Health Card -->
+            <div class="neu-card p-5 flex flex-col gap-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                  <span>🛡️</span>
+                  <span>Review Center</span>
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono ${healthScore >= 85 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'}">
+                  ${healthScore}% ผ่านเกณฑ์
+                </span>
+              </div>
+
+              <div class="flex items-baseline justify-between pt-1">
+                <h3 class="text-lg font-black text-slate-900 dark:text-white">ศูนย์ตรวจความสอดคล้อง</h3>
+                <span class="text-xs font-bold text-slate-500">${passCount}/${totalCount} ผ่าน</span>
+              </div>
+
+              <!-- Progress Meter -->
+              <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500 ${passCount >= Math.round(totalCount * 0.8) ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${(passCount / totalCount) * 100}%"></div>
+              </div>
+
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                ตรวจสอบข้อพึงระวังและเกณฑ์มาตรฐานวิจัยเชิงพัฒนา 14 ประการ (V2.0) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
+              </p>
+
+              <div class="pt-2 flex flex-col gap-2">
+                <button onclick="ROAD_APP.exportFullManuscript()" class="w-full py-2.5 neu-btn-primary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
+                  <span>🏆 ดาวน์โหลดเล่มสมบูรณ์ All-in-One (.doc)</span>
+                </button>
+                <button onclick="ROAD_APP.exportAppendix()" class="w-full py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ">
+                  <span>📎 ส่งออกภาคผนวก & เครื่องมือ (.doc)</span>
+                </button>
+                <button onclick="ROAD_APP.openWizardModal(10)" class="w-full py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1 cursor-pointer">
+                  <span>🧭 ตรวจทานด้วย Wizard 10 ขั้น</span>
+                </button>
+              </div>
             </div>
 
-            <div class="flex items-baseline justify-between pt-1">
-              <h3 class="text-lg font-black text-slate-900 dark:text-white">ศูนย์ตรวจความสอดคล้อง</h3>
-              <span class="text-xs font-bold text-slate-500">${passCount}/${totalCount} ผ่าน</span>
-            </div>
+            <!-- 14 Pitfalls Checklist Accordion/Cards -->
+            <div class="neu-card p-5 flex flex-col gap-3">
+              <div class="text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                <span>📋 14 ข้อพึงระวังตามสูตร อ.ชวลิต (V2.0)</span>
+                <span class="text-[11px] text-slate-500 font-normal">${passCount}/${totalCount} สมบูรณ์</span>
+              </div>
 
-            <!-- Progress Meter -->
-            <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-500 ${passCount >= Math.round(totalCount * 0.8) ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}" style="width: ${(passCount / totalCount) * 100}%"></div>
-            </div>
-
-            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              ตรวจสอบข้อพึงระวังและเกณฑ์มาตรฐานวิจัยเชิงพัฒนา 14 ประการ (V2.0) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
-            </p>
-
-            <div class="pt-2 flex flex-col gap-2">
-              <button onclick="ROAD_APP.exportWord()" class="w-full py-2.5 neu-btn-primary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
-                <span>📄 ดาวน์โหลด Word (5 บทเต็ม)</span>
-              </button>
-              <button onclick="ROAD_APP.exportAppendix()" class="w-full py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm" title="ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง พร้อมส่งผู้เชี่ยวชาญ">
-                <span>📎 ส่งออกภาคผนวก & เครื่องมือ (.doc)</span>
-              </button>
-              <button onclick="ROAD_APP.openWizardModal(10)" class="w-full py-2 neu-squircle text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1 cursor-pointer">
-                <span>🧭 ตรวจทานด้วย Wizard 10 ขั้น</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 14 Pitfalls Checklist Accordion/Cards -->
-          <div class="neu-card p-5 flex flex-col gap-3">
-            <div class="text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-              <span>📋 14 ข้อพึงระวังตามสูตร อ.ชวลิต (V2.0)</span>
-              <span class="text-[11px] text-slate-500 font-normal">${passCount}/${totalCount} สมบูรณ์</span>
-            </div>
-
-            <div class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
-              ${pitfallChecks.map(item => `
-                <div class="p-3 rounded-xl border transition ${item.pass ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-900/40' : 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/50'}">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-start gap-1.5">
-                      <span class="text-sm shrink-0 mt-0.5">${item.pass ? '✅' : '⚠️'}</span>
-                      <div>
-                        <div class="text-xs font-bold text-slate-900 dark:text-white leading-snug">
-                          ${item.num}. ${escapeHtml(item.title)}
-                        </div>
-                        <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                          ${escapeHtml(item.desc)}
-                        </p>
-                        ${!item.pass && item.recommendation ? `
-                          <div class="text-[11px] text-amber-800 dark:text-amber-300 mt-1.5 p-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900">
-                            <b>💡 ข้อเสนอแนะ:</b> ${escapeHtml(item.recommendation)}
+              <div class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                ${pitfallChecks.map(item => `
+                  <div class="p-3 rounded-xl border transition ${item.pass ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-900/40' : 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/50'}">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-start gap-1.5">
+                        <span class="text-sm shrink-0 mt-0.5">${item.pass ? '✅' : '⚠️'}</span>
+                        <div>
+                          <div class="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                            ${item.num}. ${escapeHtml(item.title)}
                           </div>
-                        ` : ''}
+                          <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                            ${escapeHtml(item.desc)}
+                          </p>
+                          ${!item.pass && item.recommendation ? `
+                            <div class="text-[11px] text-amber-800 dark:text-amber-300 mt-1.5 p-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900">
+                              <b>💡 ข้อเสนอแนะ:</b> ${escapeHtml(item.recommendation)}
+                            </div>
+                          ` : ''}
+                        </div>
                       </div>
                     </div>
+                    <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
+                      <span class="font-bold ${item.pass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">
+                        ${item.pass ? '✔ ผ่านเกณฑ์มาตรฐาน' : '⚡ ข้อเสนอแนะเพื่อปรับปรุง'}
+                      </span>
+                      <button onclick="${item.actionFn}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer">
+                        ${item.actionText} →
+                      </button>
+                    </div>
                   </div>
-                  <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
-                    <span class="font-bold ${item.pass ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">
-                      ${item.pass ? '✔ ผ่านเกณฑ์มาตรฐาน' : '⚡ ข้อเสนอแนะเพื่อปรับปรุง'}
-                    </span>
-                    <button onclick="${item.actionFn}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer">
-                      ${item.actionText} →
-                    </button>
-                  </div>
-                </div>
-              `).join("")}
+                `).join("")}
+              </div>
             </div>
           </div>
-        </div>
+        ` : ""}
       </div>
     `;
   }
@@ -4613,22 +4685,22 @@
     return `
       <div class="flex flex-col gap-6">
         <!-- Subtabs Navigation -->
-        <div class="neu-card p-4 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">📐 เครื่องมือวิจัย:</span>
+        <div class="neu-card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">📐 เครื่องมือ:</span>
             ${[
-              ["instrument_types", "1. แยกประเภทเครื่องมือ (ทดลอง VS เก็บรวบรวม)"],
-              ["blueprint", "2. ผังสร้างแบบทดสอบ (Bloom 6 ระดับ + Try-out)"],
-              ["rubrics", "3. เกณฑ์รูบริก 4 ระดับ (Analytic Rubric)"],
-              ["operational_def", "4. นิยามศัพท์เฉพาะ 3 มิติ (Operational Def)"]
-            ].map(([id, title]) => `
-              <button onclick="ROAD_APP.setInstrumentSubTab('${id}')" class="px-3.5 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${subTab === id ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              ["instrument_types", "⚖️ แยกเครื่องมือ", "แยกเครื่องมือทดลองใช้นวัตกรรม VS เครื่องมือเก็บรวบรวมข้อมูลตามเกณฑ์ ก.ค.ศ."],
+              ["blueprint", "ผังข้อสอบ (Bloom)", "ผังสร้างแบบทดสอบ Test Blueprint จำแนกตาม Bloom 6 ระดับ พร้อมคำนวณข้อสอบสำรอง Try-out"],
+              ["rubrics", "📊 รูบริก 4 ระดับ", "เกณฑ์การประเมินแบบรูบริก Analytic Rubrics 4 ระดับ พร้อมระบบตรวจทานน้ำหนักรวม 100%"],
+              ["operational_def", "📖 นิยามศัพท์ 3 มิติ", "นิยามศัพท์เฉพาะเชิงปฏิบัติการ 3 มิติ: นิยาม + พฤติกรรมที่สังเกตได้ + เครื่องมือวัดและเกณฑ์"]
+            ].map(([id, title, tip]) => `
+              <button onclick="ROAD_APP.setInstrumentSubTab('${id}')" data-tooltip="${tip}" title="${tip}" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${subTab === id ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${title}
               </button>
             `).join("")}
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">มาตรฐาน ก.ค.ศ. วPA</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">วPA</span>
           </div>
         </div>
 
@@ -4981,12 +5053,14 @@
     `;
   }
 
-  // --- Studio Tab 4: Visual Conceptual Framework & R&D Flowchart ---
   function renderTabDiagrams(proj) {
-    const model = window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId) || window.ROAD_DATA.RESEARCH_MODELS[0];
+    const model = (window.ROAD_DATA.RESEARCH_MODELS && window.ROAD_DATA.RESEARCH_MODELS.find(m => m.id === proj.modelId)) || window.ROAD_DATA.RESEARCH_MODELS[0];
     const steps = (proj.B_steps || []).filter(Boolean);
     const cList = (proj.C_list || []).filter(Boolean);
-    const components = window.ROAD_GENERATOR.generateModelComponents(proj);
+    const rawComponents = window.ROAD_GENERATOR.generateModelComponents(proj);
+    const compList = Array.isArray(rawComponents) ? rawComponents : ((rawComponents && rawComponents.components) || []);
+    const compTitle = (rawComponents && rawComponents.title) || `โครงสร้างองค์ประกอบของรูปแบบนวัตกรรม (${compList.length} ด้าน)`;
+    const compSubtitle = (rawComponents && rawComponents.subtitle) || `โครงสร้างเชิงระบบตามแบบแผน R&D ครบถ้วนตามระเบียบวิธีวิจัย`;
 
     return `
       <div class="flex flex-col gap-8">
@@ -5134,27 +5208,31 @@
               DIAGRAM 2 · โครงสร้างองค์ประกอบของรูปแบบนวัตกรรม
             </span>
             <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-1.5">
-              ${escapeHtml(components.title)}
+              ${escapeHtml(compTitle)}
             </h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ${escapeHtml(components.subtitle)}
+              ${escapeHtml(compSubtitle)}
             </p>
           </div>
 
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${components.components.map((cmp, idx) => `
+            ${compList.map((cmp, idx) => {
+              const title = cmp.name || cmp.title || `ด้านที่ ${idx + 1}`;
+              const detail = cmp.content || cmp.detail || "";
+              const elements = cmp.elements || [];
+              return `
               <div class="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3 shadow-sm hover:shadow-md transition">
                 <div>
                   <div class="flex items-center justify-between">
                     <span class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-extrabold">${idx + 1}</span>
-                    <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-400">${escapeHtml(cmp.title.split(":")[0] || `ด้านที่ ${idx + 1}`)}</span>
+                    <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-400">${escapeHtml(title.split(":")[0] || `ด้านที่ ${idx + 1}`)}</span>
                   </div>
-                  <h3 class="font-extrabold text-sm text-slate-900 dark:text-white mt-2">${escapeHtml(cmp.title)}</h3>
-                  <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">${escapeHtml(cmp.detail)}</p>
+                  <h3 class="font-extrabold text-sm text-slate-900 dark:text-white mt-2">${escapeHtml(title)}</h3>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed whitespace-pre-line">${escapeHtml(detail)}</p>
                 </div>
-                ${cmp.elements && cmp.elements.length ? `
+                ${elements && elements.length ? `
                   <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
-                    ${cmp.elements.map(el => `
+                    ${elements.map(el => `
                       <div class="text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-1.5">
                         <span class="text-indigo-500 font-bold shrink-0">•</span>
                         <span>${escapeHtml(el)}</span>
@@ -5163,7 +5241,7 @@
                   </div>
                 ` : ""}
               </div>
-            `).join("")}
+            `}).join("")}
           </div>
         </div>
 
@@ -5215,22 +5293,22 @@
     return `
       <div class="flex flex-col gap-6">
         <!-- Sub-Navigation Bar -->
-        <div class="p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-wrap gap-2">
+        <div class="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             ${[
-              ["syntax_matrix", "📚 1. ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรม (Syntax Matrix)"],
-              ["r1d1_bridge", "🌉 2. ตารางเชื่อมโยงจาก R1 สู่ D1 (Synthesis Bridge)"],
-              ["operational", "📋 3. ตารางการดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2 6 คอลัมน์)"],
-              ["alignment", "🎯 4. ตารางความสอดคล้อง 360° (Alignment Matrix)"]
-            ].map(([k, lbl]) => `
-              <button onclick="ROAD_APP.setMatrixSubTab('${k}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              ["syntax_matrix", "🧩 สังเคราะห์ Syntax", "ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรมการเรียนรู้จากนักวิชาการ 7 ท่าน"],
+              ["r1d1_bridge", "🌉 สะพาน R1->D1", "ตารางเชื่อมโยงผลการวิจัยระยะ R1 สู่การออกแบบนวัตกรรม D1 ตามหลัก รศ.ดร.ชวลิต"],
+              ["operational", "📋 ตาราง 4 ระยะ (R1-D2)", "ตารางการดำเนินการวิจัย 4 ระยะ 6 คอลัมน์ (วัตถุประสงค์-กลุ่มตัวอย่าง-เครื่องมือ-การเก็บ-สถิติ)"],
+              ["alignment", "🎯 ความสอดคล้อง 360°", "ตารางตรวจสอบความสอดคล้อง 360 องศา ระหว่างชื่อเรื่อง วัตถุประสงค์ สมมติฐาน และเครื่องมือ"]
+            ].map(([k, lbl, tip]) => `
+              <button onclick="ROAD_APP.setMatrixSubTab('${k}')" data-tooltip="${tip}" title="${tip}" class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${lbl}
               </button>
             `).join("")}
           </div>
           <div class="flex items-center gap-2">
             <button onclick="window.print()" class="px-3 py-1.5 rounded-lg neu-btn-emerald text-xs font-bold cursor-pointer print:hidden">
-              🖨️ พิมพ์หน้านี้
+              🖨️ พิมพ์ A4
             </button>
           </div>
         </div>
@@ -5673,27 +5751,27 @@
 
     return `
       <div class="flex flex-col gap-6">
-        <!-- StatLab Sub-Navigation Bar (8 Subtabs) -->
-        <div class="p-3 neu-card shadow-sm flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap gap-2">
+        <!-- StatLab Sub-Navigation Bar (8 Subtabs with Standard Abbreviations & Hover Tooltips) -->
+        <div class="p-2.5 sm:p-3 neu-card shadow-sm flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             ${[
-              ["decision_rules", "🧭 1. กฎเหล็กเลือกสถิติ"],
-              ["pni_modified", "🎯 2. Needs PNI_modified"],
-              ["ioc_cvi", `📋 3. IOC & CVI (ผชช. ${expertCount})`],
-              ["item_analysis", `🎯 4. วิเคราะห์ข้อสอบ (Norm/Crit)`],
-              ["cronbach", `📏 5. Cronbach's α`],
-              ["e1e2", `⚙️ 6. ประสิทธิภาพ E1/E2 & E.I.`],
-              ["hypothesis_lab", `📈 7. Smart Hypothesis Lab`],
-              ["ch4_tables", "📑 8. ตารางมาตรฐาน APA บทที่ 4"]
-            ].map(([k, lbl]) => `
-              <button onclick="ROAD_APP.setStatlabSubTab('${k}')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+              ["decision_rules", "🧭 กฎเลือกสถิติ", "ผังการตัดสินใจเลือกสถิติวิจัยตามวัตถุประสงค์และประเภทตัวแปร"],
+              ["pni_modified", "🎯 PNI", "การประเมินความต้องการจำเป็น Needs Assessment ด้วยดัชนี PNI_modified"],
+              ["ioc_cvi", `📋 IOC/CVI (${expertCount})`, "หาความตรงเชิงเนื้อหาด้วยดัชนี IOC และ CVI จากผู้เชี่ยวชาญ"],
+              ["item_analysis", "🎯 Item (p,r)", "วิเคราะห์ความยากง่าย (p) และอำนาจจำแนก (r / B-Index)"],
+              ["cronbach", "📏 Alpha (α)", "วิเคราะห์ความเชื่อมั่นของเครื่องมือด้วยสัมประสิทธิ์แอลฟาของครอนบาค"],
+              ["e1e2", "⚙️ E1/E2 & E.I.", "วิเคราะห์ประสิทธิภาพกระบวนการ/ผลลัพธ์ E1/E2 และดัชนีประสิทธิผล E.I."],
+              ["hypothesis_lab", "📈 t-test / Z", "ทดสอบสมมติฐานเปรียบเทียบก่อน-หลังเรียน (t-test Dependent หรือ Wilcoxon Z)"],
+              ["ch4_tables", "📑 ตาราง APA บท 4", "รายงานผลการวิเคราะห์ข้อมูลในรูปแบบตารางมาตรฐาน APA 7th พร้อมคำแปลผล"]
+            ].map(([k, lbl, tip]) => `
+              <button onclick="ROAD_APP.setStatlabSubTab('${k}')" data-tooltip="${tip}" title="${tip}" class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${subTab === k ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                 ${lbl}
               </button>
             `).join("")}
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold font-mono">
-              StatLab Studio V2.0
+              StatLab
             </span>
           </div>
         </div>
@@ -6653,13 +6731,13 @@
   // --- Custom ABCD Modal & Smart Decomposer Wizard ---
   function renderCustomAbcdModal() {
     const proj = getActiveProject();
-    const vocab = window.ROAD_DATA.ABCD_SUGGESTIONS;
+    const vocab = window.ROAD_DATA.ABCD_SUGGESTIONS || { A: [], A_CATEGORIES: [], B: [], C1: [], C2: [], D: [] };
     const tab = state.abcdModalTab || "manual";
     const parsed = state.abcdParsedResult || window.ROAD_GENERATOR.parseTitleToABCD(state.abcdParseInput || window.ROAD_GENERATOR.composeFullTitle(proj));
 
     return `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-fade-in print:hidden">
-        <div class="neu-card max-w-4xl w-full p-5 sm:p-8 my-auto max-h-[92vh] flex flex-col gap-5 overflow-y-auto relative shadow-2xl">
+        <div class="neu-card max-w-4xl w-full p-5 sm:p-8 my-auto max-h-[90vh] flex flex-col gap-5 overflow-y-auto relative shadow-2xl">
           <!-- Header -->
           <div class="flex items-start justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
             <div class="flex items-center gap-3">
@@ -6915,7 +6993,7 @@
 
     return `
       <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-        <div class="neu-card w-full max-w-4xl max-h-[92vh] flex flex-col justify-between overflow-hidden shadow-2xl border-2 border-blue-400/40">
+        <div class="neu-card w-full max-w-4xl max-h-[90vh] flex flex-col justify-between overflow-hidden shadow-2xl border-2 border-blue-400/40">
           <!-- Wizard Header -->
           <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/80 via-white to-sky-50/80 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
             <div class="flex items-center gap-3">
@@ -7139,7 +7217,7 @@
 
     return `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-fade-in print:hidden">
-        <div class="neu-card max-w-4xl w-full p-5 sm:p-8 my-auto max-h-[92vh] flex flex-col gap-5 overflow-y-auto relative shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl">
+        <div class="neu-card max-w-4xl w-full p-5 sm:p-8 my-auto max-h-[90vh] flex flex-col gap-5 overflow-y-auto relative shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl">
           <!-- Header -->
           <div class="flex items-start justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
             <div class="flex items-center gap-3">

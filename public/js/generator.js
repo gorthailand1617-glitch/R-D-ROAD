@@ -16,12 +16,21 @@ function escapeHtml(str) {
 }
 
 window.ROAD_GENERATOR = {
-  // ประเมินคะแนนความสมบูรณ์และตรวจ 10 กฎเหล็ก (Health Score & Validator)
   evaluateResearchHealth(p) {
     if (window.ROAD_ADVISOR && typeof window.ROAD_ADVISOR.validate10Pitfalls === "function") {
-      return window.ROAD_ADVISOR.validate10Pitfalls(p);
+      const res = window.ROAD_ADVISOR.validate10Pitfalls(p);
+      const checks = (res.results || []).map(r => ({
+        ok: r.level === "pass",
+        label: r.ruleName,
+        detail: r.title + " - " + r.desc
+      }));
+      return {
+        ...res,
+        score: res.score !== undefined ? res.score : res.healthScore,
+        checks
+      };
     }
-    return { healthScore: 100, passedCount: 11, totalRules: 11, results: [] };
+    return { healthScore: 100, score: 100, passedCount: 14, totalRules: 14, results: [], checks: [] };
   },
 
   // ประกอบชื่อเรื่องวิจัยเต็มจาก ABCD
