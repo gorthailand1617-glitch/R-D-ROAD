@@ -132,7 +132,7 @@ testedTabs.forEach(tab => {
     const code = match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
     
     // Skip external URLs or download clicks that try to manipulate DOM blobs directly
-    if (code.includes('window.open') || code.includes('exportWord') || code.includes('download')) {
+    if (code.includes('window.open') || code.includes('exportWord') || code.includes('download') || code.includes('exportSingleThesis') || code.includes('exportAllTheses') || code.includes('searchThesisOnline')) {
       continue;
     }
 

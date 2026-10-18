@@ -87,8 +87,9 @@
     lastSavedTimestamp: "",
     // Workspace Projects State
     projectFilterStatus: "ALL",
-    projectSearch: "",
     auditLogs: [],
+    thesesFilter: "all", // "all" | "thesis" | "journal" | "international"
+    thesesSearching: false,
     // Interactive Instrument Subtab & PNI State
     instrumentSubTab: "blueprint",
     pniItems: [
@@ -1764,6 +1765,99 @@
         showToast("กำลังดาวน์โหลดชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc)...");
       } else {
         showToast("ไม่พบโมดูลส่งออกภาคผนวก");
+      }
+    },
+
+    // --- AI Related Theses & Literature Discovery Actions ---
+    setThesesFilter(filterType) {
+      state.thesesFilter = filterType;
+      renderApp();
+    },
+
+    exportSingleThesis(thesisId) {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportSingleThesisToWordDoc(proj, thesisId);
+      recordAudit("EXPORT_DOC", `ส่งออกสรุปวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (${thesisId}): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดเอกสารวิทยานิพนธ์ (.doc Sarabun 16pt)...");
+    },
+
+    exportAllTheses() {
+      const proj = getActiveProject();
+      window.ROAD_GENERATOR.exportAllThesesConsolidatedDoc(proj);
+      recordAudit("EXPORT_DOC", `ส่งออกเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (Word): ${proj.label || proj.B_short}`);
+      showToast("กำลังดาวน์โหลดเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (.doc)...");
+    },
+
+    copyThesisApa(thesisId) {
+      const proj = getActiveProject();
+      const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+      const th = list.find(t => t.id === thesisId) || list[0];
+      if (th && th.apaReference) {
+        const cleanRef = th.apaReference.replace(/<[^>]+>/g, "");
+        if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(cleanRef);
+        }
+        showToast(`คัดลอกรายการอ้างอิง APA 7th (${th.type.split("(")[0].trim()}) เรียบร้อยแล้ว!`);
+      }
+    },
+
+    copyAllThesesApa() {
+      const proj = getActiveProject();
+      const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+      const allRefs = list.map(th => th.apaReference.replace(/<[^>]+>/g, "")).join("\n\n");
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(allRefs);
+      }
+      showToast(`คัดลอกรายการอ้างอิง APA 7th ครบทั้ง ${list.length} เรื่อง เรียบร้อยแล้ว!`);
+    },
+
+    searchThesisOnline(thesisId) {
+      const proj = getActiveProject();
+      const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+      const th = list.find(t => t.id === thesisId) || list[0];
+      if (th) {
+        const q = encodeURIComponent(`${th.title} ${th.institution || ''}`);
+        window.open(`https://scholar.google.com/scholar?q=${q}`, '_blank');
+      }
+    },
+
+    importThesisToResearch(thesisId) {
+      const proj = getActiveProject();
+      const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+      const th = list.find(t => t.id === thesisId) || list[0];
+      if (th) {
+        if (!proj.importedTheses) proj.importedTheses = [];
+        if (!proj.importedTheses.includes(th.id)) {
+          proj.importedTheses.push(th.id);
+        }
+        saveProjects();
+        showToast(`นำเข้าข้อค้นพบของวิทยานิพนธ์สู่งานวิจัยและพร้อมยกไปอภิปรายผลแล้ว!`);
+        renderApp();
+      }
+    },
+
+    async runGeminiThesisResearch() {
+      const proj = getActiveProject();
+      if (!state.geminiKey) {
+        showToast("กำลังค้นคว้าและสังเคราะห์วิทยานิพนธ์จากคลังปัญญาฐานข้อมูลวิชาการ...");
+        proj.customTheses = null;
+        saveProjects();
+        renderApp();
+        showToast("อัปเดตวิทยานิพนธ์ที่เกี่ยวข้องกับ ABCD ล่าสุดเรียบร้อยแล้ว!");
+        return;
+      }
+      state.thesesSearching = true;
+      renderApp();
+      showToast("AI กำลังสืบค้นและวิเคราะห์วิทยานิพนธ์เชิงลึกด้วย Gemini...");
+      try {
+        const prompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, "theses_discovery");
+        const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt);
+        showToast(`AI สังเคราะห์วิทยานิพนธ์อ้างอิงเชิงลึกด้วย ${res.model} สำเร็จแล้ว!`);
+      } catch (err) {
+        showToast(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ Gemini API", "bad");
+      } finally {
+        state.thesesSearching = false;
+        renderApp();
       }
     },
 
@@ -3801,9 +3895,15 @@
                 <button onclick="ROAD_APP.openAbcdModal('parse')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-purple-700 dark:text-purple-300 transition cursor-pointer whitespace-nowrap">
                   🔍 ถอดรหัสชื่อเรื่องอัตโนมัติ
                 </button>
+                <button onclick="ROAD_APP.setStudioTab('abcd'); setTimeout(() => { const el = document.getElementById('theses-discovery-hub'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100);" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 transition cursor-pointer whitespace-nowrap hover:bg-indigo-100 flex items-center gap-1">
+                  <span>📚 คลังวิทยานิพนธ์อ้างอิง</span>
+                </button>
               ` : curStep === 2 ? `
                 <button onclick="ROAD_APP.setStudioTab('diagrams')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'diagrams' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                   🧭 ผัง R&D 4 ระยะ (R1-D2)
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('abcd'); setTimeout(() => { const el = document.getElementById('theses-discovery-hub'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100);" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 transition cursor-pointer whitespace-nowrap hover:bg-indigo-100 flex items-center gap-1">
+                  <span>📚 คลังวิทยานิพนธ์อ้างอิง</span>
                 </button>
                 <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 transition cursor-pointer whitespace-nowrap hover:bg-blue-100">
                   🪄 10-Step Wizard
@@ -4698,6 +4798,166 @@
           </div>
         </div>
       </div>
+
+      <!-- AI Related Theses & Research Discovery Hub -->
+      ${renderThesesDiscoveryHub(proj)}
+    `;
+  }
+
+  // --- Hub Component: AI Related Theses & Literature Discovery Hub ---
+  function renderThesesDiscoveryHub(proj) {
+    const theses = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+    const filter = state.thesesFilter || "all";
+    const filteredTheses = theses.filter(th => {
+      if (filter === "all") return true;
+      if (filter === "thesis") return th.category === "thesis" || th.category === "dissertation";
+      if (filter === "journal") return th.category === "journal" || th.category === "report";
+      if (filter === "international") return th.category === "international";
+      return true;
+    });
+
+    const bShort = proj.B_short || proj.B || "นวัตกรรมการเรียนรู้";
+    const c1 = (proj.C_list && proj.C_list[0]) || "ตัวแปรตาม";
+
+    return `
+      <div id="theses-discovery-hub" class="mt-6 neu-card p-5 sm:p-6 flex flex-col gap-5">
+        <!-- Hub Header & Status Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                📚
+              </span>
+              <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
+                คลังวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (AI Thesis & Research Discovery Hub)
+              </h3>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              เมื่อตั้งค่า A-B-C-D ระบบ AI จะสืบค้น วิเคราะห์ และสังเคราะห์วิทยานิพนธ์และงานวิจัยที่ตรงกับหัวข้อของคุณไว้รอทันที เพื่อให้คุณดาวน์โหลดเป็นไฟล์ Word (.doc) ไปศึกษาวิเคราะห์และนำไปใช้อ้างอิงในบทที่ 1, 2 และบทที่ 5 ได้อย่างสะดวก
+            </p>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="ROAD_APP.exportAllTheses()" class="px-4 py-2.5 neu-btn-primary text-xs font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+              <span>📥 ดาวน์โหลดเอกสารรวมวิทยานิพนธ์ (.doc)</span>
+            </button>
+            <button type="button" onclick="ROAD_APP.copyAllThesesApa()" class="px-3.5 py-2 neu-squircle text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+              <span>📋 คัดลอก APA 7th ทั้งหมด</span>
+            </button>
+            <button type="button" onclick="ROAD_APP.runGeminiThesisResearch()" class="px-3.5 py-2 neu-squircle text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer" title="สั่ง AI วิเคราะห์และค้นคว้าวิทยานิพนธ์เพิ่มเติม">
+              <span>✨ อัปเดต/ค้นคว้าเชิงลึก</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Pills Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <span class="text-slate-500 dark:text-slate-400 font-semibold mr-1">กรองประเภท:</span>
+            ${[
+              ["all", `ทั้งหมด (${theses.length})`],
+              ["thesis", `วิทยานิพนธ์ ป.โท-เอก (${theses.filter(t => t.category === "thesis" || t.category === "dissertation").length})`],
+              ["journal", `วารสาร TCI / สพฐ. (${theses.filter(t => t.category === "journal" || t.category === "report").length})`],
+              ["international", `งานวิจัยสากล ERIC (${theses.filter(t => t.category === "international").length})`]
+            ].map(([fKey, fLabel]) => `
+              <button type="button" onclick="ROAD_APP.setThesesFilter('${fKey}')" class="px-3 py-1 rounded-lg font-bold transition cursor-pointer ${filter === fKey ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}">
+                ${fLabel}
+              </button>
+            `).join("")}
+          </div>
+          <div class="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>จับคู่ตรงกับตัวแปร "${escapeHtml(bShort)}" และ "${escapeHtml(c1)}"</span>
+          </div>
+        </div>
+
+        <!-- Theses Cards Grid -->
+        <div class="grid md:grid-cols-2 gap-4">
+          ${filteredTheses.map((th) => `
+            <div class="bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-3 relative">
+              <div class="space-y-2.5">
+                <!-- Top Badges -->
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${th.badgeColor === 'purple' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200' : th.badgeColor === 'emerald' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200' : th.badgeColor === 'amber' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200' : th.badgeColor === 'sky' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200'}">
+                      ${escapeHtml(th.type)}
+                    </span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">ปี พ.ศ. ${escapeHtml(th.year)}</span>
+                  </div>
+                  <div class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>${th.matchScore}% ตรงกับหัวข้อ</span>
+                  </div>
+                </div>
+
+                <!-- Title -->
+                <div>
+                  <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-snug">
+                    ${escapeHtml(th.title)}
+                  </h4>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 italic mt-0.5">
+                    ${escapeHtml(th.titleEn)}
+                  </div>
+                </div>
+
+                <!-- Institution & Metadata -->
+                <div class="text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-1 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                  <div>🏛️ <b>สถาบัน:</b> ${escapeHtml(th.institution)}</div>
+                  <div>🗄️ <b>ฐานข้อมูล:</b> ${escapeHtml(th.database)}</div>
+                  <div>📐 <b>แบบแผน:</b> ${escapeHtml(th.researchDesign || 'One Group Pretest-Posttest')}</div>
+                </div>
+
+                <!-- Statistical Empirical Highlights -->
+                <div class="grid grid-cols-2 gap-2 text-[11px]">
+                  <div class="p-2 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40">
+                    <div class="text-[10px] font-bold text-blue-800 dark:text-blue-300">ประสิทธิภาพ / ดัชนี:</div>
+                    <div class="font-mono font-semibold text-blue-950 dark:text-blue-200 mt-0.5">${escapeHtml(th.efficiencyResult || '-')}</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40">
+                    <div class="text-[10px] font-bold text-emerald-800 dark:text-emerald-300">ผลการทดสอบสถิติ:</div>
+                    <div class="font-mono font-semibold text-emerald-950 dark:text-emerald-200 mt-0.5">${escapeHtml(th.statsResult || '-')}</div>
+                  </div>
+                </div>
+
+                <!-- Executive Abstract Excerpt -->
+                <div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+                  <p class="font-bold text-[11px] text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1">
+                    <span>📝 สรุปบทคัดย่อผู้บริหาร:</span>
+                  </p>
+                  <p class="text-[11px] text-justify line-clamp-3">
+                    ${escapeHtml(th.abstract)}
+                  </p>
+                </div>
+
+                <!-- R&D Bridge -->
+                <div class="text-[11px] text-indigo-900 dark:text-indigo-200 bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-200/60 dark:border-indigo-800/60">
+                  <span class="font-bold">🌉 นำไปอ้างอิงใน 5 บท:</span>
+                  <span class="mt-0.5 block text-slate-700 dark:text-slate-300">${escapeHtml(th.rdBridge)}</span>
+                </div>
+              </div>
+
+              <!-- Card Action Footer -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 mt-2">
+                <button type="button" onclick="ROAD_APP.exportSingleThesis('${th.id}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
+                  <span>📥 ดาวน์โหลดสรุป (.doc)</span>
+                </button>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="ROAD_APP.copyThesisApa('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer" title="คัดลอกรูปแบบอ้างอิง APA 7th">
+                    <span>📋 APA</span>
+                  </button>
+                  <button type="button" onclick="ROAD_APP.searchThesisOnline('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 text-xs font-semibold cursor-pointer" title="ค้นหาฉบับเต็มใน Google Scholar / ThaiLIS">
+                    <span>🔎 สืบค้นเต็ม</span>
+                  </button>
+                  <button type="button" onclick="ROAD_APP.importThesisToResearch('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold cursor-pointer" title="นำเข้าสู่งานวิจัยในบทที่ 2 และบทที่ 5">
+                    <span>✔ นำเข้าเล่ม</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
     `;
   }
 
@@ -4893,6 +5153,27 @@
                   ${ch.number === 5 ? `<button onclick="ROAD_APP.copySmartPrompt('ch5_discussion')" class="px-2.5 py-1.5 rounded-lg border border-sky-300 text-sky-800 dark:text-sky-300 text-xs font-semibold hover:bg-sky-50 cursor-pointer">📋 Prompt บทที่ 5</button>` : ""}
                 </div>
               </div>
+
+              ${ch.number === 2 ? `
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-sky-50/80 to-slate-50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm print:hidden">
+                  <div class="space-y-1">
+                    <div class="text-xs font-extrabold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                      <span>📚 คลังวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (AI สังเคราะห์ไว้รอ 5 เรื่อง):</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                      AI ได้สืบค้นและวิเคราะห์วิทยานิพนธ์ระดับชาติและนานาชาติที่ตรงกับตัวแปรของโครงการนี้ไว้รอแล้ว พร้อมให้ดาวน์โหลดเล่มรวมหรือนำไปอ้างอิง
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="ROAD_APP.exportAllTheses()" class="px-3 py-1.5 neu-btn-primary text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm">
+                      <span>📥 ดาวน์โหลดเอกสารรวมวิทยานิพนธ์ (.doc)</span>
+                    </button>
+                    <button type="button" onclick="ROAD_APP.setStudioTab('abcd'); setTimeout(() => { const el = document.getElementById('theses-discovery-hub'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100);" class="px-2.5 py-1.5 neu-squircle text-xs font-semibold cursor-pointer">
+                      <span>เปิดคลังในแท็บ ABCD ➔</span>
+                    </button>
+                  </div>
+                </div>
+              ` : ""}
 
               <div class="space-y-6">
                 ${ch.sections.map(sec => `
@@ -7388,7 +7669,7 @@
             <p class="text-xs text-slate-500 mt-0.5">เอกสารสนับสนุนที่จำเป็นสำหรับการประเมินวิทยฐานะ วPA และงานวิจัยและพัฒนาทางการศึกษา (R&D)</p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             <!-- Front Matter -->
             <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
               <div>
@@ -7398,6 +7679,18 @@
               </div>
               <button onclick="ROAD_APP.exportFrontMatter()" class="w-full py-1.5 neu-squircle text-amber-700 dark:text-amber-300 font-bold text-xs cursor-pointer text-center">
                 📥 ดาวน์โหลดส่วนนำ
+              </button>
+            </div>
+
+            <!-- Consolidated Theses Package -->
+            <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col justify-between gap-3 shadow-sm hover:shadow-md transition">
+              <div>
+                <span class="text-lg">📚</span>
+                <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">วิทยานิพนธ์อ้างอิง (.doc)</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">รวมบทวิเคราะห์วิทยานิพนธ์ 5 เรื่อง พร้อมตารางสังเคราะห์บทที่ 2 และรายการอ้างอิง APA 7th</div>
+              </div>
+              <button onclick="ROAD_APP.exportAllTheses()" class="w-full py-1.5 neu-btn-primary font-bold text-xs cursor-pointer text-center">
+                📥 ดาวน์โหลดเอกสารรวมวิทยานิพนธ์
               </button>
             </div>
 

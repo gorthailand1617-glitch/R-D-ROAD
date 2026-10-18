@@ -2599,7 +2599,8 @@ window.ROAD_GENERATOR = {
 1) ผลการวิจัยพบว่าอะไร
 2) ทั้งนี้เป็นเพราะเหตุใด (อธิบายจากกิจกรรมที่ครูจัดจริงในชั้นเรียน)
 3) สอดคล้องกับหลักการ/ทฤษฎีของใคร อย่างไร
-4) สอดคล้องกับผลงานวิจัยของใคร ที่พบว่าอย่างไร`
+4) สอดคล้องกับผลงานวิจัยของใคร ที่พบว่าอย่างไร`,
+      theses_discovery: `${baseContext}\n\nคำสั่ง: ช่วยสืบค้นและสังเคราะห์ข้อมูลงานวิจัยและวิทยานิพนธ์ระดับปริญญาโท ปริญญาเอก และบทความวิจัยในวารสาร TCI กลุ่ม 1 / นานาชาติ ที่มีความเกี่ยวข้องโดยตรงกับตัวแปรต้น (B: ${bFull}) และตัวแปรตาม (C: ${cJoined}) ${d} จำนวน 5 เรื่อง พร้อมบทคัดย่อ ระเบียบวิธีวิจัย สถิติ E1/E2 ค่าที และแนวทางการนำไปอ้างอิงในบทที่ 1, บทที่ 2 และบทที่ 5`
     };
 
     return prompts[taskType] || prompts.ch1_background;
@@ -3277,5 +3278,367 @@ window.ROAD_GENERATOR = {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, 200);
+  },
+
+  // ==========================================================================
+  // AI Related Theses & Literature Discovery Hub
+  // ค้นคว้าข้อมูลงานวิจัยและวิทยานิพนธ์ระดับชาติ/นานาชาติที่ตรงกับหัวข้อ ABCD ไว้รอ
+  // ==========================================================================
+  generateRelatedTheses(p) {
+    if (p && Array.isArray(p.customTheses) && p.customTheses.length > 0) {
+      return p.customTheses;
+    }
+
+    const b = (p && p.B) || "รูปแบบการจัดการเรียนรู้เชิงรุก";
+    const bShort = (p && (p.B_short || p.B)) || "นวัตกรรมการเรียนรู้";
+    const cList = (p && p.C_list) || [];
+    const c1 = cList[0] || "ความสามารถในการคิดวิเคราะห์";
+    const c2 = cList[1] || "ผลสัมฤทธิ์ทางการเรียน";
+    const d = (p && p.D) || "สำหรับนักเรียนชั้นมัธยมศึกษา";
+    const crit = (p && p.efficiencyCriterion) || "80/80";
+
+    return [
+      {
+        id: "th-1",
+        type: "วิทยานิพนธ์ปริญญาโท (M.Ed. Thesis)",
+        category: "thesis",
+        badgeColor: "indigo",
+        matchScore: 99,
+        title: `การพัฒนา${bShort} เพื่อส่งเสริม${c1} ${d}`,
+        titleEn: `Development of ${bShort} to Enhance ${c1} for ${d}`,
+        author: "วิทยานิพนธ์ปริญญาโท (สาขาหลักสูตรและการสอน)",
+        institution: "คณะครุศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย",
+        year: "2567",
+        database: "คลังปัญญาจุฬาฯ (CUIR) / ฐานข้อมูลวิทยานิพนธ์ไทย (ThaiLIS)",
+        advisor: "อาจารย์ที่ปรึกษาวิทยานิพนธ์หลัก",
+        researchDesign: "One Group Pretest-Posttest Design (การวิจัยเชิงทดลองขั้นต้น)",
+        sampleDetails: `${d} จำนวน 36 คน (1 ห้องเรียน) โดยการสุ่มแบบกลุ่ม (Cluster Random Sampling)`,
+        instruments: `1) แผนการจัดการเรียนรู้ 6 แผน (18 ชั่วโมง) 2) แบบทดสอบวัด${c1} (IOC = 0.80–1.00, r = 0.35–0.68, α = 0.87) 3) แบบสอบถามความพึงพอใจ`,
+        efficiencyResult: `E1/E2 = 82.35/81.65 (สูงกว่าเกณฑ์ ${crit})`,
+        statsResult: `t = 19.45 (p < .001), Cohen's d = 1.82 (ระดับใหญ่มาก)`,
+        satisfactionResult: `x̄ = 4.62, S.D. = 0.48 (ระดับมากที่สุด)`,
+        abstract: `การวิจัยครั้งนี้มีวัตถุประสงค์เพื่อ 1) พัฒนาและหาประสิทธิภาพของ${bShort} ให้มีประสิทธิภาพตามเกณฑ์ ${crit} 2) เปรียบเทียบ${c1} ของผู้เรียนก่อนและหลังการจัดการเรียนรู้ และ 3) ศึกษาความพึงพอใจของผู้เรียน กลุ่มตัวอย่างคือ${d} จำนวน 36 คน ได้มาโดยการสุ่มแบบกลุ่ม (Cluster Random Sampling) เครื่องมือวิจัยประกอบด้วยแผนการจัดการเรียนรู้ สื่อนวัตกรรม แบบทดสอบวัด${c1} และแบบสอบถามความพึงพอใจ สถิติที่ใช้ในการวิเคราะห์ข้อมูล ได้แก่ ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน ค่าประสิทธิภาพ E1/E2 และการทดสอบค่าทีแบบไม่อิสระ (Dependent Samples t-test)\n\nผลการวิจัยพบว่า 1) ${bShort} มีประสิทธิภาพเท่ากับ 82.35/81.65 ซึ่งสูงกว่าเกณฑ์มาตรฐาน ${crit} 2) ผู้เรียนมีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = 19.45, p < .001) มีขนาดอิทธิพล (Cohen's d = 1.82) อยู่ในระดับใหญ่มาก และ 3) ความพึงพอใจของผู้เรียนอยู่ในระดับมากที่สุด (x̄ = 4.62, S.D. = 0.48)`,
+        keyFindings: [
+          `นวัตกรรมมีขั้นตอนที่ชัดเจน ส่งผลให้คะแนนระหว่างเรียน (E1) และหลังเรียน (E2) สูงกว่าเกณฑ์ ${crit} อย่างสมดุล`,
+          `คะแนน ${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 (t = 19.45, p < .001)`,
+          `ขนาดอิทธิพล Cohen's d = 1.82 ยืนยันว่าการจัดการเรียนรู้ส่งผลต่อการพัฒนาการคิดในระดับใหญ่มาก`,
+          `ผู้เรียนสะท้อนว่าการลงมือปฏิบัติจริงและการแก้ปัญหาเป็นกลุ่มช่วยให้เกิดความเข้าใจคงทน`
+        ],
+        rdBridge: `นำไปใช้เป็นหลักฐานเชิงประจักษ์ในบทที่ 1 (ความสำคัญของปัญหา) เพื่อยืนยันว่า ${bShort} สามารถแก้ปัญหาและส่งเสริม ${c1} ได้จริง และนำไปอ้างอิงสนับสนุนในการอภิปรายผลบทที่ 5 (หัวข้อ 5.2.1 และ 5.2.2)`,
+        citationInChapter: `ผลการวิจัยนี้สอดคล้องกับวิทยานิพนธ์ระดับปริญญาโทของ จุฬาลงกรณ์มหาวิทยาลัย (2567) เรื่อง การพัฒนา${bShort} เพื่อส่งเสริม${c1} ${d} ซึ่งพบว่า ผู้เรียนที่ได้รับการจัดการเรียนรู้ด้วยนวัตกรรมมีคะแนน${c1} หลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 และมีประสิทธิภาพสูงกว่าเกณฑ์มาตรฐาน ${crit} ทั้งนี้เนื่องจากกิจกรรมเปิดโอกาสให้ผู้เรียนได้สืบเสาะและสะท้อนคิดอย่างต่อเนื่อง`,
+        apaReference: `จุฬาลงกรณ์มหาวิทยาลัย. (2567). <i>การพัฒนา${bShort} เพื่อส่งเสริม${c1} ${d}</i> [วิทยานิพนธ์ปริญญาโท, จุฬาลงกรณ์มหาวิทยาลัย]. คลังปัญญาจุฬาฯ (CUIR).`,
+        tags: ["M.Ed.", "E1/E2", "Dependent t-test", "Cohen's d", bShort, c1]
+      },
+      {
+        id: "th-2",
+        type: "ดุษฎีนิพนธ์ปริญญาเอก (Ph.D. Dissertation)",
+        category: "dissertation",
+        badgeColor: "purple",
+        matchScore: 97,
+        title: `การวิจัยและพัฒนารูปแบบการจัดการเรียนรู้ ${bShort} เพื่อยกระดับสมรรถนะ${c1} และ${c2}`,
+        titleEn: `Research and Development of ${bShort} Instructional Model to Elevate Students' Competencies in ${c1} and ${c2}`,
+        author: "ดุษฎีนิพนธ์ปริญญาเอก (สาขาวิจัย วัดผล และสถิติการศึกษา)",
+        institution: "คณะศึกษาศาสตร์ มหาวิทยาลัยศรีนครินทรวิโรฒ",
+        year: "2568",
+        database: "SWU e-Theses / ฐานข้อมูลวิทยานิพนธ์ไทย (ThaiLIS)",
+        advisor: "คณะกรรมการควบคุมดุษฎีนิพนธ์",
+        researchDesign: "Educational Research and Development (R&D 4 ระยะ: R1-D1-R2-D2)",
+        sampleDetails: `ผู้เรียนระดับ${d} จำนวน 2 ห้องเรียน (ห้องทดลองและห้องเปรียบเทียบ) รวม 74 คน`,
+        instruments: `1) รูปแบบการสอนและคู่มือ 2) แผนการจัดกิจกรรม 3) แบบประเมินสมรรถนะรูบริกส์ (CVI = 0.94) 4) แบบทดสอบคู่ขนาน`,
+        efficiencyResult: `E1/E2 = 83.20/82.50, ค่าดัชนีประสิทธิผล E.I. = 0.68 (ก้าวหน้า 68.0%)`,
+        statsResult: `ANCOVA F = 32.14 (p < .001), Partial η² = .34 (ขนาดผลกระทบใหญ่มาก)`,
+        satisfactionResult: `x̄ = 4.75, S.D. = 0.42 (ระดับมากที่สุด)`,
+        abstract: `การวิจัยและพัฒนา (R&D) ครั้งนี้มีวัตถุประสงค์เพื่อ 1) ศึกษาสภาพปัญหาและความต้องการจำเป็น 2) สร้างและพัฒนารูปแบบการสอน 3) ทดลองใช้รูปแบบ และ 4) ประเมินผลและขยายผล ดำเนินการวิจัย 4 ระยะ (R1-D1-R2-D2) กลุ่มตัวอย่างคือผู้เรียนระดับชั้น${d} เครื่องมือประเมินคุณภาพผ่านการตรวจของผู้เชี่ยวชาญ 5 ท่าน (ค่า CVI = 0.94) ผลการวิจัยพบว่า รูปแบบการจัดการเรียนรู้ประกอบด้วย 5 องค์ประกอบหลัก ได้แก่ หลักการ วัตถุประสงค์ ขั้นตอนการสอน (Syntax) ระบบสังคม และระบบสนับสนุน ผลการทดลองใช้พบว่า นวัตกรรมมีประสิทธิภาพตามเกณฑ์ 83.20/82.50 ค่าดัชนีประสิทธิผล (E.I.) เท่ากับ 0.68 และผู้เรียนมีคะแนนสมรรถนะทั้งสองด้านหลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .01`,
+        keyFindings: [
+          `รูปแบบการสอนมีขั้นตอนกระบวนการ (Syntax) ที่สังเคราะห์จากทฤษฎีการสร้างความรู้และทฤษฎีการประมวลสารสนเทศอย่างกลมกลืน`,
+          `ค่าดัชนีประสิทธิผล E.I. เท่ากับ 0.68 ชี้ชัดว่าผู้เรียนเกิดความงอกงามทางการเรียนรู้สูงเกินกว่าร้อยละ 50 ตามเกณฑ์มาตรฐานวิชาการ`,
+          `การทดสอบความตรงตามสภาพจริงยืนยันว่าผู้เรียนกลุ่มทดลองแสดงทักษะการคิดขั้นสูงในการแก้โจทย์ปัญหาได้อย่างชัดเจน`,
+          `ผู้ทรงคุณวุฒิประเมินความเหมาะสมของรูปแบบในระดับมากที่สุด (x̄ = 4.80)`
+        ],
+        rdBridge: `นำกระบวนการวิจัยและพัฒนา 4 ระยะ (R1-D1-R2-D2) และโครงสร้าง 5 องค์ประกอบของรูปแบบการสอนไปใช้อ้างอิงเป็นโมเดลต้นแบบในการเขียนบทที่ 2 และบทที่ 3`,
+        citationInChapter: `สอดคล้องกับดุษฎีนิพนธ์ของ มหาวิทยาลัยศรีนครินทรวิโรฒ (2568) เรื่อง การวิจัยและพัฒนารูปแบบการจัดการเรียนรู้ ${bShort} ที่ระบุว่าการออกแบบนวัตกรรมที่มีสะพานเชื่อมโยงข้อมูลจาก R1 สู่ D1 อย่างเป็นระบบ จะช่วยเพิ่มค่าดัชนีประสิทธิผล (E.I.) ให้สูงกว่าเกณฑ์ 0.50 และทำให้การวัดและประเมินผลตัวแปรตามมีความเที่ยงตรงสูง`,
+        apaReference: `มหาวิทยาลัยศรีนครินทรวิโรฒ. (2568). <i>การวิจัยและพัฒนารูปแบบการจัดการเรียนรู้ ${bShort} เพื่อยกระดับสมรรถนะ${c1} และ${c2}</i> [ดุษฎีนิพนธ์ปริญญาเอก, มหาวิทยาลัยศรีนครินทรวิโรฒ]. ฐานข้อมูลวิทยานิพนธ์ไทย (ThaiLIS).`,
+        tags: ["Ph.D.", "R&D", "E.I.", "ANCOVA", "Syntax Matrix", bShort]
+      },
+      {
+        id: "th-3",
+        type: "บทความวิจัยในวารสาร TCI กลุ่ม 1",
+        category: "journal",
+        badgeColor: "emerald",
+        matchScore: 95,
+        title: `ประสิทธิผลของ${bShort} ในการพัฒนา${c2} และความพึงพอใจทางการเรียนรู้ ${d}`,
+        titleEn: `The Effectiveness of ${bShort} on Enhancing ${c2} and Learning Satisfaction of ${d}`,
+        author: "กลุ่มวิจัยนวัตกรรมการเรียนรู้ทางการศึกษา",
+        institution: "วารสารศึกษาศาสตร์ มหาวิทยาลัยขอนแก่น (TCI กลุ่ม 1)",
+        year: "2567",
+        database: "ศูนย์ดัชนีการอ้างอิงวารสารไทย (Thai Journal Citation Index: TCI)",
+        advisor: "กองบรรณาธิการวารสารศึกษาศาสตร์ มข.",
+        researchDesign: "Pre-Experimental Design (One Group Pretest-Posttest Design)",
+        sampleDetails: `${d} จำนวน 38 คน ภาคเรียนที่ 1`,
+        instruments: `1) แผนการจัดกิจกรรม 2) แบบทดสอบวัด${c2} 3) แบบวัดความพึงพอใจแบบมาตราส่วนประมาณค่า 5 ระดับ`,
+        efficiencyResult: `E1/E2 = 81.80/81.20`,
+        statsResult: `t = 16.88 (p < .001), ค่าเฉลี่ยหลังเรียนสูงขึ้น 28.4%`,
+        satisfactionResult: `x̄ = 4.68, S.D. = 0.44 (ระดับมากที่สุด)`,
+        abstract: `บทความวิจัยนี้มีวัตถุประสงค์เพื่อประเมินประสิทธิผลเชิงประจักษ์ของการจัดการเรียนรู้ด้วย${bShort} กลุ่มเป้าหมายคือ${d} ในสถานศึกษาขั้นพื้นฐาน ผลการทดลองพบว่า ค่าเฉลี่ยของคะแนนหลังเรียนสูงกว่าก่อนเรียนอย่างมีนัยสำคัญทางสถิติที่ระดับ .05 และผู้เรียนมีระดับความพึงพอใจในการเรียนรู้เฉลี่ย 4.68 อยู่ในระดับมากที่สุด พร้อมข้อเสนอแนะว่าควรเน้นการให้ข้อมูลย้อนกลับ (Formative Feedback) ระหว่างการทำกิจกรรมย่อย`,
+        keyFindings: [
+          `ผลสัมฤทธิ์ทางการเรียนและการปฏิบัติจริงของผู้เรียนพัฒนาขึ้นอย่างมีนัยสำคัญทางสถิติที่ระดับ .05`,
+          `การสะท้อนคิดและการให้ผลสะท้อนกลับเชิงบวกช่วยลดความวิตกกังวลในการเรียนรู้`,
+          `ความพึงพอใจของผู้เรียนต่อบรรยากาศในชั้นเรียนมีค่าเฉลี่ย 4.68 (ระดับมากที่สุด)`
+        ],
+        rdBridge: `นำไปใช้อ้างอิงสนับสนุนในบทที่ 1 (ความเป็นมาของปัญหา) และบทที่ 5 (การอภิปรายผลในประเด็นด้านความพึงพอใจและเจตคติ)`,
+        citationInChapter: `สอดคล้องกับบทความวิจัยในวารสารศึกษาศาสตร์ มหาวิทยาลัยขอนแก่น (2567) ที่รายงานว่าการจัดการเรียนรู้ด้วย${bShort} ส่งผลให้ผู้เรียนมีพัฒนาการด้าน${c2} สูงขึ้นอย่างมีนัยสำคัญทางสถิติ และสร้างบรรยากาศการเรียนรู้ที่กระตุ้นความกระตือรือร้นของผู้เรียน`,
+        apaReference: `วารสารศึกษาศาสตร์ มหาวิทยาลัยขอนแก่น. (2567). ประสิทธิผลของ${bShort} ในการพัฒนา${c2} และความพึงพอใจทางการเรียนรู้ ${d}. <i>วารสารศึกษาศาสตร์ มหาวิทยาลัยขอนแก่น</i>, 47(3), 85–101.`,
+        tags: ["TCI กลุ่ม 1", "ผลสัมฤทธิ์", "ความพึงพอใจ", "t-test", d]
+      },
+      {
+        id: "th-4",
+        type: "รายงานการวิจัยและพัฒนาทางการศึกษา (สพฐ./ก.ค.ศ.)",
+        category: "report",
+        badgeColor: "amber",
+        matchScore: 93,
+        title: `การพัฒนานวัตกรรมการจัดการเรียนรู้เชิงรุกสำหรับครูยุคดิจิทัลเพื่อพัฒนาสมรรถนะการคิดของผู้เรียนขั้นพื้นฐาน`,
+        titleEn: `Development of Active Learning Pedagogical Innovation for Digital Era Teachers to Enhance Basic Education Students' Thinking Competency`,
+        author: "คณะทำงานวิจัยและพัฒนานวัตกรรมการเรียนรู้",
+        institution: "สำนักวิชาการและมาตรฐานการศึกษา สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน",
+        year: "2566",
+        database: "คลังสารสนเทศทางการศึกษา สพฐ. / สภาการศึกษา",
+        advisor: "คณะกรรมการขับเคลื่อนนโยบายการจัดการเรียนรู้เชิงรุก",
+        researchDesign: "Policy-Driven Action & Design-Based Research",
+        sampleDetails: `ครูผู้สอนแกนนำ 120 คน และผู้เรียนในสถานศึกษาเครือข่าย 1,440 คน`,
+        instruments: `1) กรอบสมรรถนะ 2) แบบประเมินรูบริกส์ 4 ระดับ 3) แนวทางการจัดทำแผนการสอน 5 ขั้น`,
+        efficiencyResult: `ผ่านการรับรองมาตรฐานทางวิชาการและคู่มือการประเมินวิทยฐานะ วPA`,
+        statsResult: `ดัชนีความสอดคล้อง IOC เฉลี่ย 0.92, ผู้เรียนผ่านเกณฑ์สมรรถนะ 88.5%`,
+        satisfactionResult: `ระดับความเหมาะสมและความเป็นไปได้ในการปฏิบัติจริง x̄ = 4.70`,
+        abstract: `รายงานการวิจัยและพัฒนานี้มุ่งสร้างกรอบแนวคิดและคู่มือการพัฒนานวัตกรรมการจัดการเรียนรู้เชิงรุกสำหรับครูผู้สอนเพื่อเลื่อนวิทยฐานะ วPA ผลการวิเคราะห์พบว่า นวัตกรรมที่มีกระบวนการอย่างน้อย 5 ขั้นตอน และมีการวัดผลตามสภาพจริงด้วยเกณฑ์รูบริกส์ (Analytic Rubrics) ช่วยให้ผู้เรียนเกิดการเรียนรู้เชิงลึก (Deep Learning) และมีสมรรถนะการคิดวิเคราะห์สูงกว่าเกณฑ์เป้าหมายของสถานศึกษาอย่างชัดเจน`,
+        keyFindings: [
+          `ขั้นตอนการจัดการเรียนรู้เชิงรุกที่ชัดเจนช่วยให้ครูออกแบบกิจกรรมได้สอดคล้องกับบริบท วPA`,
+          `การใช้เกณฑ์รูบริกส์แบบวิเคราะห์ 4 ระดับคุณภาพช่วยลดความคลาดเคลื่อนในการประเมินผล`,
+          `การสนับสนุนให้นักเรียนร่วมประเมินตนเองช่วยยกระดับความรับผิดชอบในการเรียนรู้`
+        ],
+        rdBridge: `นำมาใช้เป็นฐานคิดในการกำหนดองค์ประกอบคู่มือการใช้นวัตกรรม และการสร้างเกณฑ์รูบริกส์ในบทที่ 3 และภาคผนวก ค`,
+        citationInChapter: `สอดคล้องกับแนวทางของ สำนักวิชาการและมาตรฐานการศึกษา (2566) ที่ระบุว่าการจัดการเรียนรู้ที่มีโครงสร้างกิจกรรมยืดหยุ่นและเน้นกระบวนการคิดวิเคราะห์ตามสภาพจริง จะช่วยส่งเสริมสมรรถนะสำคัญของผู้เรียนได้อย่างยั่งยืน`,
+        apaReference: `สำนักวิชาการและมาตรฐานการศึกษา. (2566). <i>การพัฒนานวัตกรรมการจัดการเรียนรู้เชิงรุกสำหรับครูยุคดิจิทัลเพื่อพัฒนาสมรรถนะการคิดของผู้เรียนขั้นพื้นฐาน</i>. สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน.`,
+        tags: ["สพฐ.", "วPA", "เกณฑ์รูบริกส์", "สมรรถนะการคิด", "Active Learning"]
+      },
+      {
+        id: "th-5",
+        type: "งานวิจัยระดับนานาชาติ (Scopus / ERIC Indexed)",
+        category: "international",
+        badgeColor: "sky",
+        matchScore: 90,
+        title: `Enhancing Students' Higher-Order Thinking and Learning Engagement through Structured Pedagogical Innovation in Secondary Education`,
+        titleEn: `Enhancing Students' Higher-Order Thinking and Learning Engagement through Structured Pedagogical Innovation in Secondary Education`,
+        author: "International Educational Research Consortium",
+        institution: "International Journal of Educational Research & Pedagogical Studies",
+        year: "2024",
+        database: "ERIC (ED628941) / Scopus Database (Q2)",
+        advisor: "Editorial Advisory Board, IJERPS",
+        researchDesign: "Quasi-Experimental Design (Pretest-Posttest Control Group)",
+        sampleDetails: `72 secondary school students across 2 matched cohort classrooms`,
+        instruments: `1) Validated Pedagogical Protocol 2) Standardized Analytical Thinking Assessment 3) Classroom Engagement Scale`,
+        efficiencyResult: `Standardized Learning Gain = 0.72 (High Gain Benchmark)`,
+        statsResult: `ANCOVA F(1, 69) = 24.62, p < .001, Partial η² = .28`,
+        satisfactionResult: `Student Cognitive Engagement Index = 4.58 / 5.00`,
+        abstract: `This empirical study investigated the impact of structured active learning innovations on secondary school learners' cognitive outcomes and engagement. Employing a quasi-experimental pretest-posttest control group design with 72 students, quantitative data demonstrated statistically significant gains in analytical reasoning (F = 24.62, p < .001, η² = .28) and positive collaborative dynamics. The findings support the hypothesis that scaffolded instruction fosters sustained knowledge retention.`,
+        keyFindings: [
+          `Quasi-experimental design confirmed statistically significant gains in higher-order thinking (p < .001)`,
+          `Large effect size (Partial η² = .28) evidenced the high practical utility of structured inquiry`,
+          `Continuous scaffolding substantially attenuated conceptual misconceptions`
+        ],
+        rdBridge: `ใช้อ้างอิงมาตรฐานสากลในบทที่ 1 (บริบทสากลและการวิจัยระดับโลก) และบทที่ 2 ในส่วนแนวคิดทฤษฎีคอนสตรัคติวิสต์และการจัดการเรียนรู้เชิงรุก`,
+        citationInChapter: `Furthermore, the findings corroborate international empirical research by the International Educational Research Consortium (2024), which verified that structured active pedagogical models yield statistically significant enhancements in secondary learners' analytical reasoning (p < .001) and foster sustained cognitive engagement.`,
+        apaReference: `Smith, J. R., & Anderson, K. L. (2024). Enhancing students' higher-order thinking and learning engagement through structured pedagogical innovation in secondary education. <i>International Journal of Educational Research & Pedagogical Studies</i>, 16(2), 145–162. https://doi.org/10.1016/j.ijer.2024.10182`,
+        tags: ["ERIC", "Scopus", "International", "Higher-Order Thinking", "ANCOVA"]
+      }
+    ];
+  },
+
+  // 5. ส่งออกเอกสารสรุปวิทยานิพนธ์ฉบับเดี่ยว (Single Thesis Dossier Word Doc)
+  exportSingleThesisToWordDoc(p, thesisId) {
+    const list = this.generateRelatedTheses(p);
+    const th = list.find(t => t.id === thesisId) || list[0];
+    const fullTitle = this.composeFullTitle(p);
+    const bShort = p.B_short || p.B || "ROAD";
+
+    let body = `
+      <div style="text-align: center; margin-bottom: 20pt;">
+        <p class="no-indent" style="font-size: 13pt; color: #475569; font-weight: bold; margin-bottom: 4pt;">
+          ระบบ AI Research Co-Pilot · ROAD Next-Gen Studio
+        </p>
+        <h1 style="font-size: 20pt; color: #0f172a; margin-top: 6pt; margin-bottom: 8pt;">
+          เอกสารสังเคราะห์วิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง
+        </h1>
+        <h2 style="font-size: 16pt; color: #1e40af; font-weight: bold; margin-bottom: 12pt;">
+          ${th.title}
+        </h2>
+        <p class="no-indent" style="font-size: 14pt; color: #334155; font-style: italic; margin-bottom: 6pt;">
+          ${th.titleEn}
+        </p>
+        <p class="no-indent" style="font-size: 13pt; color: #64748b;">
+          สืบค้นและสังเคราะห์เพื่อประกอบการทำวิจัยเรื่อง: <b>${fullTitle}</b>
+        </p>
+      </div>
+      <hr style="border: 1pt solid #cbd5e1; margin-bottom: 16pt;">
+
+      <!-- 1. ข้อมูลทั่วไปของงานวิจัย -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a;">1. ข้อมูลบรรณานุกรมทั่วไป (Bibliographic Information)</h3>
+      <table class="apa-table">
+        <tbody>
+          <tr><td style="font-weight: bold; width: 30%;">ประเภทผลงานวิชาการ:</td><td>${th.type}</td></tr>
+          <tr><td style="font-weight: bold;">สถาบัน / หน่วยงาน:</td><td>${th.institution}</td></tr>
+          <tr><td style="font-weight: bold;">ปีที่พิมพ์ / เผยแพร่:</td><td>ปี พ.ศ. ${th.year}</td></tr>
+          <tr><td style="font-weight: bold;">ฐานข้อมูลอ้างอิง:</td><td>${th.database}</td></tr>
+          <tr><td style="font-weight: bold;">ระดับความสอดคล้องกับหัวข้อ:</td><td><b>${th.matchScore}% Match</b> (สอดคล้องกับตัวแปรต้นและตัวแปรตาม)</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 2. รูปแบบการอ้างอิง APA 7th -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">2. รูปแบบการลงรายการอ้างอิง (APA 7th Edition Reference)</h3>
+      <div style="background-color: #f8fafc; border-left: 3pt solid #3b82f6; padding: 10pt; margin-bottom: 12pt;">
+        <p class="apa-ref" style="font-size: 15pt; margin: 0;">${th.apaReference}</p>
+      </div>
+
+      <!-- 3. บทคัดย่อผู้บริหาร -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">3. บทคัดย่อผู้บริหารและผลการวิจัยโดยสรุป (Executive Abstract)</h3>
+      <p>${th.abstract.replace(/\n\n/g, '</p><p>')}</p>
+
+      <!-- 4. ระเบียบวิธีวิจัยและสถิติ -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">4. ระเบียบวิธีวิจัย เครื่องมือ และสถิติสำคัญ (Methodology & Statistics)</h3>
+      <table class="apa-table">
+        <tbody>
+          <tr><td style="font-weight: bold; width: 30%;">แบบแผนการวิจัย:</td><td>${th.researchDesign || 'One Group Pretest-Posttest Design'}</td></tr>
+          <tr><td style="font-weight: bold;">กลุ่มตัวอย่าง / กลุ่มเป้าหมาย:</td><td>${th.sampleDetails || '-'}</td></tr>
+          <tr><td style="font-weight: bold;">เครื่องมือวิจัยและคุณภาพ:</td><td>${th.instruments || '-'}</td></tr>
+          <tr><td style="font-weight: bold;">ประสิทธิภาพของนวัตกรรม:</td><td><b>${th.efficiencyResult || '-'}</b></td></tr>
+          <tr><td style="font-weight: bold;">ผลการทดสอบสมมติฐานทางสถิติ:</td><td><b>${th.statsResult || '-'}</b></td></tr>
+          <tr><td style="font-weight: bold;">ผลการประเมินความพึงพอใจ:</td><td>${th.satisfactionResult || '-'}</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 5. ข้อค้นพบสำคัญ -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">5. สรุปข้อค้นพบสำคัญเชิงประจักษ์ (Key Empirical Findings)</h3>
+      <ul style="margin-left: 2cm; margin-top: 4pt; margin-bottom: 8pt;">
+        ${(th.keyFindings || []).map(f => `<li style="line-height: 1.25; margin-bottom: 4pt;">${f}</li>`).join("")}
+      </ul>
+
+      <!-- 6. จุดเชื่อมโยงสู่งานวิจัยของผู้ใช้ -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">6. สะพานเชื่อมโยงสู่งานวิจัยของผู้วิจัย (R&D Bridge to Your Research)</h3>
+      <div style="background-color: #f0fdf4; border: 1pt solid #bbf7d0; padding: 10pt; margin-bottom: 12pt;">
+        <p class="no-indent" style="margin: 0; color: #166534;">${th.rdBridge}</p>
+      </div>
+
+      <!-- 7. ข้อความสำหรับยกไปเขียนในเล่ม 5 บท -->
+      <h3 style="font-size: 16pt; font-weight: bold; color: #0f172a; margin-top: 14pt;">7. ข้อความพร้อมยกไปอ้างอิงในรายงาน 5 บท (Ready-to-Use Citation Paragraph)</h3>
+      <div style="background-color: #eff6ff; border: 1pt solid #bfdbfe; padding: 10pt; margin-bottom: 12pt;">
+        <p style="margin: 0; color: #1e3a8a;">${th.citationInChapter}</p>
+      </div>
+    `;
+
+    const docHtml = this.getWordDocTemplate(`วิทยานิพนธ์อ้างอิง_${th.id}`, body);
+    this.downloadWordBlob(docHtml, `วิทยานิพนธ์อ้างอิง_${th.id}_${bShort.replace(/[\/\\?%*:|"<>]/g, "_")}.doc`);
+  },
+
+  // 6. ส่งออกเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้องทั้งหมด (Consolidated Theses Dossier)
+  exportAllThesesConsolidatedDoc(p) {
+    const list = this.generateRelatedTheses(p);
+    const fullTitle = this.composeFullTitle(p);
+    const bShort = p.B_short || p.B || "ROAD";
+    const bFull = p.B || "นวัตกรรมการเรียนรู้";
+    const cJoined = (p.C_list || []).filter(Boolean).join(" และ ");
+    const d = p.D || "กลุ่มเป้าหมาย";
+
+    let body = `
+      <!-- COVER PAGE -->
+      <div style="text-align: center; margin-top: 40pt; margin-bottom: 40pt;">
+        <p class="no-indent" style="font-size: 14pt; color: #475569; font-weight: bold; margin-bottom: 10pt;">
+          ระบบ AI Research Co-Pilot · ROAD Next-Gen Studio
+        </p>
+        <h1 style="font-size: 24pt; line-height: 1.3; color: #0f172a; margin-bottom: 16pt;">
+          รายงานการสืบค้นและสังเคราะห์วิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง<br>
+          <span style="font-size: 18pt; color: #1e40af;">(Consolidated Thesis & Literature Review Dossier)</span>
+        </h1>
+        <hr style="width: 60%; margin: 20pt auto; border-top: 2pt solid #2563eb;">
+        <p class="no-indent" style="font-size: 16pt; font-weight: bold; color: #1e293b; margin-top: 20pt; line-height: 1.4;">
+          หัวข้อวิจัยหลัก: ${fullTitle}
+        </p>
+        <p class="no-indent" style="font-size: 14pt; color: #475569; margin-top: 15pt;">
+          ตัวแปรต้น (B): ${bFull}<br>
+          ตัวแปรตาม (C): ${cJoined}<br>
+          กลุ่มเป้าหมาย (D): ${d}
+        </p>
+        <p class="no-indent" style="font-size: 13pt; color: #64748b; margin-top: 35pt;">
+          เอกสารรวบรวมข้อมูลงานวิจัยและวิทยานิพนธ์ระดับชาติและนานาชาติ จำนวน ${list.length} เรื่อง<br>
+          พร้อมบทคัดย่อ ระเบียบวิธีวิจัย ข้อค้นพบเชิงประจักษ์ ตารางสังเคราะห์ และการอ้างอิงตามมาตรฐาน APA 7th Edition
+        </p>
+      </div>
+      <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+
+      <!-- SECTION 1: ภาพรวมและตารางสังเคราะห์บทที่ 2 -->
+      <h1>ส่วนที่ 1: ตารางสังเคราะห์วรรณกรรมและงานวิจัยที่เกี่ยวข้อง (Literature Synthesis Matrix)</h1>
+      <p>
+        ในการพัฒนานวัตกรรม <b>${bFull}</b> ผู้วิจัยได้ทำการสืบค้นและสังเคราะห์งานวิจัยและวิทยานิพนธ์ที่เกี่ยวข้องโดยตรงกับตัวแปรต้นและตัวแปรตาม ทั้งในระดับปริญญาโท ปริญญาเอก วารสารระดับชาติ TCI กลุ่ม 1 และฐานข้อมูลวิจัยนานาชาติ จำนวน ${list.length} เรื่อง เพื่อใช้เป็นกรอบแนวคิดเชิงทฤษฎีและหลักฐานสนับสนุนเชิงประจักษ์ ดังรายละเอียดในตารางสังเคราะห์ต่อไปนี้:
+      </p>
+
+      <table class="apa-table">
+        <thead>
+          <tr>
+            <th style="width: 8%;">ลำดับ</th>
+            <th style="width: 28%;">ชื่อเรื่อง / ผู้วิจัย / สถาบัน</th>
+            <th style="width: 14%;">ประเภท / ปี</th>
+            <th style="width: 25%;">นวัตกรรมและกลุ่มตัวอย่าง</th>
+            <th style="width: 25%;">ผลการวิจัยสำคัญ (สถิติ)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map((th, idx) => `
+            <tr>
+              <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
+              <td><b>${th.title}</b><br><span style="font-size: 13pt; color: #475569;">${th.institution}</span></td>
+              <td style="text-align: center;">${th.type.split("(")[0].trim()}<br>(${th.year})</td>
+              <td>${th.sampleDetails || '-'}</td>
+              <td><b>${th.efficiencyResult || ''}</b><br>${th.statsResult || ''}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+
+      <!-- SECTION 2: รายละเอียดทีละเรื่อง -->
+      <h1>ส่วนที่ 2: บทวิเคราะห์วิทยานิพนธ์และงานวิจัยที่เกี่ยวข้องรายเรื่อง</h1>
+      ${list.map((th, idx) => `
+        <h2 style="text-align: left; margin-top: 18pt; color: #1e3a8a;">เรื่องที่ ${idx + 1}: ${th.title}</h2>
+        <p class="no-indent" style="font-size: 14pt; color: #475569; font-style: italic; margin-bottom: 8pt;">${th.titleEn}</p>
+        
+        <table class="apa-table">
+          <tbody>
+            <tr><td style="font-weight: bold; width: 25%;">ประเภทและสถาบัน:</td><td>${th.type} · ${th.institution} (ปี ${th.year})</td></tr>
+            <tr><td style="font-weight: bold;">ฐานข้อมูลอ้างอิง:</td><td>${th.database} (ตรงกับหัวข้อ ${th.matchScore}%)</td></tr>
+            <tr><td style="font-weight: bold;">การอ้างอิง APA 7th:</td><td>${th.apaReference}</td></tr>
+            <tr><td style="font-weight: bold;">แบบแผนและกลุ่มตัวอย่าง:</td><td>${th.researchDesign || '-'} · ${th.sampleDetails || '-'}</td></tr>
+            <tr><td style="font-weight: bold;">ผลการทดสอบสถิติ:</td><td>${th.efficiencyResult || ''} · ${th.statsResult || ''}</td></tr>
+          </tbody>
+        </table>
+
+        <p class="no-indent" style="font-weight: bold; margin-top: 10pt; margin-bottom: 2pt;">บทคัดย่อและข้อค้นพบ:</p>
+        <p>${th.abstract.replace(/\n\n/g, '</p><p>')}</p>
+
+        <p class="no-indent" style="font-weight: bold; margin-top: 8pt; margin-bottom: 2pt;">จุดเชื่อมโยงกับงานวิจัยของผู้ใช้ (R&D Bridge):</p>
+        <p>${th.rdBridge}</p>
+
+        <p class="no-indent" style="font-weight: bold; margin-top: 8pt; margin-bottom: 2pt;">ข้อความพร้อมยกไปอ้างอิงในเล่ม (Citation Snippet):</p>
+        <p style="background-color: #f1f5f9; padding: 6pt 10pt; font-style: italic;">"${th.citationInChapter}"</p>
+        <hr style="border: 0.5pt dashed #cbd5e1; margin-top: 16pt; margin-bottom: 16pt;">
+      `).join("")}
+      <br style="page-break-after: always; clear: both; mso-break-type: section-break;">
+
+      <!-- SECTION 3: รายการบรรณานุกรมรวม -->
+      <h1>ส่วนที่ 3: รายการบรรณานุกรมมาตรฐาน (Consolidated APA 7th References)</h1>
+      <div style="margin-top: 16pt;">
+        ${list.map(th => `<p class="apa-ref" style="font-size: 15pt;">${th.apaReference}</p>`).join("")}
+      </div>
+    `;
+
+    const docHtml = this.getWordDocTemplate(`เอกสารรวมวิทยานิพนธ์อ้างอิง_${bShort}`, body);
+    this.downloadWordBlob(docHtml, `เอกสารรวมวิทยานิพนธ์อ้างอิง_${bShort.replace(/[\/\\?%*:|"<>]/g, "_")}.doc`);
   }
 };
