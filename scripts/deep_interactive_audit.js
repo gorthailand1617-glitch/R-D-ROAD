@@ -117,7 +117,7 @@ const roadApp = sandbox.window.ROAD_APP;
 
 console.log('=== RUNNING DEEP INTERACTIVE HANDLER AUDIT ===\n');
 
-const testedTabs = ['workspace', 'abcd', 'chapters', 'diagrams', 'matrix', 'instruments', 'statlab', 'ai', 'advisor'];
+const testedTabs = ['workspace', 'abcd', 'chapters', 'diagrams', 'matrix', 'instruments', 'statlab', 'ai', 'advisor', 'export'];
 let totalHandlersChecked = 0;
 let errors = [];
 

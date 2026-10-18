@@ -517,7 +517,7 @@
       if (stepNum === 1) this.setStudioTab("abcd");
       else if (stepNum === 2) this.setStudioTab("diagrams");
       else if (stepNum === 3) this.setStudioTab("chapters");
-      else if (stepNum === 4) this.setStudioTab("advisor");
+      else if (stepNum === 4) this.setStudioTab("export");
       if (typeof window.scrollTo === "function") {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -1800,7 +1800,7 @@
       proj.contextMeta.schoolName = getVal("ctx_schoolName", proj.contextMeta.schoolName || proj.school || "");
       proj.contextMeta.affiliation = getVal("ctx_affiliation", proj.contextMeta.affiliation || proj.affiliation || "");
       proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "ขอนแก่น");
-      proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ดร.วิชัย มุ่งมั่น");
+      proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ผู้อำนวยการสถานศึกษา");
       proj.contextMeta.academicYear = getVal("ctx_academicYear", proj.contextMeta.academicYear || "2569");
       proj.contextMeta.semester = getVal("ctx_semester", proj.contextMeta.semester || "1");
       proj.contextMeta.courseCode = getVal("ctx_courseCode", proj.contextMeta.courseCode || "ว23101");
@@ -3644,7 +3644,7 @@
     if (state.studioTab === "abcd" || state.studioTab === "workspace") curStep = 1;
     else if (["diagrams", "instruments", "statlab", "matrix", "wizard"].includes(state.studioTab)) curStep = 2;
     else if (state.studioTab === "chapters" || state.studioTab === "ai") curStep = 3;
-    else if (state.studioTab === "advisor") curStep = 4;
+    else if (state.studioTab === "export" || state.studioTab === "advisor") curStep = 4;
 
     const stepsConfig = [
       {
@@ -3663,17 +3663,17 @@
       },
       {
         num: 3,
-        title: "ขั้นที่ 3: เล่ม 5 บท & AI",
-        desc: "เล่มวิจัยเต็ม & AI Co-Pilot",
+        title: "ขั้นที่ 3: AI เขียนเล่ม 5 บท",
+        desc: "เล่มวิจัยเต็ม & Dual-Mode AI",
         icon: "📘",
         tab: "chapters"
       },
       {
         num: 4,
-        title: "ขั้นที่ 4: ตรวจทาน & ส่งออก",
-        desc: "14 กฎเหล็ก & ส่งออก Word/PDF",
+        title: "ขั้นที่ 4: ส่งออกไฟล์",
+        desc: "ส่งออก Word/PDF & ตรวจ 14 ข้อ",
         icon: "🏆",
-        tab: "advisor"
+        tab: "export"
       }
     ];
 
@@ -3832,17 +3832,20 @@
                   `).join("")}
                 </div>
               ` : `
+                <button onclick="ROAD_APP.setStudioTab('export')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'export' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🏆 ศูนย์ส่งออกเอกสาร Word/PDF
+                </button>
                 <button onclick="ROAD_APP.setStudioTab('advisor')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'advisor' ? 'neu-btn-emerald' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
                   🧠 ตรวจทาน 14 กฎเหล็ก วPA (${health.score}%)
                 </button>
                 <button onclick="ROAD_APP.exportFullManuscript()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-btn-primary transition cursor-pointer whitespace-nowrap">
-                  🏆 ส่งออกเล่มวิจัย All-in-One (.doc)
+                  📥 ดาวน์โหลดเล่มฉบับเต็ม (.doc)
                 </button>
                 <button onclick="window.print()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-slate-700 dark:text-slate-300 transition cursor-pointer whitespace-nowrap">
                   🖨️ พิมพ์ A4 / PDF
                 </button>
-                <button onclick="ROAD_APP.exportExpertKit()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-indigo-700 dark:text-indigo-300 transition cursor-pointer whitespace-nowrap">
-                  👥 ชุด 5 ผู้เชี่ยวชาญ + IOC
+                <button onclick="ROAD_APP.setView('slides')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-indigo-700 dark:text-indigo-300 transition cursor-pointer whitespace-nowrap">
+                  🖥️ สไลด์ 7 แผ่น
                 </button>
               `}
             </div>
@@ -3895,6 +3898,7 @@
           ${state.studioTab === "matrix" ? renderTabMatrix(proj) : ""}
           ${state.studioTab === "statlab" ? renderTabStatLab(proj) : ""}
           ${state.studioTab === "ai" ? renderTabAi(proj) : ""}
+          ${state.studioTab === "export" ? renderTabExport(proj, health) : ""}
         </div>
       </div>
     `;
@@ -6769,7 +6773,7 @@
                 </div>
                 <p class="text-xs leading-relaxed">
                   ${!isGapExceeded 
-                    ? `ผลต่างระหว่าง E1 และ E2 เท่ากับ <b>${eGap}%</b> (ไม่เกินเกณฑ์ 5.0%) ถือว่าประสิทธิภาพของกระบวนการและผลลัพธ์สอดคล้องสมดุลกันตามหลักวิชาการของ รศ.ดร.ชัยยงค์ พรหมวงศ์`
+                    ? `ผลต่างระหว่าง E1 และ E2 เท่ากับ <b>${eGap}%</b> (ไม่เกินเกณฑ์ 5.0%) ถือว่าประสิทธิภาพของกระบวนการและผลลัพธ์สอดคล้องสมดุลกันตามหลักวิชาการและวิธีวิทยาการวิจัยมาตรฐาน`
                     : `ผลต่างระหว่าง E1 และ E2 เท่ากับ <b>${eGap}%</b> ซึ่งเกินกว่าเกณฑ์ยอมรับ <b>5.0%</b> บ่งชี้ว่าระดับความยากของแบบฝึกหัดระหว่างเรียนกับแบบทดสอบหลังเรียนไม่สอดคล้องกัน`}
                 </p>
               </div>
@@ -7245,6 +7249,236 @@
               <a href="https://tci-thailand.org" target="_blank" class="text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline">ไปยัง TCI Thailand ➔</a>
             </div>
           </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- Studio Tab 10: Publication Export & Quality Verification Hub ---
+  function renderTabExport(proj, health) {
+    const fullTitle = window.ROAD_GENERATOR.composeFullTitle(proj);
+    const passCount = health.passedCount ?? 14;
+    const totalCount = health.totalRules ?? 14;
+    const healthScore = health.score ?? 100;
+    const results = health.results || [];
+
+    return `
+      <div class="flex flex-col gap-6">
+        <!-- 1. Header Banner -->
+        <div class="rounded-3xl bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white p-6 sm:p-7 border border-sky-800/50 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div class="space-y-1.5 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-200 text-xs font-bold uppercase tracking-wider">
+              <span>🏆 STEP 4 · PUBLICATION & EXPORT HUB</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+              ศูนย์ส่งออกเอกสารวิจัยฉบับสมบูรณ์ & ตรวจสอบคุณภาพ วPA
+            </h2>
+            <p class="text-xs sm:text-sm text-sky-200/80 leading-relaxed">
+              ส่งออกรายงานการวิจัย 5 บทฉบับเต็ม (.doc ฟอนต์ Sarabun 16pt พร้อมตาราง APA), ส่งออกแยกบท 1-5, ชุดหนังสือขอความอนุเคราะห์ผู้เชี่ยวชาญ 5 ท่าน + แบบประเมิน IOC และสั่งพิมพ์ A4 / บันทึกเป็น PDF
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <button onclick="ROAD_APP.exportFullManuscript()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5">
+              <span>🏆 ดาวน์โหลดเล่มสมบูรณ์ All-in-One (.doc)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Primary 1-Click Export Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Card 1: Full Word Manuscript -->
+          <div class="neu-card p-5 flex flex-col justify-between gap-4 border-2 border-emerald-400/40">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-2xl">🏆</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">แนะนำสำหรับส่ง วPA</span>
+              </div>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">เล่มรายงานวิจัยฉบับเต็ม (.doc)</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                รวมเนื้อหาทั้งหมดตั้งแต่ปกนอก ปกใน บทคัดย่อ กิตติกรรมประกาศ สารบัญ บทที่ 1 ถึง 5 บรรณานุกรม APA 7th และภาคผนวก ครบถ้วนในไฟล์เดียว
+              </p>
+            </div>
+            <button onclick="ROAD_APP.exportFullManuscript()" class="w-full py-2.5 neu-btn-emerald text-xs font-bold cursor-pointer text-center">
+              📥 ดาวน์โหลดเล่มฉบับเต็ม (.doc)
+            </button>
+          </div>
+
+          <!-- Card 2: A4 Print & PDF -->
+          <div class="neu-card p-5 flex flex-col justify-between gap-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-2xl">🖨️</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">Print / PDF</span>
+              </div>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">พิมพ์เอกสาร A4 / บันทึก PDF</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                จัดหน้ากระดาษมาตรฐาน A4 พร้อมหัวกระดาษและระยะกั้นหน้าตามระเบียบ สามารถสั่งพิมพ์ออกเครื่องพิมพ์หรือเลือกบันทึกเป็น PDF ได้ทันที
+              </p>
+            </div>
+            <button onclick="window.print()" class="w-full py-2.5 neu-btn-primary text-xs font-bold cursor-pointer text-center">
+              🖨️ สั่งพิมพ์ A4 / บันทึก PDF
+            </button>
+          </div>
+
+          <!-- Card 3: Presentation Slides & Backup -->
+          <div class="neu-card p-5 flex flex-col justify-between gap-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-2xl">🖥️</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">นำเสนอ / สำรอง</span>
+              </div>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">สไลด์นำเสนอ & สำรองข้อมูล</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                เปิดโหมดฉายสไลด์นำเสนอ 7 สไลด์สรุปผลงานวิจัยสำหรับกรรมการ หรือส่งออกไฟล์ข้อมูลโครงการ (JSON) สำหรับสำรองหรือย้ายเครื่อง
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="ROAD_APP.setView('slides')" class="py-2.5 neu-squircle text-indigo-700 dark:text-indigo-300 text-xs font-bold cursor-pointer text-center">
+                🖥️ เปิดสไลด์ 7 แผ่น
+              </button>
+              <button onclick="ROAD_APP.exportJson()" class="py-2.5 neu-squircle text-slate-700 dark:text-slate-300 text-xs font-bold cursor-pointer text-center">
+                💾 สำรอง JSON
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Chapter-by-Chapter Single Word Exports -->
+        <div class="neu-card p-5 sm:p-6 flex flex-col gap-4">
+          <div class="border-b border-slate-200 dark:border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <span>📄 ส่งออกแยกเฉพาะบท (Chapter-by-Chapter Word Export)</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">เลือกดาวน์โหลดเฉพาะบทที่ต้องการแก้ไขหรือนำไปใช้งานแยกเล่ม ฟอนต์ Sarabun 16pt ตาราง APA 3 เส้นหลัก</p>
+            </div>
+            <button onclick="ROAD_APP.setStudioTab('chapters')" class="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
+              ✏️ ไปยังหน้าแก้ไขเนื้อหา 5 บท ➔
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            ${[
+              { num: 1, title: "บทที่ 1 บทนำ", sub: "ความเป็นมา วัตถุประสงค์ สมมติฐาน นิยามศัพท์", icon: "📘" },
+              { num: 2, title: "บทที่ 2 วรรณกรรม", sub: "แนวคิดทฤษฎี กรอบแนวคิด ตารางสังเคราะห์", icon: "📚" },
+              { num: 3, title: "บทที่ 3 วิธีดำเนินการ", sub: "ผัง 4 ระยะ R1-D2 ประชากร เครื่องมือ สถิติ", icon: "🧭" },
+              { num: 4, title: "บทที่ 4 ผลการวิเคราะห์", sub: "ตาราง E1/E2, E.I., t-test, ความพึงพอใจ", icon: "📊" },
+              { num: 5, title: "บทที่ 5 สรุป & อภิปราย", sub: "สรุปผล อภิปราย 4 องค์ประกอบ ข้อเสนอแนะ", icon: "💡" }
+            ].map(c => `
+              <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3 shadow-sm hover:shadow-md transition">
+                <div>
+                  <div class="text-xl mb-1">${c.icon}</div>
+                  <div class="font-extrabold text-xs text-slate-900 dark:text-white">${c.title}</div>
+                  <div class="text-[11px] text-slate-500 mt-1 line-clamp-2">${c.sub}</div>
+                </div>
+                <button onclick="ROAD_APP.exportSingleChapter(${c.num})" class="w-full py-1.5 neu-btn-primary text-xs font-bold cursor-pointer text-center">
+                  📥 ดาวน์โหลด บทที่ ${c.num}
+                </button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- 4. Support Kits & Documentation -->
+        <div class="neu-card p-5 sm:p-6 flex flex-col gap-4">
+          <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <span>📎 เอกสารประกอบ ส่วนนำ ชุดผู้เชี่ยวชาญ และภาคผนวก</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">เอกสารสนับสนุนที่จำเป็นสำหรับการประเมินวิทยฐานะ วPA และงานวิจัยและพัฒนาทางการศึกษา (R&D)</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Front Matter -->
+            <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <span class="text-lg">📄</span>
+                <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">ส่วนนำ & บทคัดย่อ (.doc)</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">ปกนอก, ปกใน, บทคัดย่อภาษาไทย, Abstract ภาษาอังกฤษ, กิตติกรรมประกาศ และสารบัญ</div>
+              </div>
+              <button onclick="ROAD_APP.exportFrontMatter()" class="w-full py-1.5 neu-squircle text-amber-700 dark:text-amber-300 font-bold text-xs cursor-pointer text-center">
+                📥 ดาวน์โหลดส่วนนำ
+              </button>
+            </div>
+
+            <!-- Expert Kit -->
+            <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <span class="text-lg">👥</span>
+                <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">ชุด 5 ผู้เชี่ยวชาญ & IOC (.doc)</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">หนังสือขอความอนุเคราะห์รายบุคคล 5 ฉบับ พร้อมผังเครื่องมือและแบบประเมิน IOC</div>
+              </div>
+              <button onclick="ROAD_APP.exportExpertKit()" class="w-full py-1.5 neu-squircle text-indigo-700 dark:text-indigo-300 font-bold text-xs cursor-pointer text-center">
+                📥 ดาวน์โหลดชุด IOC (5 ท่าน)
+              </button>
+            </div>
+
+            <!-- Back Matter -->
+            <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <span class="text-lg">📚</span>
+                <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">บรรณานุกรม APA 7th (.doc)</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">เอกสารอ้างอิงภาษาไทยและภาษาอังกฤษตามแบบแผน APA 7th Edition และประวัติผู้วิจัย</div>
+              </div>
+              <button onclick="ROAD_APP.exportBackMatter()" class="w-full py-1.5 neu-squircle text-teal-700 dark:text-teal-300 font-bold text-xs cursor-pointer text-center">
+                📥 ดาวน์โหลดบรรณานุกรม
+              </button>
+            </div>
+
+            <!-- Appendix -->
+            <div class="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div>
+                <span class="text-lg">📎</span>
+                <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">ภาคผนวก ก–ง (.doc)</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">เครื่องมือวิจัย, ตารางผล IOC, แผนการจัดการเรียนรู้ 6 แผน และภาพนวัตกรรม</div>
+              </div>
+              <button onclick="ROAD_APP.exportAppendix()" class="w-full py-1.5 neu-squircle text-blue-700 dark:text-sky-300 font-bold text-xs cursor-pointer text-center">
+                📥 ดาวน์โหลดภาคผนวก ก–ง
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 14-Rule Research Quality & Health Audit -->
+        <div class="neu-card p-5 sm:p-6 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🛡️</span>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">ผลการตรวจทานความสอดคล้อง 14 กฎเหล็ก วPA (Research Health Audit)</h3>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">ตรวจสอบความสอดคล้อง 360° ระหว่างชื่อเรื่อง วัตถุประสงค์ ตัวแปร วิธีสุ่ม เครื่องมือ และสถิติ</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-bold text-slate-500">ความสมบูรณ์:</span>
+              <span class="font-mono text-xl font-extrabold ${healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">${healthScore}%</span>
+              <button onclick="ROAD_APP.setStudioTab('advisor')" class="px-3.5 py-1.5 neu-squircle text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer">
+                🧠 ดูคำแนะนำ AI Advisor ➔
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            ${results.slice(0, 6).map(r => `
+              <div class="p-3 rounded-xl border ${r.level === 'pass' ? 'border-emerald-200/80 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-950 dark:text-emerald-200' : 'border-amber-200/80 bg-amber-50/50 dark:bg-amber-950/20 text-amber-950 dark:text-amber-200'} flex items-start gap-2 text-xs">
+                <span class="text-sm shrink-0">${r.level === 'pass' ? '✔' : '⚠️'}</span>
+                <div class="flex-1">
+                  <div class="font-bold">${escapeHtml(r.ruleName || r.title)}</div>
+                  <div class="text-[11px] opacity-80 mt-0.5 line-clamp-1">${escapeHtml(r.desc || '')}</div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- 6. Step Footer Navigation (Clear, Guided Step Transition) -->
+        <div class="neu-card p-4 flex flex-wrap items-center justify-between gap-3">
+          <button onclick="ROAD_APP.goToWorkflowStep(3)" class="px-4 py-2.5 rounded-xl bg-slate-200/70 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition">
+            <span>⬅️ ย้อนกลับไป ขั้นที่ 3: AI เขียนเล่ม 5 บท</span>
+          </button>
+          <button onclick="ROAD_APP.exportFullManuscript()" class="px-5 py-2.5 neu-btn-primary text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-md">
+            <span>🏆 ส่งออกเล่มวิจัยฉบับสมบูรณ์ All-in-One (.doc)</span>
+          </button>
         </div>
       </div>
     `;
@@ -7994,7 +8228,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อผู้วิจัย (พร้อมคำนำหน้า):</label>
-                  <input type="text" id="ctx_researcherName" value="${escapeHtml(meta.researcherName || proj.researcher || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น นายสมชาย ใจมั่น" />
+                  <input type="text" id="ctx_researcherName" value="${escapeHtml(meta.researcherName || proj.researcher || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ชื่อ-นามสกุล ผู้วิจัย" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ตำแหน่งและวิทยฐานะ:</label>
@@ -8018,7 +8252,7 @@
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อผู้อำนวยการโรงเรียน (กิตติกรรมประกาศ):</label>
-                  <input type="text" id="ctx_directorName" value="${escapeHtml(meta.directorName || 'ดร.วิชัย มุ่งพัฒนา')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ดร.วิชัย มุ่งพัฒนา" />
+                  <input type="text" id="ctx_directorName" value="${escapeHtml(meta.directorName || 'ผู้อำนวยการสถานศึกษา')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น ผู้อำนวยการสถานศึกษา" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">ปีการศึกษา:</label>
