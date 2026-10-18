@@ -51,6 +51,7 @@
     showLoginPass: false,
     rememberMe: true,
     studioTab: "workspace", // "workspace" | "advisor" | "abcd" | "chapters" | "diagrams" | "matrix" | "statlab" | "ai"
+    showAllTools: false, // Toggle full 9-tool navigation
     activeChapterFilter: 0, // 0 = All 5 chapters, 1..5 = specific chapter
     showReviewCenter: false, // Collapsible on iPad/tablet for 100% full-width reading
     slideIndex: 0,
@@ -512,6 +513,21 @@
       renderApp();
     },
 
+    goToWorkflowStep(stepNum) {
+      if (stepNum === 1) this.setStudioTab("abcd");
+      else if (stepNum === 2) this.setStudioTab("diagrams");
+      else if (stepNum === 3) this.setStudioTab("chapters");
+      else if (stepNum === 4) this.setStudioTab("advisor");
+      if (typeof window.scrollTo === "function") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+
+    toggleAllToolsView() {
+      state.showAllTools = !state.showAllTools;
+      renderApp();
+    },
+
     getActiveProject() {
       return getActiveProject();
     },
@@ -569,6 +585,10 @@
     setChapterFilter(num) {
       state.activeChapterFilter = Number(num);
       renderApp();
+    },
+
+    filterChapterView(num) {
+      this.setChapterFilter(num);
     },
 
     setAdvisorTab(t) {
@@ -2458,7 +2478,7 @@
       state.lastSavedTimestamp = new Date().toLocaleTimeString("th-TH");
       saveProjects();
       renderApp();
-      showToast(`เติมข้อมูลตัวอย่างมาตรฐานของ อ.ชวลิต ในขั้นตอนที่ ${stepNum} เรียบร้อยแล้ว`, "ok");
+      showToast(`เติมข้อมูลตัวอย่างมาตรฐาน R&D ในขั้นตอนที่ ${stepNum} เรียบร้อยแล้ว`, "ok");
     },
 
     saveWizardStep() {
@@ -2674,7 +2694,7 @@
                   ROAD <span class="text-blue-600 dark:text-blue-400">NEXT-GEN</span>
                   <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-400/30">AI + R&D Studio</span>
                 </div>
-                <div class="text-[11px] text-[#5b6d96] dark:text-slate-400">จากชื่อเรื่อง ABCD สู่รายงานการวิจัย 5 บท · รศ.ดร.ชวลิต ชูกำแพง</div>
+                <div class="text-[11px] text-[#5b6d96] dark:text-slate-400">จากชื่อเรื่อง ABCD สู่รายงานการวิจัย 5 บท · R&D Research Studio</div>
               </div>
             </button>
           </div>
@@ -3607,22 +3627,60 @@
 
         <div class="max-w-5xl mx-auto w-full border-t border-slate-800 pt-4 flex justify-between text-xs text-slate-400">
           <span>ระบบ ROAD Next-Gen · Report Outline Assistant for Development</span>
-          <span>พัฒนาต่อยอดแนวคิด รศ.ดร.ชวลิต ชูกำแพง คณะศึกษาศาสตร์ มหาวิทยาลัยมหาสารคาม</span>
+          <span>มาตรฐานวิธีวิทยาการวิจัยและพัฒนาทางการศึกษา (R&D) สำหรับการประเมินวิทยฐานะ วPA</span>
         </div>
       </div>
     `;
   }
 
-  // --- View 5: Main R&D Research Studio (6 Power Tabs) ---
+  // --- View 5: Main R&D Research Studio (4-Step Guided Workflow & Power Tabs) ---
   function renderStudioView() {
     const proj = getActiveProject();
     const fullTitle = window.ROAD_GENERATOR.composeFullTitle(proj);
     const health = window.ROAD_GENERATOR.evaluateResearchHealth(proj);
 
+    // Current Workflow Step (1..4) based on state.studioTab
+    let curStep = 1;
+    if (state.studioTab === "abcd" || state.studioTab === "workspace") curStep = 1;
+    else if (["diagrams", "instruments", "statlab", "matrix", "wizard"].includes(state.studioTab)) curStep = 2;
+    else if (state.studioTab === "chapters" || state.studioTab === "ai") curStep = 3;
+    else if (state.studioTab === "advisor") curStep = 4;
+
+    const stepsConfig = [
+      {
+        num: 1,
+        title: "ขั้นที่ 1: ตั้งค่า ABCD",
+        desc: "โครงสร้างชื่อเรื่อง & บริบท",
+        icon: "🎯",
+        tab: "abcd"
+      },
+      {
+        num: 2,
+        title: "ขั้นที่ 2: สังเคราะห์โครงร่าง",
+        desc: "4 ระยะ R1-D2 & เครื่องมือ",
+        icon: "🧭",
+        tab: "diagrams"
+      },
+      {
+        num: 3,
+        title: "ขั้นที่ 3: เล่ม 5 บท & AI",
+        desc: "เล่มวิจัยเต็ม & AI Co-Pilot",
+        icon: "📘",
+        tab: "chapters"
+      },
+      {
+        num: 4,
+        title: "ขั้นที่ 4: ตรวจทาน & ส่งออก",
+        desc: "14 กฎเหล็ก & ส่งออก Word/PDF",
+        icon: "🏆",
+        tab: "advisor"
+      }
+    ];
+
     return `
-      <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col gap-6 relative z-10">
-        <!-- Project Switcher & Compact Action Bar (3D Soft Neumorphic Card) -->
-        <div class="neu-card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2.5 print:hidden">
+      <div class="max-w-7xl mx-auto px-3 sm:px-4 py-5 flex flex-col gap-5 relative z-10">
+        <!-- 1. Top Executive Control Bar (Clean, Unified Neumorphic Card) -->
+        <div class="neu-card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 hidden sm:inline">📂 โครงการ:</span>
             <select onchange="ROAD_APP.selectProject(this.value)" class="px-3 py-2 neu-input-pill text-xs sm:text-sm font-bold text-slate-800 dark:text-white cursor-pointer max-w-[210px] sm:max-w-[280px] truncate min-h-[40px]" data-tooltip="สลับโครงการวิจัยที่ต้องการทำงาน" title="สลับโครงการวิจัย">
@@ -3639,9 +3697,9 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- ✨ ตัวอย่าง 1-Click Presets -->
+            <!-- ✨ 1-Click Presets -->
             <div class="dropdown relative inline-block">
-              <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" data-tooltip="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" title="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" class="px-3 py-2 neu-input-pill text-xs font-bold text-emerald-800 dark:text-emerald-300 cursor-pointer min-h-[40px] bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800">
+              <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" data-tooltip="โหลดตัวอย่างงานวิจัยมาตรฐานครู/ผู้บริหารครบชุด" title="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" class="px-3 py-2 neu-input-pill text-xs font-bold text-emerald-800 dark:text-emerald-300 cursor-pointer min-h-[40px] bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800">
                 <option value="">✨ ตัวอย่าง 1-Click ▾</option>
                 ${window.ROAD_DATA.PRESETS.map(pr => `<option value="${pr.id}">${escapeHtml(pr.label)}</option>`).join("")}
               </select>
@@ -3663,54 +3721,170 @@
           </div>
         </div>
 
-        <!-- Live Full Title Banner (Supports Color-Coded Badges) -->
-        <div class="neu-input-pill rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <!-- 2. Live Full Title Banner (Soft Neumorphic Card with ABCD Decomposition) -->
+        <div class="neu-card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="flex-1">
-            <div class="flex items-center justify-between gap-2 text-xs font-bold text-blue-700 dark:text-sky-300 mb-1.5">
-              <span>📌 ชื่อเรื่องการวิจัย (ประกอบอัตโนมัติตามสูตร ABCD):</span>
-              <button type="button" onclick="ROAD_APP.toggleTitleViewMode()" class="px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800 text-[11px] font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition">
+            <div class="flex items-center justify-between gap-2 text-xs font-bold text-blue-700 dark:text-sky-300 mb-2">
+              <span class="flex items-center gap-1.5">
+                <span>📌 ชื่อเรื่องการวิจัย:</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">สูตร ABCD</span>
+              </span>
+              <button type="button" onclick="ROAD_APP.toggleTitleViewMode()" class="px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 text-[11px] font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer transition">
                 ${state.titleViewMode === 'plain' ? '🏷️ แสดงแบบแยกสี A B C D' : '📝 แสดงแบบข้อความเดียว'}
               </button>
             </div>
-            <div id="live-composed-title" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
+            <div id="live-composed-title" class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-relaxed">
               ${state.titleViewMode === 'plain' ? escapeHtml(fullTitle) : window.ROAD_GENERATOR.composeColorCodedTitle(proj)}
             </div>
           </div>
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-3 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-200/80 dark:border-slate-800">
             <div class="text-right">
               <div class="text-[11px] font-semibold text-slate-500">ความสมบูรณ์โครงร่าง</div>
-              <div class="text-lg font-mono font-extrabold ${health.score >= 85 ? 'text-emerald-600' : 'text-amber-600'}">${health.score}%</div>
+              <div class="text-xl font-mono font-extrabold ${health.score >= 85 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">${health.score}%</div>
             </div>
-            <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-blue-700 dark:text-sky-300 cursor-pointer" title="เปิดตัวช่วยป้อน A B C D">
-              ✏️ แก้ไข ABCD
+            <button onclick="ROAD_APP.openAbcdModal('manual')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-blue-700 dark:text-sky-300 cursor-pointer flex items-center gap-1 min-h-[40px]" title="เปิดตัวช่วยป้อน A B C D">
+              <span>✏️ แก้ไข ABCD</span>
             </button>
-            <button onclick="ROAD_APP.copySmartPrompt('title_polish')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer">
-              ✨ Prompt เกลาชื่อ
+            <button onclick="ROAD_APP.copySmartPrompt('title_polish')" class="px-3.5 py-2 neu-squircle text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer flex items-center gap-1 min-h-[40px]" title="คัดลอก Smart Prompt สำหรับเกลาชื่อเรื่อง">
+              <span>✨ เกลาชื่อ</span>
             </button>
           </div>
         </div>
 
-        <!-- Studio Sub-Navigation Tabs (Compact, Academic Symbols & Hover Tooltips) -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-2">
-          ${[
-            ["workspace", "📁 คลังวิจัย", "คลังโครงการวิจัยทั้งหมด สลับโครงการ หรือสร้างโครงร่างใหม่"],
-            ["abcd", "🎯 1. ABCD", "ตั้งค่าชื่อเรื่องและแยกองค์ประกอบ ABCD"],
-            ["wizard", "🪄 2. Wizard", "ระบบนำทางออกแบบโครงร่างวิจัย 10 ขั้นตอน"],
-            ["chapters", "📘 3. เล่ม 5 บท", "รายงานการวิจัยฉบับสมบูรณ์ 5 บท ส่วนนำ และภาคผนวก"],
-            ["diagrams", "🧭 4. ผัง R&D", "ตารางดำเนินการวิจัย 4 ระยะ (R1-D2) และผังเชื่อมโยง 360°"],
-            ["instruments", "📐 เครื่องมือ & รูบริก", "ผังสร้างแบบทดสอบ Test Blueprint, เกณฑ์รูบริก 4 ระดับ และนิยามปฏิบัติการ"],
-            ["statlab", "📊 5. StatLab", "ห้องปฏิบัติการสถิติวิจัยและตรวจสอบคุณภาพเครื่องมือ"],
-            ["ai", "🤖 AI Co-Pilot", "AI ช่วยเขียนเนื้อหารายบท เกลาภาษา และวิเคราะห์สังเคราะห์"],
-            ["advisor", "🧠 AI Advisor", "ระบบตรวจสอบ 14 กฎเหล็ก และแนะนำทิศทางวิจัยระดับชาติ"]
-          ].map(([key, label, tip]) => `
-            <button onclick="ROAD_APP.setStudioTab('${key}')" data-tooltip="${tip}" title="${tip}" class="px-3.5 py-2 text-xs sm:text-sm font-bold transition cursor-pointer whitespace-nowrap rounded-xl ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
-              ${label}
+        <!-- 3. Primary Step-by-Step Workflow Pipeline (4 Master Phases) -->
+        <div class="neu-card p-3 sm:p-4 print:hidden">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <span>ขั้นตอนการทำวิจัยทีละสเต็ป (Step-by-Step R&D Workflow):</span>
+            </div>
+            <button onclick="ROAD_APP.toggleAllToolsView()" class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer">
+              ${state.showAllTools ? '🔼 ซ่อนเครื่องมือทั้งหมด' : '⚙️ เมนูเครื่องมือแบบรวม (9 แท็บ)'}
             </button>
-          `).join("")}
-        </div>
-      </div>
+          </div>
 
-        <!-- Active Tab Content -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            ${stepsConfig.map(s => {
+              const isActive = curStep === s.num;
+              return `
+                <button type="button" onclick="ROAD_APP.goToWorkflowStep(${s.num})" class="text-left p-3 sm:p-3.5 rounded-2xl transition-all cursor-pointer relative border ${isActive ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-blue-600 shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40' : 'bg-white/60 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'}">
+                  <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                    <span class="text-lg">${s.icon}</span>
+                    <span class="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
+                      Step ${s.num}
+                    </span>
+                  </div>
+                  <div class="text-xs sm:text-sm font-extrabold truncate ${isActive ? 'text-white' : 'text-slate-900 dark:text-white'}">
+                    ${s.title}
+                  </div>
+                  <div class="text-[11px] truncate mt-0.5 ${isActive ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}">
+                    ${s.desc}
+                  </div>
+                </button>
+              `;
+            }).join("")}
+          </div>
+
+          <!-- 4. Contextual Sub-Tools for Active Step -->
+          <div class="mt-3.5 pt-3 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-1">
+              ${curStep === 1 ? `
+                <button onclick="ROAD_APP.setStudioTab('abcd')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'abcd' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🎯 สตูดิโอออกแบบ ABCD
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('workspace')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'workspace' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  📁 คลังโครงร่าง (Workspace)
+                </button>
+                <button onclick="ROAD_APP.openContextMetaModal('context')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-sky-700 dark:text-sky-300 transition cursor-pointer whitespace-nowrap">
+                  ⚙️ บริบทสถานศึกษา & ผชช.
+                </button>
+                <button onclick="ROAD_APP.openAbcdModal('parse')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-purple-700 dark:text-purple-300 transition cursor-pointer whitespace-nowrap">
+                  🔍 ถอดรหัสชื่อเรื่องอัตโนมัติ
+                </button>
+              ` : curStep === 2 ? `
+                <button onclick="ROAD_APP.setStudioTab('diagrams')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'diagrams' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🧭 ผัง R&D 4 ระยะ (R1-D2)
+                </button>
+                <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 transition cursor-pointer whitespace-nowrap hover:bg-blue-100">
+                  🪄 10-Step Wizard
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('instruments')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'instruments' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  📐 ผังแบบทดสอบ & รูบริก
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('statlab')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'statlab' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  📊 สถิติวิจัย (StatLab)
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('matrix')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'matrix' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🔬 ตารางสังเคราะห์ R1->D1
+                </button>
+              ` : curStep === 3 ? `
+                <button onclick="ROAD_APP.setStudioTab('chapters')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'chapters' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  📘 รายงานวิจัย 5 บทฉบับเต็ม
+                </button>
+                <button onclick="ROAD_APP.setStudioTab('ai')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'ai' ? 'neu-btn-primary' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🤖 AI Co-Pilot อัจฉริยะ
+                </button>
+                <div class="inline-flex items-center gap-1 border-l border-slate-300 dark:border-slate-700 pl-2 ml-1">
+                  ${[0, 1, 2, 3, 4, 5].map(ch => `
+                    <button onclick="ROAD_APP.filterChapterView(${ch})" class="px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${state.activeChapterFilter === ch ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}">
+                      ${ch === 0 ? 'ทุกบท' : 'บทที่ ' + ch}
+                    </button>
+                  `).join("")}
+                </div>
+              ` : `
+                <button onclick="ROAD_APP.setStudioTab('advisor')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${state.studioTab === 'advisor' ? 'neu-btn-emerald' : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  🧠 ตรวจทาน 14 กฎเหล็ก วPA (${health.score}%)
+                </button>
+                <button onclick="ROAD_APP.exportFullManuscript()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-btn-primary transition cursor-pointer whitespace-nowrap">
+                  🏆 ส่งออกเล่มวิจัย All-in-One (.doc)
+                </button>
+                <button onclick="window.print()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-slate-700 dark:text-slate-300 transition cursor-pointer whitespace-nowrap">
+                  🖨️ พิมพ์ A4 / PDF
+                </button>
+                <button onclick="ROAD_APP.exportExpertKit()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl neu-squircle text-indigo-700 dark:text-indigo-300 transition cursor-pointer whitespace-nowrap">
+                  👥 ชุด 5 ผู้เชี่ยวชาญ + IOC
+                </button>
+              `}
+            </div>
+
+            <!-- Workflow Next Step Button -->
+            ${curStep < 4 ? `
+              <button onclick="ROAD_APP.goToWorkflowStep(${curStep + 1})" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold flex items-center gap-1.5 hover:opacity-90 cursor-pointer transition shadow-sm shrink-0">
+                <span>ไปยังขั้นที่ ${curStep + 1}</span>
+                <span>➔</span>
+              </button>
+            ` : `
+              <button onclick="ROAD_APP.exportFullManuscript()" class="px-3.5 py-1.5 rounded-xl neu-btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-sm shrink-0">
+                <span>✨ ส่งออกผลงานพร้อมประเมิน</span>
+              </button>
+            `}
+          </div>
+
+          <!-- Legacy Full 9-Tab Bar (Optional Power-User Mode) -->
+          ${state.showAllTools ? `
+            <div class="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar animate-fade-in">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">เครื่องมือทั้งหมด:</span>
+              ${[
+                ["workspace", "📁 คลังวิจัย", "คลังโครงการวิจัยทั้งหมด สลับโครงการ หรือสร้างโครงร่างใหม่"],
+                ["abcd", "🎯 1. ABCD", "ตั้งค่าชื่อเรื่องและแยกองค์ประกอบ ABCD"],
+                ["wizard", "🪄 2. Wizard", "ระบบนำทางออกแบบโครงร่างวิจัย 10 ขั้นตอน"],
+                ["chapters", "📘 3. เล่ม 5 บท", "รายงานการวิจัยฉบับสมบูรณ์ 5 บท ส่วนนำ และภาคผนวก"],
+                ["diagrams", "🧭 4. ผัง R&D", "ตารางดำเนินการวิจัย 4 ระยะ (R1-D2) และผังเชื่อมโยง 360°"],
+                ["instruments", "📐 เครื่องมือ & รูบริก", "ผังสร้างแบบทดสอบ Test Blueprint, เกณฑ์รูบริก 4 ระดับ และนิยามปฏิบัติการ"],
+                ["statlab", "📊 5. StatLab", "ห้องปฏิบัติการสถิติวิจัยและตรวจสอบคุณภาพเครื่องมือ"],
+                ["matrix", "🔬 สังเคราะห์ R1->D1", "ตารางสังเคราะห์ขั้นตอนกิจกรรมและเชื่อมโยงผลการวิจัย"],
+                ["ai", "🤖 AI Co-Pilot", "AI ช่วยเขียนเนื้อหารายบท เกลาภาษา และวิเคราะห์สังเคราะห์"],
+                ["advisor", "🧠 AI Advisor", "ระบบตรวจสอบ 14 กฎเหล็ก และแนะนำทิศทางวิจัยระดับชาติ"]
+              ].map(([key, label, tip]) => `
+                <button onclick="ROAD_APP.setStudioTab('${key}')" data-tooltip="${tip}" title="${tip}" class="px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap rounded-xl ${state.studioTab === key ? (key === 'workspace' ? 'neu-btn-primary' : key === 'advisor' ? 'neu-btn-emerald' : 'neu-btn-primary') : 'neu-squircle text-slate-700 dark:text-slate-300'}">
+                  ${label}
+                </button>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+
+        <!-- 5. Active Tab Workspace / Content Area -->
         <div class="print-area">
           ${state.studioTab === "workspace" ? renderTabWorkspace(proj) : ""}
           ${state.studioTab === "advisor" ? renderTabAdvisor() : ""}
@@ -3948,7 +4122,7 @@
             `).join("")}
           </div>
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">
-            ตามเกณฑ์ ก.ค.ศ. & รศ.ดร.ชวลิต ชูกำแพง
+            ตามเกณฑ์ ก.ค.ศ. & มาตรฐานวิธีวิทยา R&D
           </div>
         </div>
 
@@ -4117,7 +4291,7 @@
                 <div>
                   <h3 class="text-lg font-bold text-slate-900 dark:text-white">ผลการตรวจสอบกฎเหล็ก 10 ประการ (10 Pitfalls Validator)</h3>
                   <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                    ตรวจสอบความถูกต้องตามเกณฑ์ประเมิน วPA ของ ก.ค.ศ. และมาตรฐานงานวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง
+                    ตรวจสอบความถูกต้องตามเกณฑ์ประเมิน วPA ของ ก.ค.ศ. และมาตรฐานงานวิจัย R&D ขั้นสูง
                   </p>
                   <div class="mt-2 flex items-center gap-3 text-xs">
                     <span class="font-bold text-emerald-600 dark:text-emerald-400">ผ่าน ${validation.passedCount} จาก ${validation.totalRules} ข้อ</span>
@@ -4951,7 +5125,7 @@
               </div>
 
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                ตรวจสอบข้อพึงระวังและเกณฑ์มาตรฐานวิจัยเชิงพัฒนา 14 ประการ (V2.0) ตามระเบียบวิธีวิจัยของ รศ.ดร.ชวลิต ชูกำแพง
+                ตรวจสอบข้อพึงระวังและเกณฑ์มาตรฐานวิจัยเชิงพัฒนา 14 ประการ (V2.0) ตามระเบียบวิธีวิจัยทางการศึกษา
               </p>
 
               <div class="pt-2 flex flex-col gap-2">
@@ -4970,7 +5144,7 @@
             <!-- 14 Pitfalls Checklist Accordion/Cards -->
             <div class="neu-card p-5 flex flex-col gap-3">
               <div class="text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <span>📋 14 ข้อพึงระวังตามสูตร อ.ชวลิต (V2.0)</span>
+                <span>📋 14 ข้อพึงระวังตามมาตรฐาน วPA (V2.0)</span>
                 <span class="text-[11px] text-slate-500 font-normal">${passCount}/${totalCount} สมบูรณ์</span>
               </div>
 
@@ -5420,7 +5594,7 @@
         <div class="neu-card p-4 sm:p-5 border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 flex items-start gap-3">
           <div class="text-2xl shrink-0">⚠️</div>
           <div class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-            <span class="font-bold text-amber-800 dark:text-amber-300">กฎเหล็กตามหลัก รศ.ดร.ชวลิต ชูกำแพง:</span>
+            <span class="font-bold text-amber-800 dark:text-amber-300">กฎเหล็กตามหลักวิธีวิทยาการวิจัย R&D:</span>
             <b>กรอบแนวคิดการวิจัย (Conceptual Framework) ในบทที่ 2 "ห้ามวาดเป็นขั้นตอนการวิจัย R1-D2 เด็ดขาด!"</b> 
             แต่ต้องนำเสนอเป็นแผนผังที่แสดงความสัมพันธ์เชิงทฤษฎี (Why) ระหว่าง <b>ตัวแปรต้น [หลักการ/ทฤษฎี B + องค์ประกอบนวัตกรรม A]</b> ส่งผลต่อ <b>ตัวแปรตาม [ตัวแปร C 4 ด้านตาม วPA]</b> สำหรับผังขั้นตอน R1-D1-R2-D2 ต้องนำเสนอแยกต่างหากในบทที่ 3
           </div>
@@ -5649,7 +5823,7 @@
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             ${[
               ["syntax_matrix", "🧩 สังเคราะห์ Syntax", "ตารางสังเคราะห์ขั้นตอนการจัดกิจกรรมการเรียนรู้จากนักวิชาการ 7 ท่าน"],
-              ["r1d1_bridge", "🌉 สะพาน R1->D1", "ตารางเชื่อมโยงผลการวิจัยระยะ R1 สู่การออกแบบนวัตกรรม D1 ตามหลัก รศ.ดร.ชวลิต"],
+              ["r1d1_bridge", "🌉 สะพาน R1->D1", "ตารางเชื่อมโยงผลการวิจัยระยะ R1 สู่การออกแบบนวัตกรรม D1 มาตรฐาน R&D"],
               ["operational", "📋 ตาราง 4 ระยะ (R1-D2)", "ตารางการดำเนินการวิจัย 4 ระยะ 6 คอลัมน์ (วัตถุประสงค์-กลุ่มตัวอย่าง-เครื่องมือ-การเก็บ-สถิติ)"],
               ["alignment", "🎯 ความสอดคล้อง 360°", "ตารางตรวจสอบความสอดคล้อง 360 องศา ระหว่างชื่อเรื่อง วัตถุประสงค์ สมมติฐาน และเครื่องมือ"]
             ].map(([k, lbl, tip]) => `
@@ -6904,7 +7078,7 @@
   function renderTabAi(proj) {
     const currentPrompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, state.aiTask);
     const tasks = [
-      ["ch1_background", "1. เขียน 1.1 ความเป็นมาและความสำคัญ 7 ย่อหน้าตามกรวยคว่ำ (รศ.ดร.ชวลิต)"],
+      ["ch1_background", "1. เขียน 1.1 ความเป็นมาและความสำคัญ 7 ย่อหน้าตามกรวยคว่ำ (R&D Framework)"],
       ["r1_d1_bridge", "2. สังเคราะห์ตารางเชื่อมโยงจาก R1 สู่ D1 (R1-to-D1 Synthesis Bridge)"],
       ["title_polish", "3. วิเคราะห์และเกลาชื่อเรื่อง ABCD และประเมิน 10 Pitfalls (คศ.3–คศ.5)"],
       ["ch1_definitions", "4. เขียน 1.5 นิยามศัพท์เฉพาะเชิงปฏิบัติการ (ห้ามนิยามคำทั่วไป)"],
@@ -7372,7 +7546,7 @@
               <div>
                 <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                   Research Wizard · ตัวช่วยจัดทำโครงร่าง 10 ขั้นตอน
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">ตามสูตร อ.ชวลิต</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">มาตรฐาน R&D</span>
                 </h2>
                 <div class="text-xs text-slate-500">ขั้นตอนที่ ${curStepNum} จาก 10: ${escapeHtml(curStepObj.title)}</div>
               </div>
@@ -7403,7 +7577,7 @@
             <div class="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800 flex flex-col sm:flex-row items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="text-xs font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-                  <span>💡 คำแนะนำเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</span>
+                  <span>💡 คำแนะนำเชิงระเบียบวิธีวิจัยมาตรฐาน (R&D Guidelines):</span>
                 </div>
                 <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                   ${escapeHtml(curStepObj.advice || curStepObj.tip || curStepObj.subtitle || '')}
@@ -7542,7 +7716,7 @@
                       <div class="flex items-start gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
                         <span class="text-base">⚠️</span>
                         <div>
-                          <div>คำเตือนเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</div>
+                          <div>คำเตือนเชิงระเบียบวิธีวิจัยมาตรฐาน:</div>
                           <div class="text-[11px] font-normal text-amber-900 dark:text-amber-200 mt-0.5 leading-relaxed">
                             การเลือกแบบเจาะจง (Purposive Sampling) ไม่มี Sampling Error ขัดต่อข้อตกลงเบื้องต้นของสถิติอนุมาน ระบบจะปรับแผนสถิติเป็น <b>"สถิติบรรยาย (x̄, S.D., ร้อยละ) ร่วมกับดัชนีประสิทธิผล (E.I.)"</b> และตัดการทดสอบ t-test ออกจากเล่มวิจัยโดยอัตโนมัติ
                           </div>
@@ -7559,7 +7733,7 @@
                       <div class="flex items-start gap-2 text-xs font-bold text-rose-800 dark:text-rose-300">
                         <span class="text-base">🛑</span>
                         <div>
-                          <div>คำแนะนำเชิงระเบียบวิธีวิจัย (รศ.ดร.ชวลิต ชูกำแพง):</div>
+                          <div>คำแนะนำเชิงระเบียบวิธีวิจัยมาตรฐาน:</div>
                           <div class="text-[11px] font-normal text-rose-900 dark:text-rose-200 mt-0.5 leading-relaxed">
                             การศึกษาจากประชากรทั้งหมด ข้อมูลที่ได้คือค่าจริงของประชากร (Parameters: μ, σ) ไม่มีความคลาดเคลื่อนจากการสุ่มตัวอย่าง จึงไม่ต้องและไม่สามารถทดสอบ t-test ได้ ระบบจะรายงานด้วย ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน ร้อยละ และดัชนีประสิทธิผล E.I.
                           </div>
@@ -7684,7 +7858,7 @@
                       <span>พร้อมสร้างโครงร่างวิจัยและรายงาน 5 บทฉบับสมบูรณ์แล้ว!</span>
                     </div>
                     <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                      ระบบได้รวบรวมข้อมูลตั้งต้นทั้ง 9 ขั้นตอน พร้อมตรวจทานความสอดคล้องตามเกณฑ์ วPA และหลักการวิจัย R&D ของ รศ.ดร.ชวลิต ชูกำแพง เมื่อคุณกดยืนยัน ระบบจะสร้างรายงานวิจัย 5 บท ตารางความสอดคล้อง 360° และชุดสถิติพร้อมนำเข้า Studio ทันที
+                      ระบบได้รวบรวมข้อมูลตั้งต้นทั้ง 9 ขั้นตอน พร้อมตรวจทานความสอดคล้องตามเกณฑ์ วPA และหลักการวิจัย R&D ทางการศึกษาขั้นสูง เมื่อคุณกดยืนยัน ระบบจะสร้างรายงานวิจัย 5 บท ตารางความสอดคล้อง 360° และชุดสถิติพร้อมนำเข้า Studio ทันที
                     </p>
                   </div>
 
@@ -7940,7 +8114,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label class="text-[11px] font-semibold text-slate-500">ชื่อ-สกุล พร้อมตำแหน่งทางวิชาการ/วิทยฐานะ:</label>
-                        <input type="text" id="ctx_exp_name_${idx}" value="${escapeHtml(exp.prefixName || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white mt-0.5" placeholder="เช่น รศ.ดร.ชวลิต ชูกำแพง" />
+                        <input type="text" id="ctx_exp_name_${idx}" value="${escapeHtml(exp.prefixName || '')}" class="w-full neu-input-pill px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white mt-0.5" placeholder="เช่น ศ.ดร.ประสิทธิ์ วิจัยวัฒนา" />
                       </div>
                       <div>
                         <label class="text-[11px] font-semibold text-slate-500">ตำแหน่ง / วิทยฐานะปัจจุบัน:</label>
@@ -7978,9 +8152,30 @@
   function renderFooter() {
     if (state.view === "slides") return "";
     return `
-      <footer class="max-w-7xl mx-auto px-4 py-8 mt-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 print:hidden">
-        <b class="text-slate-800 dark:text-slate-200">ระบบ ROAD Next-Gen (R&D Research Studio & AI Co-Pilot)</b> · Report Outline Assistant for Development · จากชื่อเรื่องสู่รายงานการวิจัย 5 บท<br/>
-        พัฒนาต่อยอดจากแนวคิดการบรรยายและอบรมของ รศ.ดร.ชวลิต ชูกำแพง คณะศึกษาศาสตร์ มหาวิทยาลัยมหาสารคาม
+      <footer class="max-w-7xl mx-auto px-4 py-8 mt-10 border-t border-slate-200/80 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 print:hidden">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl p-4 sm:px-6 border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+          <div class="text-left">
+            <div class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>ระบบ ROAD Next-Gen · R&D Research Studio & AI Co-Pilot</span>
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              ระบบสังเคราะห์โครงร่างและเขียนเล่มวิจัย 5 บท มาตรฐานวิจัยและพัฒนาทางการศึกษา (R&D)
+            </div>
+          </div>
+          <div class="text-center sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60 dark:border-slate-800/60">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 mb-1">
+              <span>พัฒนาโดย:</span>
+              <span class="font-extrabold text-indigo-800 dark:text-indigo-200">Dev.By Kru.GOR</span>
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">
+              อีเมลติดต่อ: <a href="mailto:Gorthailand1617@gmail.com" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Gorthailand1617@gmail.com</a>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 text-[11px] text-slate-400 dark:text-slate-500 text-center">
+          © 2026 ROAD Next-Gen · Report Outline Assistant for Development · มาตรฐานวิธีวิทยาการวิจัยและพัฒนาทางการศึกษาเพื่อการประเมินวิทยฐานะ วPA
+        </div>
       </footer>
     `;
   }
