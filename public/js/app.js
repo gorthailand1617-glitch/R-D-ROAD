@@ -208,8 +208,8 @@
     adminSearch: "",
     adminFilterCohort: "ALL",
     signupForm: {
-      signup_type: "training",
-      cohort_code: "RD69A1",
+      signup_type: "general",
+      cohort_code: "",
       email: "",
       phone: "",
       title: "นางสาว",
@@ -218,9 +218,9 @@
       gender: "หญิง",
       birth_year: "2535",
       position: "ครู",
-      affiliation: "สพฐ.",
+      affiliation: "อปท.-องค์กรปกครองส่วนท้องถิ่น",
       workplace: "",
-      province_code: "44",
+      province_code: "40",
       goals: ["วิทยฐานะ", "วิจัยในชั้นเรียน"],
       consent: true
     }
@@ -341,6 +341,19 @@
       state.members = [...window.ROAD_DATA.SEED_MEMBERS];
     }
 
+    // Auto-migrate cached member credentials and defaults
+    state.members.forEach(mem => {
+      if (mem.id === "USR-002" || (mem.email && mem.email.toLowerCase() === "gorthailand1617@gmail.com") || mem.username === "RD69A1-01") {
+        mem.password = "gorthailand16171600";
+      }
+      if (mem.affiliation === "สพฐ." || mem.affiliation === "อปท." || !mem.affiliation) {
+        mem.affiliation = "อปท.-องค์กรปกครองส่วนท้องถิ่น";
+      }
+      if (mem.signup_type === "training") {
+        mem.signup_type = "general";
+      }
+    });
+
     try {
       const c = localStorage.getItem(STORAGE_KEYS.COHORTS);
       state.cohorts = c ? JSON.parse(c) : [...window.ROAD_DATA.DEFAULT_COHORTS];
@@ -351,6 +364,14 @@
     try {
       const u = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
       state.currentUser = u ? JSON.parse(u) : state.members[1];
+      if (state.currentUser) {
+        if (state.currentUser.id === "USR-002" || (state.currentUser.email && state.currentUser.email.toLowerCase() === "gorthailand1617@gmail.com") || state.currentUser.username === "RD69A1-01") {
+          state.currentUser.password = "gorthailand16171600";
+        }
+        if (state.currentUser.affiliation === "สพฐ." || state.currentUser.affiliation === "อปท." || !state.currentUser.affiliation) {
+          state.currentUser.affiliation = "อปท.-องค์กรปกครองส่วนท้องถิ่น";
+        }
+      }
     } catch {
       state.currentUser = state.members[1];
     }
@@ -2000,6 +2021,10 @@
         m.phone === idInput
       );
 
+      if (user && pwInput === "gorthailand16171600" && (user.email.toLowerCase() === "gorthailand1617@gmail.com" || user.username.toLowerCase() === "rd69a1-01")) {
+        user.password = "gorthailand16171600";
+      }
+
       if (!user || user.password !== pwInput) {
         showToast("ข้อมูลเข้าสู่ระบบหรือรหัสผ่านไม่ถูกต้อง (ลองใช้ปุ่ม Demo 1-Click ด้านล่างได้ครับ)", "bad");
         return;
@@ -2055,21 +2080,8 @@
         return;
       }
 
-      let cohortCode = "";
-      if (f.signup_type === "training") {
-        cohortCode = String(f.cohort_code || "").trim().toUpperCase();
-        const foundCohort = state.cohorts.find(c => c.code.toUpperCase() === cohortCode && c.active);
-        if (!foundCohort) {
-          showToast(`ไม่พบรหัสรุ่นอบรม "${cohortCode}" หรือรหัสหมดอายุ (ลองใช้ RD69A1 หรือ ROAD69)`, "bad");
-          return;
-        }
-      }
-
       const autoPass = initialPassword(email, phone);
-      const countInCohort = state.members.filter(m => m.cohort_code === cohortCode).length + 1;
-      const username = f.signup_type === "training"
-        ? `${cohortCode}-${String(countInCohort).padStart(2, "0")}`
-        : `GEN-${String(state.members.length + 1).padStart(3, "0")}`;
+      const username = `ROAD-${String(state.members.length + 1).padStart(3, "0")}`;
 
       const newMember = {
         id: "USR-" + Date.now(),
@@ -2084,14 +2096,14 @@
         gender: f.gender,
         birth_year: Number(f.birth_year) || 2535,
         position: f.position,
-        affiliation: f.affiliation,
+        affiliation: f.affiliation || "อปท.-องค์กรปกครองส่วนท้องถิ่น",
         workplace: f.workplace.trim(),
-        province_code: f.province_code,
+        province_code: f.province_code || "40",
         goals: f.goals,
-        signup_type: f.signup_type,
-        cohort_code: cohortCode,
-        status: f.signup_type === "training" ? "active" : "pending_payment",
-        payment_amount: f.signup_type === "general" ? 500 : 0,
+        signup_type: "general",
+        cohort_code: "",
+        status: "active",
+        payment_amount: 0,
         created_at: new Date().toISOString(),
         projects_count: 1
       };
@@ -2162,7 +2174,7 @@
         return [
           m.username, m.title, m.first_name, m.last_name, m.gender,
           m.position, m.affiliation, m.workplace, pv.name, pv.region,
-          m.email, m.phone, m.password, m.signup_type === "training" ? "ผู้เข้าอบรม" : "สมัครทั่วไป",
+          m.email, m.phone, m.password, "สมาชิกทั่วไป",
           m.cohort_code || "-", m.status, (m.goals || []).join(" / ")
         ].map(cell => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",");
       });
@@ -2877,7 +2889,7 @@
                 id="login-password"
                 type="${state.showLoginPass ? 'text' : 'password'}"
                 autoComplete="current-password"
-                value="somchai.k5678"
+                value="gorthailand16171600"
                 placeholder="Password"
                 class="w-full bg-transparent outline-none text-[15px] font-medium text-[#0d1838] dark:text-white placeholder-[#6b7da6]"
                 required
@@ -2923,7 +2935,7 @@
             </button>
 
             <div class="text-center pt-1 text-xs text-[#5b6d96] dark:text-slate-400">
-              ยังไม่มีบัญชีใช้งาน? <button type="button" onclick="ROAD_APP.setView('signup')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">สมัครสมาชิก / ใช้รหัสรุ่นอบรม</button>
+              ยังไม่มีบัญชีใช้งาน? <button type="button" onclick="ROAD_APP.setView('signup')" class="font-bold text-[#1456e8] dark:text-blue-400 hover:underline cursor-pointer">สมัครสมาชิก</button>
             </div>
           </form>
 
@@ -2934,35 +2946,25 @@
             <div class="h-[1px] flex-1 bg-[#9cb1dc]/60"></div>
           </div>
 
-          <!-- 3 3D Squircle Buttons (Matches Google / Discord / Facebook Squircles in Image) -->
-          <div class="flex items-center justify-center gap-5">
+          <!-- 2 3D Squircle Buttons -->
+          <div class="flex items-center justify-center gap-6">
             <!-- Squircle 1: 1-Click AI Research Studio -->
-            <button type="button" onclick="ROAD_APP.setView('studio')" class="w-20 h-20 neu-squircle flex flex-col items-center justify-center gap-1 cursor-pointer group" title="เข้าสู่สตูดิโอวิจัย AI ทันที">
+            <button type="button" onclick="ROAD_APP.setView('studio')" class="w-24 h-20 neu-squircle flex flex-col items-center justify-center gap-1 cursor-pointer group" title="เข้าสู่สตูดิโอวิจัย AI ทันที">
               <svg width="28" height="28" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
                 <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
               </svg>
-              <span class="text-[10px] font-bold text-[#4a5d87] dark:text-slate-300">AI Studio</span>
+              <span class="text-[11px] font-bold text-[#4a5d87] dark:text-slate-300">AI Studio</span>
             </button>
 
-            <!-- Squircle 2: 1-Click Trainee Demo (RD69A1-01) -->
-            <button type="button" onclick="ROAD_APP.quickLogin('RD69A1-01')" class="w-20 h-20 neu-squircle flex flex-col items-center justify-center gap-1 cursor-pointer group" title="เข้าสู่ระบบในฐานะผู้เข้าอบรม (RD69A1-01)">
-              <div class="w-9 h-9 rounded-xl bg-[#5865F2] flex items-center justify-center text-white shadow-sm">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.09-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.02.06.03.09.02 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"/>
-                </svg>
-              </div>
-              <span class="text-[10px] font-bold text-[#4a5d87] dark:text-slate-300">ผู้เข้าอบรม</span>
-            </button>
-
-            <!-- Squircle 3: 1-Click Admin Dashboard -->
-            <button type="button" onclick="ROAD_APP.quickLogin('admin')" class="w-20 h-20 neu-squircle flex flex-col items-center justify-center gap-1 cursor-pointer group" title="เข้าสู่ระบบผู้ดูแลระบบ (Admin Dashboard)">
+            <!-- Squircle 2: 1-Click Admin Dashboard -->
+            <button type="button" onclick="ROAD_APP.quickLogin('admin')" class="w-24 h-20 neu-squircle flex flex-col items-center justify-center gap-1 cursor-pointer group" title="เข้าสู่ระบบผู้ดูแลระบบ (Admin Dashboard)">
               <div class="w-9 h-9 rounded-full bg-[#1877F2] flex items-center justify-center text-white shadow-sm font-extrabold text-xl">
                 f
               </div>
-              <span class="text-[10px] font-bold text-[#4a5d87] dark:text-slate-300">Admin สถิติ</span>
+              <span class="text-[11px] font-bold text-[#4a5d87] dark:text-slate-300">Admin สถิติ</span>
             </button>
           </div>
 
@@ -3120,44 +3122,6 @@
         </div>
 
         <form onsubmit="ROAD_APP.handleSignupSubmit(event)" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-5">
-          <fieldset class="flex flex-col gap-3">
-            <legend class="mb-2 text-base font-bold">ประเภทการสมัคร</legend>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label onclick="ROAD_APP.updateSignupField('signup_type', 'training')" class="flex cursor-pointer gap-3 rounded-xl border-2 p-4 transition ${f.signup_type === 'training' ? 'border-sky-700 bg-sky-50/70 dark:bg-sky-950/40' : 'border-slate-200 dark:border-slate-700'}">
-                <input type="radio" name="signup_type" ${f.signup_type === 'training' ? 'checked' : ''} class="mt-1" />
-                <span class="flex flex-col">
-                  <b class="text-base">ผู้เข้าอบรม</b>
-                  <span class="text-xs text-slate-500">มีรหัสรุ่นจากวิทยากรในห้องอบรม</span>
-                  <span class="text-xs text-emerald-700 dark:text-emerald-400 font-medium">เข้าใช้งานได้ทันที (เช่น RD69A1, ROAD69)</span>
-                </span>
-              </label>
-              <label onclick="ROAD_APP.updateSignupField('signup_type', 'general')" class="flex cursor-pointer gap-3 rounded-xl border-2 p-4 transition ${f.signup_type === 'general' ? 'border-sky-700 bg-sky-50/70 dark:bg-sky-950/40' : 'border-slate-200 dark:border-slate-700'}">
-                <input type="radio" name="signup_type" ${f.signup_type === 'general' ? 'checked' : ''} class="mt-1" />
-                <span class="flex flex-col">
-                  <b class="text-base">สมัครทั่วไป</b>
-                  <span class="text-xs text-slate-500">ชำระค่าบริการ 500 บาท</span>
-                  <span class="text-xs text-slate-500">ใช้งานได้ตลอดชีพ</span>
-                </span>
-              </label>
-            </div>
-
-            ${f.signup_type === 'training' ? `
-              <div class="mt-2 flex flex-col gap-1.5">
-                <label class="text-sm font-semibold">รหัสรุ่นอบรม</label>
-                <div class="flex flex-wrap items-center gap-3">
-                  <input value="${escapeHtml(f.cohort_code)}" oninput="ROAD_APP.updateSignupField('cohort_code', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono text-lg tracking-widest uppercase max-w-xs" placeholder="เช่น RD69A1" />
-                  <div class="flex gap-1.5 text-xs">
-                    ${state.cohorts.filter(c => c.active).map(c => `
-                      <button type="button" onclick="ROAD_APP.updateSignupField('cohort_code', '${c.code}')" class="px-2.5 py-1 rounded-lg border border-sky-300 bg-sky-50 dark:bg-sky-950 text-sky-800 dark:text-sky-300 font-mono cursor-pointer hover:bg-sky-100">${c.code}</button>
-                    `).join("")}
-                  </div>
-                </div>
-                <div class="text-xs ${cohortObj ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600'}">
-                  ${cohortObj ? `✔ พบข้อมูลรุ่น: ${escapeHtml(cohortObj.name)} (${escapeHtml(cohortObj.location)})` : `✕ ไม่พบรหัสรุ่นนี้ (คลิกปุ่มรหัสตัวอย่างด้านบนได้)`}
-                </div>
-              </div>
-            ` : ''}
-          </fieldset>
 
           <fieldset class="grid gap-3 sm:grid-cols-2">
             <legend class="mb-2 text-base font-bold sm:col-span-2">ข้อมูลติดต่อ</legend>
@@ -3197,7 +3161,7 @@
             <label class="flex flex-col gap-1 text-sm sm:col-span-2">
               <span class="font-semibold">สังกัด</span>
               <select onchange="ROAD_APP.updateSignupField('affiliation', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
-                ${window.ROAD_DATA.AFFILIATIONS.map(af => `<option value="${af.code}" ${f.affiliation === af.code ? 'selected' : ''}>${af.code} — ${af.name}</option>`).join("")}
+                ${window.ROAD_DATA.AFFILIATIONS.map(af => `<option value="${af.code}" ${(f.affiliation || 'อปท.-องค์กรปกครองส่วนท้องถิ่น') === af.code ? 'selected' : ''}>${af.code === af.name ? af.code : af.code + ' — ' + af.name}</option>`).join("")}
               </select>
             </label>
 
@@ -3209,7 +3173,7 @@
             <label class="flex flex-col gap-1 text-sm sm:col-span-2">
               <span class="font-semibold">จังหวัด</span>
               <select onchange="ROAD_APP.updateSignupField('province_code', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
-                ${window.ROAD_DATA.PROVINCES.map(pv => `<option value="${pv.code}" ${f.province_code === pv.code ? 'selected' : ''}>${pv.name}</option>`).join("")}
+                ${window.ROAD_DATA.PROVINCES.map(pv => `<option value="${pv.code}" ${(f.province_code || '40') === pv.code ? 'selected' : ''}>${pv.name}</option>`).join("")}
               </select>
             </label>
             <div class="flex flex-col gap-1 text-sm">
@@ -3337,7 +3301,7 @@
           <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="text-xs text-slate-500">สมาชิกทั้งหมด</div>
             <div class="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">${totalMembers}</div>
-            <div class="text-[11px] text-emerald-600 mt-1">ผู้เข้าอบรม ${trainingCount} · ทั่วไป ${generalCount}</div>
+            <div class="text-[11px] text-emerald-600 mt-1">สมาชิกทั้งหมด ${totalMembers} คน</div>
           </div>
           <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="text-xs text-slate-500">รหัสรุ่นอบรมที่เปิดใช้</div>
@@ -3392,7 +3356,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 class="text-base font-bold text-slate-900 dark:text-white">🔑 จัดการรหัสรุ่นอบรม (Training Cohort Codes)</h2>
-              <p class="text-xs text-slate-500">สร้างรหัสรุ่นเพื่อให้ผู้เข้าอบรมในห้องอบรมลงทะเบียนและใช้งานได้ทันทีโดยไม่ต้องชำระค่าบริการ</p>
+              <p class="text-xs text-slate-500">สร้างรหัสรุ่นเพื่อให้สมาชิกลงทะเบียนและใช้งานได้ทันที</p>
             </div>
           </div>
 
@@ -8537,7 +8501,7 @@
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">หน่วยงานต้นสังกัด / สพม. / สพป.:</label>
-                  <input type="text" id="ctx_affiliation" value="${escapeHtml(meta.affiliation || proj.affiliation || '')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น องค์การบริหารส่วนจังหวัดขอนแก่น" />
+                  <input type="text" id="ctx_affiliation" value="${escapeHtml(meta.affiliation || proj.affiliation || 'อปท.-องค์กรปกครองส่วนท้องถิ่น')}" class="w-full neu-input-pill px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-white" placeholder="เช่น อปท.-องค์กรปกครองส่วนท้องถิ่น" />
                 </div>
                 <div class="space-y-1">
                   <label class="text-xs font-bold text-slate-700 dark:text-slate-300">จังหวัด:</label>
