@@ -1949,9 +1949,167 @@
       renderApp();
     },
 
+    syncContextMetaInputsFromDom(proj) {
+      if (!proj) return;
+      if (!proj.contextMeta) proj.contextMeta = {};
+      const getVal = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : fallback;
+      };
+
+      // Sync Context fields if in DOM
+      if (document.getElementById("ctx_schoolName")) {
+        proj.contextMeta.researcherName = getVal("ctx_researcherName", proj.contextMeta.researcherName || proj.researcher || "");
+        proj.contextMeta.academicRank = getVal("ctx_academicRank", proj.contextMeta.academicRank || proj.position || "");
+        proj.contextMeta.degree = getVal("ctx_degree", proj.contextMeta.degree || "กศ.ม. (หลักสูตรและการจัดการเรียนรู้)");
+        proj.contextMeta.schoolName = getVal("ctx_schoolName", proj.contextMeta.schoolName || proj.school || "");
+        proj.contextMeta.affiliation = getVal("ctx_affiliation", proj.contextMeta.affiliation || proj.affiliation || "");
+        proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "ขอนแก่น");
+        proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ผู้อำนวยการสถานศึกษา");
+        proj.contextMeta.academicYear = getVal("ctx_academicYear", proj.contextMeta.academicYear || "2569");
+        proj.contextMeta.semester = getVal("ctx_semester", proj.contextMeta.semester || "1");
+        proj.contextMeta.courseCode = getVal("ctx_courseCode", proj.contextMeta.courseCode || "ว23101");
+        proj.contextMeta.courseName = getVal("ctx_courseName", proj.contextMeta.courseName || proj.subject || "");
+        proj.contextMeta.totalHours = getVal("ctx_totalHours", proj.contextMeta.totalHours || "18 ชั่วโมง");
+        proj.contextMeta.pastScoreAvg = getVal("ctx_pastScoreAvg", proj.contextMeta.pastScoreAvg || "56.80%");
+
+        if (proj.contextMeta.researcherName) proj.researcher = proj.contextMeta.researcherName;
+        if (proj.contextMeta.academicRank) proj.position = proj.contextMeta.academicRank;
+        if (proj.contextMeta.schoolName) proj.school = proj.contextMeta.schoolName;
+        if (proj.contextMeta.affiliation) proj.affiliation = proj.contextMeta.affiliation;
+        if (proj.contextMeta.courseName) proj.subject = proj.contextMeta.courseName;
+      }
+
+      // Sync Lesson Plans from DOM
+      if (Array.isArray(proj.lessonPlans)) {
+        proj.lessonPlans.forEach((lp, idx) => {
+          const titleEl = document.getElementById(`ctx_lp_title_${idx}`);
+          if (titleEl) lp.unitTitle = titleEl.value.trim();
+          const hoursEl = document.getElementById(`ctx_lp_hours_${idx}`);
+          if (hoursEl) lp.hours = Math.max(1, Number(hoursEl.value) || 2);
+          const conceptEl = document.getElementById(`ctx_lp_concept_${idx}`);
+          if (conceptEl) lp.conceptSummary = conceptEl.value.trim();
+        });
+
+        const sumHours = proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0);
+        if (sumHours > 0) {
+          proj.contextMeta.totalHours = `${sumHours} ชั่วโมง`;
+          proj.duration = `จำนวน ${proj.lessonPlans.length} แผนการจัดการเรียนรู้ เวลา ${sumHours} ชั่วโมง`;
+        }
+      }
+
+      // Sync Experts from DOM
+      if (Array.isArray(proj.expertRoster)) {
+        proj.expertRoster.forEach((exp, idx) => {
+          const nameEl = document.getElementById(`ctx_exp_name_${idx}`);
+          if (nameEl) exp.prefixName = nameEl.value.trim();
+          const posEl = document.getElementById(`ctx_exp_pos_${idx}`);
+          if (posEl) exp.position = posEl.value.trim();
+          const orgEl = document.getElementById(`ctx_exp_org_${idx}`);
+          if (orgEl) exp.organization = orgEl.value.trim();
+          const roleEl = document.getElementById(`ctx_exp_role_${idx}`);
+          if (roleEl) exp.role = roleEl.value.trim();
+        });
+      }
+    },
+
     setContextMetaTab(tab) {
+      const proj = getActiveProject();
+      if (proj) this.syncContextMetaInputsFromDom(proj);
       state.contextMetaModalTab = tab;
       renderApp();
+    },
+
+    addLessonPlan() {
+      const proj = getActiveProject();
+      if (!proj) return;
+      if (!Array.isArray(proj.lessonPlans)) {
+        proj.lessonPlans = JSON.parse(JSON.stringify((window.ROAD_DATA && window.ROAD_DATA.DEFAULT_LESSON_PLANS) || []));
+      }
+      this.syncContextMetaInputsFromDom(proj);
+      const nextNo = proj.lessonPlans.length + 1;
+      const bShort = proj.B_short || proj.B || "นวัตกรรม";
+      proj.lessonPlans.push({
+        planNo: nextNo,
+        unitTitle: `หน่วยการเรียนรู้ที่ ${nextNo}: การประยุกต์ใช้${bShort}และการพัฒนาสมรรถนะ`,
+        hours: 2,
+        conceptSummary: `การจัดกิจกรรมการเรียนรู้ตามกระบวนการของ${bShort} การฝึกปฏิบัติการแก้ปัญหา และการประเมินผลลัพธ์การเรียนรู้`
+      });
+      const sumHours = proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0);
+      proj.contextMeta.totalHours = `${sumHours} ชั่วโมง`;
+      proj.duration = `จำนวน ${proj.lessonPlans.length} แผนการจัดการเรียนรู้ เวลา ${sumHours} ชั่วโมง`;
+      saveProjects();
+      renderApp();
+      showToast(`เพิ่มแผนการจัดการเรียนรู้ที่ ${nextNo} เรียบร้อยแล้ว (รวม ${proj.lessonPlans.length} แผน)`);
+    },
+
+    removeLessonPlan(index) {
+      const proj = getActiveProject();
+      if (!proj) return;
+      if (!Array.isArray(proj.lessonPlans)) return;
+      if (proj.lessonPlans.length <= 1) {
+        showToast("ต้องมีแผนการจัดการเรียนรู้อย่างน้อย 1 แผน สำหรับการทดลอง", "warning");
+        return;
+      }
+      this.syncContextMetaInputsFromDom(proj);
+      proj.lessonPlans.splice(index, 1);
+      proj.lessonPlans.forEach((lp, idx) => {
+        lp.planNo = idx + 1;
+      });
+      const sumHours = proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0);
+      proj.contextMeta.totalHours = `${sumHours} ชั่วโมง`;
+      proj.duration = `จำนวน ${proj.lessonPlans.length} แผนการจัดการเรียนรู้ เวลา ${sumHours} ชั่วโมง`;
+      saveProjects();
+      renderApp();
+      showToast(`ลบแผนการจัดการเรียนรู้เรียบร้อยแล้ว (คงเหลือ ${proj.lessonPlans.length} แผน รวม ${sumHours} ชม.)`);
+    },
+
+    applyLessonPlanPreset(presetId) {
+      const proj = getActiveProject();
+      if (!proj) return;
+      const presets = (window.ROAD_DATA && window.ROAD_DATA.CURRICULUM_DURATION_PRESETS) || [];
+      const target = presets.find(p => p.id === presetId);
+      if (!target) return;
+      this.syncContextMetaInputsFromDom(proj);
+      proj.lessonPlans = JSON.parse(JSON.stringify(target.plans));
+      proj.contextMeta.totalHours = `${target.totalHours} ชั่วโมง`;
+      proj.duration = `จำนวน ${target.plansCount} แผนการจัดการเรียนรู้ เวลา ${target.totalHours} ชั่วโมง`;
+      saveProjects();
+      renderApp();
+      showToast(`ปรับใช้โครงสร้าง ${target.name} เรียบร้อยแล้ว (${target.plansCount} แผน รวม ${target.totalHours} ชม.)`);
+    },
+
+    handlePlanHoursChange() {
+      const proj = getActiveProject();
+      if (!proj || !Array.isArray(proj.lessonPlans)) return;
+      let total = 0;
+      proj.lessonPlans.forEach((lp, idx) => {
+        const el = document.getElementById(`ctx_lp_hours_${idx}`);
+        const val = el ? Number(el.value) || 0 : (Number(lp.hours) || 0);
+        total += val;
+      });
+      const badgeEl = document.getElementById("ctx_total_hours_badge");
+      if (badgeEl) badgeEl.textContent = `${total} ชั่วโมง`;
+      const weeksEl = document.getElementById("ctx_est_weeks_badge");
+      if (weeksEl) {
+        const weeks = Math.max(1, Math.round(total / 3));
+        weeksEl.textContent = `ประมาณ ${weeks} สัปดาห์ (สัปดาห์ละ 2-3 ชม.)`;
+      }
+      const complianceEl = document.getElementById("ctx_rd_compliance_badge");
+      if (complianceEl) {
+        if (total >= 8 && total <= 24) {
+          complianceEl.className = "px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] flex items-center gap-1 border border-emerald-300 dark:border-emerald-700";
+          complianceEl.innerHTML = `✅ สอดคล้องกับเกณฑ์ R&D มาตรฐาน (8–24 ชม.)`;
+        } else if (total < 8) {
+          complianceEl.className = "px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[11px] flex items-center gap-1 border border-amber-300 dark:border-amber-700";
+          complianceEl.innerHTML = `⚠️ ชั่วโมงทดลองน้อยกว่าเกณฑ์ R&D (แนะนำ 8 ชม.ขึ้นไป)`;
+        } else {
+          complianceEl.className = "px-2.5 py-1 rounded-lg bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 font-bold text-[11px] flex items-center gap-1 border border-sky-300 dark:border-sky-700";
+          complianceEl.innerHTML = `ℹ️ หน่วยการเรียนรู้ระยะยาว (${total} ชม. สอดคล้องกับรายวิชา 1.5–2.0 หน่วยกิต)`;
+        }
+      }
+      const totalHoursInput = document.getElementById("ctx_totalHours");
+      if (totalHoursInput) totalHoursInput.value = `${total} ชั่วโมง`;
     },
 
     saveContextMeta() {
@@ -1959,69 +2117,33 @@
       if (!proj) return;
       if (!proj.contextMeta) proj.contextMeta = {};
 
-      const getVal = (id, fallback) => {
-        const el = document.getElementById(id);
-        return el ? el.value.trim() : fallback;
-      };
+      this.syncContextMetaInputsFromDom(proj);
 
-      proj.contextMeta.researcherName = getVal("ctx_researcherName", proj.contextMeta.researcherName || proj.researcher || "");
-      proj.contextMeta.academicRank = getVal("ctx_academicRank", proj.contextMeta.academicRank || proj.position || "");
-      proj.contextMeta.degree = getVal("ctx_degree", proj.contextMeta.degree || "กศ.ม. (หลักสูตรและการจัดการเรียนรู้)");
-      proj.contextMeta.schoolName = getVal("ctx_schoolName", proj.contextMeta.schoolName || proj.school || "");
-      proj.contextMeta.affiliation = getVal("ctx_affiliation", proj.contextMeta.affiliation || proj.affiliation || "");
-      proj.contextMeta.province = getVal("ctx_province", proj.contextMeta.province || "ขอนแก่น");
-      proj.contextMeta.directorName = getVal("ctx_directorName", proj.contextMeta.directorName || "ผู้อำนวยการสถานศึกษา");
-      proj.contextMeta.academicYear = getVal("ctx_academicYear", proj.contextMeta.academicYear || "2569");
-      proj.contextMeta.semester = getVal("ctx_semester", proj.contextMeta.semester || "1");
-      proj.contextMeta.courseCode = getVal("ctx_courseCode", proj.contextMeta.courseCode || "ว23101");
-      proj.contextMeta.courseName = getVal("ctx_courseName", proj.contextMeta.courseName || proj.subject || "");
-      proj.contextMeta.totalHours = getVal("ctx_totalHours", proj.contextMeta.totalHours || "18 ชั่วโมง");
-      proj.contextMeta.pastScoreAvg = getVal("ctx_pastScoreAvg", proj.contextMeta.pastScoreAvg || "56.80%");
-
-      // Sync back to top-level project fields
-      if (proj.contextMeta.researcherName) proj.researcher = proj.contextMeta.researcherName;
-      if (proj.contextMeta.academicRank) proj.position = proj.contextMeta.academicRank;
-      if (proj.contextMeta.schoolName) proj.school = proj.contextMeta.schoolName;
-      if (proj.contextMeta.affiliation) proj.affiliation = proj.contextMeta.affiliation;
-      if (proj.contextMeta.courseName) proj.subject = proj.contextMeta.courseName;
-
-      // Read Lesson Plans
-      if (!Array.isArray(proj.lessonPlans) || proj.lessonPlans.length === 0) {
-        proj.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
-      }
-      if (Array.isArray(proj.lessonPlans)) {
-        proj.lessonPlans.forEach((lp, idx) => {
-          lp.unitTitle = getVal(`ctx_lp_title_${idx}`, lp.unitTitle);
-          lp.hours = Number(getVal(`ctx_lp_hours_${idx}`, lp.hours)) || lp.hours;
-          lp.conceptSummary = getVal(`ctx_lp_concept_${idx}`, lp.conceptSummary);
-        });
+      // Compute total hours dynamically from lesson plans
+      if (Array.isArray(proj.lessonPlans) && proj.lessonPlans.length > 0) {
+        const sumHours = proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0);
+        if (sumHours > 0) {
+          proj.contextMeta.totalHours = `${sumHours} ชั่วโมง`;
+          proj.duration = `จำนวน ${proj.lessonPlans.length} แผนการจัดการเรียนรู้ เวลา ${sumHours} ชั่วโมง`;
+        }
       }
 
-      // Read Expert Roster
-      if (!Array.isArray(proj.expertRoster) || proj.expertRoster.length === 0) {
-        proj.expertRoster = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERT_ROSTER || []));
-      }
-      if (Array.isArray(proj.expertRoster)) {
-        proj.expertRoster.forEach((exp, idx) => {
-          exp.prefixName = getVal(`ctx_exp_name_${idx}`, exp.prefixName);
-          exp.position = getVal(`ctx_exp_pos_${idx}`, exp.position);
-          exp.organization = getVal(`ctx_exp_org_${idx}`, exp.organization);
-          exp.role = getVal(`ctx_exp_role_${idx}`, exp.role);
-        });
-      }
-
-      saveProject();
+      saveProjects();
       state.showContextMetaModal = false;
       renderApp();
-      recordAudit("EDIT_TITLE", `อัปเดตข้อมูลบริบทสถานศึกษาและคณะผู้เชี่ยวชาญ: ${proj.label || proj.B_short}`);
-      showToast("บันทึกข้อมูลบริบทสถานศึกษาและคณะผู้เชี่ยวชาญเรียบร้อยแล้ว");
+      recordAudit("EDIT_TITLE", `อัปเดตข้อมูลบริบทสถานศึกษาและแผนการสอน: ${proj.label || proj.B_short}`);
+      showToast("บันทึกข้อมูลบริบทสถานศึกษาและแผนการจัดการเรียนรู้เรียบร้อยแล้ว");
     },
 
     resetLessonPlansDefault() {
       const proj = getActiveProject();
       if (!proj) return;
-      proj.lessonPlans = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_LESSON_PLANS || []));
-      saveProject();
+      proj.lessonPlans = JSON.parse(JSON.stringify((window.ROAD_DATA && window.ROAD_DATA.DEFAULT_LESSON_PLANS) || []));
+      const sumHours = proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0);
+      if (!proj.contextMeta) proj.contextMeta = {};
+      proj.contextMeta.totalHours = `${sumHours} ชั่วโมง`;
+      proj.duration = `จำนวน ${proj.lessonPlans.length} แผนการจัดการเรียนรู้ เวลา ${sumHours} ชั่วโมง`;
+      saveProjects();
       renderApp();
       showToast("รีเซ็ตตารางแผนการจัดการเรียนรู้เป็นค่าเริ่มต้นเรียบร้อยแล้ว");
     },
@@ -2029,8 +2151,8 @@
     resetExpertsDefault() {
       const proj = getActiveProject();
       if (!proj) return;
-      proj.expertRoster = JSON.parse(JSON.stringify(window.ROAD_DATA.DEFAULT_EXPERT_ROSTER || []));
-      saveProject();
+      proj.expertRoster = JSON.parse(JSON.stringify((window.ROAD_DATA && window.ROAD_DATA.DEFAULT_EXPERT_ROSTER) || []));
+      saveProjects();
       renderApp();
       showToast("รีเซ็ตคณะผู้เชี่ยวชาญ 5 ท่านเป็นค่าเริ่มต้นเรียบร้อยแล้ว");
     },
@@ -2399,7 +2521,7 @@
         step6_steps: (proj.B_steps && proj.B_steps.length > 0) ? proj.B_steps.join("\n") : (window.ROAD_DATA.RESEARCH_WIZARD_STEPS[5].sample.step6_steps || ""),
         step6_independent: `นวัตกรรม ${proj.B_short || 'รูปแบบที่พัฒนาขึ้น'}`,
         step6_dependent: (proj.C_list || []).join(", "),
-        step7_tools: `- ${proj.B_short || 'คู่มือการใช้นวัตกรรม'}\n- แผนการจัดการเรียนรู้ 6 แผน (18 ชม.)\n- แบบทดสอบวัด${(proj.C_list && proj.C_list[0]) || 'ผลสัมฤทธิ์'}\n- แบบสอบถามความพึงพอใจ`,
+        step7_tools: `- ${proj.B_short || 'คู่มือการใช้นวัตกรรม'}\n- แผนการจัดการเรียนรู้ ${(Array.isArray(proj.lessonPlans) && proj.lessonPlans.length > 0) ? proj.lessonPlans.length : 6} แผน (${(Array.isArray(proj.lessonPlans) && proj.lessonPlans.length > 0) ? proj.lessonPlans.reduce((sum, p) => sum + (Number(p.hours) || 0), 0) : 18} ชม.)\n- แบบทดสอบวัด${(proj.C_list && proj.C_list[0]) || 'ผลสัมฤทธิ์'}\n- แบบสอบถามความพึงพอใจ`,
         step7_quality: "IOC โดยผู้เชี่ยวชาญ 5 ท่าน (เกณฑ์ >= 0.50), ความยากง่าย (p) 0.20-0.80, อำนาจจำแนก (r) >= 0.20, ความเชื่อมั่นแบบทดสอบ KR-20 >= 0.80, ความเชื่อมั่นแบบสอบถาม Cronbach's Alpha >= 0.85",
         step8_stats: `1. ค่าเฉลี่ย (x̄) และส่วนเบี่ยงเบนมาตรฐาน (S.D.)\n2. ประสิทธิภาพนวัตกรรม E1/E2 ตามเกณฑ์ ${proj.efficiencyCriterion || '80/80'}\n3. ดัชนีประสิทธิผล (E.I.) เกณฑ์ >= 0.50\n4. สถิติทดสอบสมมติฐาน Dependent Samples t-test (p < .05)\n5. การวิเคราะห์ขนาดอิทธิพล (Cohen's d)`,
         step9_impact: `1. ผู้เรียนมี${(proj.C_list || []).join(" และ ")}สูงขึ้นอย่างมีนัยสำคัญทางสถิติ\n2. ครูได้นวัตกรรมต้นแบบที่ผ่านการตรวจสอบเชิงประจักษ์ตามเกณฑ์ วPA ก.ค.ศ.\n3. โรงเรียนเปรมติณสูลานนท์และ อบจ.ขอนแก่น มีนวัตกรรมต้นแบบพร้อมขยายผลสู่โรงเรียนในสังกัดและเผยแพร่ในวารสาร TCI`
@@ -3800,7 +3922,7 @@
               ${state.projects.map(p => `<option value="${p.id}" ${p.id === proj.id ? 'selected' : ''}>${escapeHtml(p.label || p.B_short || p.B)}</option>`).join("")}
             </select>
 
-            <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" class="px-3 py-2 neu-squircle text-sky-700 dark:text-sky-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 min-h-[40px]">
+            <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการจัดการเรียนรู้ และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการจัดการเรียนรู้ และผู้เชี่ยวชาญ 5 ท่าน" class="px-3 py-2 neu-squircle text-sky-700 dark:text-sky-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 min-h-[40px]">
               <span>⚙️ บริบท/ผชช.</span>
             </button>
 
@@ -5141,7 +5263,7 @@
                 <span class="text-base sm:text-lg">🏆</span>
                 <span class="font-extrabold text-xs sm:text-sm text-sky-100">ศูนย์ส่งออกเอกสารวิจัยฉบับสมบูรณ์มาตรฐาน Word (.doc 16pt)</span>
               </div>
-              <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการสอน 6 แผน และผู้เชี่ยวชาญ 5 ท่าน" class="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-[11px] font-bold text-sky-200 cursor-pointer flex items-center gap-1 transition">
+              <button onclick="ROAD_APP.openContextMetaModal('context')" data-tooltip="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการจัดการเรียนรู้ และผู้เชี่ยวชาญ 5 ท่าน" title="ตั้งค่าข้อมูลบริบทสถานศึกษา แผนการจัดการเรียนรู้ และผู้เชี่ยวชาญ 5 ท่าน" class="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-[11px] font-bold text-sky-200 cursor-pointer flex items-center gap-1 transition">
                 <span>⚙️ บริบท/ผชช.</span>
               </button>
             </div>
@@ -7833,7 +7955,7 @@
               <div>
                 <span class="text-lg">📎</span>
                 <div class="font-extrabold text-xs text-slate-900 dark:text-white mt-1">ภาคผนวก ก–ง (.doc)</div>
-                <div class="text-[11px] text-slate-500 mt-0.5">เครื่องมือวิจัย, ตารางผล IOC, แผนการจัดการเรียนรู้ 6 แผน และภาพนวัตกรรม</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">เครื่องมือวิจัย, ตารางผล IOC, แผนการจัดการเรียนรู้ และภาพนวัตกรรม</div>
               </div>
               <button onclick="ROAD_APP.exportAppendix()" class="w-full py-1.5 neu-squircle text-blue-700 dark:text-sky-300 font-bold text-xs cursor-pointer text-center">
                 📥 ดาวน์โหลดภาคผนวก ก–ง
@@ -8253,7 +8375,7 @@
                 </div>
                 <div class="pt-2">
                   <button type="button" onclick="ROAD_APP.openContextMetaModal('context')" class="w-full py-2.5 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-700 text-xs font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 cursor-pointer flex items-center justify-center gap-1.5 transition shadow-sm">
-                    <span>⚙️ กรอกข้อมูลบริบทสถานศึกษา ครูผู้สอน แผนการสอน 6 แผน & คณะผู้เชี่ยวชาญ 5 ท่าน (Essential Data)</span>
+                    <span>⚙️ กรอกข้อมูลบริบทสถานศึกษา ครูผู้สอน แผนการจัดการเรียนรู้ & คณะผู้เชี่ยวชาญ 5 ท่าน (Essential Data)</span>
                   </button>
                 </div>
               ` : ""}
@@ -8600,10 +8722,10 @@
               </div>
               <div>
                 <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>ข้อมูลบริบทสถานศึกษา แผนการสอน & คณะผู้เชี่ยวชาญ</span>
+                  <span>ข้อมูลบริบทสถานศึกษา แผนการจัดการเรียนรู้ & คณะผู้เชี่ยวชาญ</span>
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  กรอกข้อมูลจริงเพียงครั้งเดียว ระบบจะซิงค์ชื่อ, วิทยฐานะ, แผนการสอน 6 แผน และหนังสือเชิญผู้เชี่ยวชาญ 5 ท่านลงในเล่มวิจัยฉบับสมบูรณ์ทันที
+                  กรอกข้อมูลจริงเพียงครั้งเดียว ระบบจะซิงค์ชื่อ, วิทยฐานะ, แผนการจัดการเรียนรู้ (${plans.length} แผน) และหนังสือเชิญผู้เชี่ยวชาญ 5 ท่านลงในเล่มวิจัยฉบับสมบูรณ์ทันที
                 </p>
               </div>
             </div>
@@ -8689,30 +8811,89 @@
             </div>
           ` : ""}
 
-          <!-- Tab 2: Lesson Plans Form (6 plans) -->
-          ${tab === "plans" ? `
+          <!-- Tab 2: Lesson Plans Form (Flexible Count & Hours) -->
+          ${tab === "plans" ? (() => {
+            const currentTotalHours = plans.reduce((acc, lp) => acc + (Number(lp.hours) || 0), 0);
+            const estWeeks = Math.max(1, Math.round(currentTotalHours / 3));
+            const isRDOk = currentTotalHours >= 8 && currentTotalHours <= 24;
+            const presets = (window.ROAD_DATA && window.ROAD_DATA.CURRICULUM_DURATION_PRESETS) || [];
+
+            return `
             <div class="space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300">
-                <div>
-                  📅 <b>โครงสร้างหน่วยและแผนการจัดการเรียนรู้:</b> ระบบกำหนดโครงสร้าง 6 แผน (รวม 18 ชั่วโมง) ใช้จัดกิจกรรมในบทที่ 1, บทที่ 3 (ตาราง 3.1) และภาคผนวก
+              <!-- Preset Selector Header -->
+              <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-50 via-sky-50 to-purple-50 dark:from-indigo-950/40 dark:via-sky-950/30 dark:to-purple-950/40 border border-indigo-200 dark:border-indigo-800 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">📅</span>
+                    <span class="text-xs sm:text-sm font-extrabold text-indigo-950 dark:text-indigo-200">
+                      โครงสร้างแผนการจัดการเรียนรู้ & ระยะเวลาทดลองนวัตกรรม (ยืดหยุ่นตามหลักสูตรไทย)
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="ROAD_APP.addLessonPlan()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer shadow-sm flex items-center gap-1 transition">
+                      <span>➕ เพิ่มแผนการเรียนรู้</span>
+                    </button>
+                    <button type="button" onclick="ROAD_APP.resetLessonPlansDefault()" class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer">
+                      🔄 คืนค่ามาตรฐาน (6 แผน)
+                    </button>
+                  </div>
                 </div>
-                <button onclick="ROAD_APP.resetLessonPlansDefault()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 cursor-pointer">
-                  🔄 รีเซ็ตแผนเป็นค่าเริ่มต้น
-                </button>
+
+                <!-- Presets Pill Bar -->
+                <div>
+                  <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
+                    <span>⚡ เลือกโครงสร้างเวลาเรียนสำเร็จรูป (ตามโครงสร้างหลักสูตรและวิทยฐานะ):</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    ${presets.map(ps => `
+                      <button type="button" onclick="ROAD_APP.applyLessonPlanPreset('${ps.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/90 dark:bg-slate-800/90 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 border border-indigo-200 dark:border-indigo-700 text-slate-800 dark:text-slate-200 shadow-xs transition cursor-pointer flex items-center gap-1" title="${escapeHtml(ps.description)}">
+                        <span>${escapeHtml(ps.name)}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">${escapeHtml(ps.badge.split("/")[0].trim())}</span>
+                      </button>
+                    `).join("")}
+                  </div>
+                </div>
+
+                <!-- Live Summary Badges -->
+                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-indigo-200/60 dark:border-indigo-800/60 text-xs">
+                  <div class="px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold flex items-center gap-1.5">
+                    <span class="text-slate-500 font-normal">จำนวนแผน:</span>
+                    <span class="font-mono text-indigo-600 dark:text-indigo-400">${plans.length} แผน</span>
+                  </div>
+                  <div class="px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold flex items-center gap-1.5">
+                    <span class="text-slate-500 font-normal">เวลารวม:</span>
+                    <span id="ctx_total_hours_badge" class="font-mono text-sky-600 dark:text-sky-400">${currentTotalHours} ชั่วโมง</span>
+                  </div>
+                  <div class="px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold flex items-center gap-1.5">
+                    <span class="text-slate-500 font-normal">ระยะเวลา:</span>
+                    <span id="ctx_est_weeks_badge" class="font-mono text-purple-600 dark:text-purple-400">ประมาณ ${estWeeks} สัปดาห์ (สัปดาห์ละ 2-3 ชม.)</span>
+                  </div>
+                  <div id="ctx_rd_compliance_badge" class="px-2.5 py-1 rounded-lg ${isRDOk ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'} font-bold text-[11px] flex items-center gap-1 border">
+                    ${isRDOk ? '✅ สอดคล้องกับเกณฑ์ R&D มาตรฐาน (8–24 ชม.)' : '⚠️ ชั่วโมงทดลองอยู่นอกช่วงแนะนำ (แนะนำ 8–24 ชม.)'}
+                  </div>
+                </div>
               </div>
 
+              <!-- Lesson Plans List -->
               <div class="space-y-3">
                 ${plans.map((lp, idx) => `
-                  <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                  <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2 hover:border-indigo-300 dark:hover:border-indigo-700 transition">
                     <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
                       <span class="flex items-center gap-1.5">
                         <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[11px] font-bold">${lp.planNo || idx + 1}</span>
                         <span>แผนการจัดการเรียนรู้ที่ ${lp.planNo || idx + 1}</span>
                       </span>
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-slate-500 font-normal">เวลา:</span>
-                        <input type="number" id="ctx_lp_hours_${idx}" value="${escapeHtml(lp.hours || 3)}" class="w-16 neu-input-pill px-2.5 py-1 text-xs font-mono text-center text-slate-900 dark:text-white" min="1" max="10" />
-                        <span class="text-slate-500 font-normal">ชั่วโมง</span>
+                      <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-slate-500 font-normal">เวลา:</span>
+                          <input type="number" id="ctx_lp_hours_${idx}" value="${escapeHtml(lp.hours || 3)}" oninput="ROAD_APP.handlePlanHoursChange()" class="w-16 neu-input-pill px-2.5 py-1 text-xs font-mono text-center text-slate-900 dark:text-white" min="1" max="10" />
+                          <span class="text-slate-500 font-normal">ชั่วโมง</span>
+                        </div>
+                        ${plans.length > 1 ? `
+                          <button type="button" onclick="ROAD_APP.removeLessonPlan(${idx})" class="px-2 py-1 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-xs font-bold cursor-pointer transition flex items-center gap-1" title="ลบแผนการเรียนรู้นี้">
+                            🗑️ <span class="hidden sm:inline">ลบ</span>
+                          </button>
+                        ` : ''}
                       </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
@@ -8726,8 +8907,16 @@
                   </div>
                 `).join("")}
               </div>
+
+              <!-- Bottom Add Button -->
+              <div class="pt-2 flex justify-center">
+                <button type="button" onclick="ROAD_APP.addLessonPlan()" class="px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-300 dark:border-indigo-700 text-xs font-bold text-indigo-700 dark:text-indigo-300 cursor-pointer flex items-center gap-1.5 transition">
+                  <span>➕ เพิ่มแผนการจัดการเรียนรู้ต่อไป (แผนที่ ${plans.length + 1})</span>
+                </button>
+              </div>
             </div>
-          ` : ""}
+            `;
+          })() : ""}
 
           <!-- Tab 3: Expert Roster Form (5 experts) -->
           ${tab === "experts" ? `

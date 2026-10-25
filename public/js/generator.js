@@ -46,6 +46,42 @@ window.ROAD_GENERATOR = {
     return `${a}${b ? ' ' + b : ''} ${conn}${cText ? ' ' + cText : ''} ${d}`.replace(/\s+/g, " ").trim();
   },
 
+  // คำนวณและดึงข้อมูลโครงสร้างเวลาเรียนและจำนวนแผนการจัดการเรียนรู้แบบยืดหยุ่น ตามหลักสูตรไทยและเกณฑ์ R&D
+  getProjectDurationInfo(p) {
+    p = p || {};
+    const meta = p.contextMeta || {};
+    const plans = (Array.isArray(p.lessonPlans) && p.lessonPlans.length > 0)
+      ? p.lessonPlans
+      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_LESSON_PLANS) || [];
+    const plansCount = plans.length;
+    
+    // คำนวณเวลารวมจากรายการแผนจริง
+    const computedHours = plans.reduce((acc, lp) => acc + (Number(lp.hours) || 0), 0);
+    const parsedMetaHours = meta.totalHours ? parseInt(String(meta.totalHours).replace(/[^0-9]/g, ""), 10) : 0;
+    const totalHours = computedHours > 0 ? computedHours : (parsedMetaHours > 0 ? parsedMetaHours : 18);
+    const totalHoursText = `${totalHours} ชั่วโมง`;
+    
+    // คำนวณชั่วโมงต่อสัปดาห์และจำนวนสัปดาห์โดยประมาณ
+    const hoursPerWeek = Math.max(1, Math.round(totalHours / plansCount) || 3);
+    const weeks = Math.max(1, Math.round(totalHours / hoursPerWeek));
+    
+    // ข้อความระยะเวลาที่ยืดหยุ่น
+    let durationText = p.duration || "";
+    if (!durationText || durationText.includes("6 แผนการจัดการเรียนรู้ เวลา 18 ชั่วโมง")) {
+      durationText = `จำนวน ${plansCount} แผนการจัดการเรียนรู้ เวลา ${totalHours} ชั่วโมง`;
+    }
+
+    return {
+      plans,
+      plansCount,
+      totalHours,
+      totalHoursText,
+      hoursPerWeek,
+      weeks,
+      durationText
+    };
+  },
+
   // ประกอบชื่อเรื่องวิจัยแบบแยกสีและองค์ประกอบ A B C D สำหรับแสดงผลใน UI
   composeColorCodedTitle(p) {
     const esc = str => String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -557,6 +593,8 @@ window.ROAD_GENERATOR = {
     const d = p.D || "สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3";
     const crit = p.efficiencyCriterion || "80/80";
 
+    const durInfo = this.getProjectDurationInfo(p);
+
     const meta = p.contextMeta || (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_CONTEXT_META) || {
       researcherName: p.researcher || "ผู้วิจัย",
       academicRank: p.position || "ครู วิทยฐานะครูชำนาญการพิเศษ",
@@ -569,7 +607,7 @@ window.ROAD_GENERATOR = {
       semester: "1",
       courseCode: "ว23101",
       courseName: "วิทยาศาสตร์พื้นฐาน",
-      totalHours: "18 ชั่วโมง",
+      totalHours: durInfo.totalHoursText,
       pastScoreAvg: "56.80%"
     };
 
@@ -643,7 +681,7 @@ window.ROAD_GENERATOR = {
                   การวิจัยและพัฒนา (Research and Development: R&D) ครั้งนี้มีวัตถุประสงค์เพื่อ 1) ศึกษาสภาพปัญหาและความต้องการจำเป็นในการพัฒนา${escapeHtml(bShort)} ${escapeHtml(d)} 2) สร้างและหาประสิทธิภาพของ${escapeHtml(bShort)} ตามเกณฑ์มาตรฐาน ${escapeHtml(crit)} 3) เปรียบเทียบ${escapeHtml(cJoined)} ของผู้เรียนก่อนและหลังการจัดการเรียนรู้ และหาค่าดัชนีประสิทธิผล (E.I.) และ 4) ประเมินความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้ด้วย${escapeHtml(bShort)}
                 </p>
                 <p class="indent-8">
-                  กลุ่มตัวอย่างที่ใช้ในการวิจัย ได้แก่ ${escapeHtml(p.sample || d)} ได้มาโดยวิธีการสุ่มแบบกลุ่ม (Cluster Random Sampling) เครื่องมือที่ใช้ในการทดลอง ได้แก่ แผนการจัดการเรียนรู้ด้วย${escapeHtml(bShort)} จำนวน 6 แผนการจัดการเรียนรู้ เครื่องมือที่ใช้ในการเก็บรวบรวมข้อมูล ได้แก่ แบบทดสอบวัด${escapeHtml(c1)} (ค่าความยากง่าย p อยู่ระหว่าง 0.38–0.72 ค่าอำนาจจำแนก r อยู่ระหว่าง 0.26–0.68 และค่าความเชื่อมั่น KR-20 เท่ากับ 0.864) แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ และแบบสอบถามความพึงพอใจของผู้เรียนแบบมาตราส่วนประมาณค่า 5 ระดับ ซึ่งผ่านการตรวจสอบความตรงเชิงเนื้อหาจากผู้เชี่ยวชาญ 5 ท่าน มีค่าเฉลี่ย IOC เท่ากับ 0.92
+                  กลุ่มตัวอย่างที่ใช้ในการวิจัย ได้แก่ ${escapeHtml(p.sample || d)} ได้มาโดยวิธีการสุ่มแบบกลุ่ม (Cluster Random Sampling) เครื่องมือที่ใช้ในการทดลอง ได้แก่ แผนการจัดการเรียนรู้ด้วย${escapeHtml(bShort)} จำนวน ${durInfo.plansCount} แผนการจัดการเรียนรู้ (รวม ${durInfo.totalHours} ชั่วโมง) เครื่องมือที่ใช้ในการเก็บรวบรวมข้อมูล ได้แก่ แบบทดสอบวัด${escapeHtml(c1)} (ค่าความยากง่าย p อยู่ระหว่าง 0.38–0.72 ค่าอำนาจจำแนก r อยู่ระหว่าง 0.26–0.68 และค่าความเชื่อมั่น KR-20 เท่ากับ 0.864) แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ และแบบสอบถามความพึงพอใจของผู้เรียนแบบมาตราส่วนประมาณค่า 5 ระดับ ซึ่งผ่านการตรวจสอบความตรงเชิงเนื้อหาจากผู้เชี่ยวชาญ 5 ท่าน มีค่าเฉลี่ย IOC เท่ากับ 0.92
                 </p>
                 <p class="indent-8">
                   แบบแผนการวิจัยใช้การวิจัยเชิงทดลองแบบกลุ่มเดียววัดก่อนและหลังการทดลอง (One-Group Pretest-Posttest Design) สถิติที่ใช้ในการวิเคราะห์ข้อมูล ได้แก่ ร้อยละ ค่าเฉลี่ย (x̄) ส่วนเบี่ยงเบนมาตรฐาน (S.D.) การทดสอบประสิทธิภาพ (E1/E2) ดัชนีประสิทธิผล (E.I.) สถิติทดสอบที (t-test for Dependent Samples) และขนาดอิทธิพล (Cohen's d)
@@ -677,7 +715,7 @@ window.ROAD_GENERATOR = {
                   The primary objectives of this educational Research and Development (R&D) study were: 1) to investigate baseline conditions and essential learning needs for developing ${escapeHtml(bShort)}; 2) to design, develop, and examine the efficiency of ${escapeHtml(bShort)} based on the ${escapeHtml(crit)} standard criterion; 3) to compare students' ${escapeHtml(cJoined)} before and after participating in the intervention and evaluate the Effectiveness Index (E.I.); and 4) to investigate student satisfaction toward the learning experience.
                 </p>
                 <p class="indent-8">
-                  The research sample consisted of ${escapeHtml(st.n)} students selected through cluster random sampling. The experimental treatment comprised 6 instructional lesson plans implementing ${escapeHtml(bShort)}. The data collection instruments included an achievement test (difficulty index p = 0.38–0.72, discrimination index r = 0.26–0.68, and KR-20 reliability = 0.864), an analytic scoring rubric sheet, and a 5-point Likert scale satisfaction questionnaire, all verified with an average IOC of 0.92 by a panel of 5 external experts.
+                  The research sample consisted of ${escapeHtml(st.n)} students selected through cluster random sampling. The experimental treatment comprised ${escapeHtml(durInfo.plansCount)} instructional lesson plans (${escapeHtml(durInfo.totalHours)} hours) implementing ${escapeHtml(bShort)}. The data collection instruments included an achievement test (difficulty index p = 0.38–0.72, discrimination index r = 0.26–0.68, and KR-20 reliability = 0.864), an analytic scoring rubric sheet, and a 5-point Likert scale satisfaction questionnaire, all verified with an average IOC of 0.92 by a panel of 5 external experts.
                 </p>
                 <p class="indent-8">
                   The research design employed a one-group pretest-posttest design. Quantitative data were analyzed using percentage, mean, standard deviation, developmental efficiency ratio (E1/E2), effectiveness index (E.I.), dependent samples t-test, and Cohen's d effect size.
@@ -859,6 +897,7 @@ window.ROAD_GENERATOR = {
   // บรรณานุกรมมาตรฐาน APA 7th Edition (ก-ฮ และ A-Z) พร้อมประวัติผู้วิจัย
   // ==========================================================================
   generateBibliography(p) {
+    const durInfo = this.getProjectDurationInfo(p);
     const meta = p.contextMeta || (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_CONTEXT_META) || {
       researcherName: p.researcher || "ผู้วิจัย",
       academicRank: p.position || "ครู วิทยฐานะครูชำนาญการพิเศษ",
@@ -871,7 +910,7 @@ window.ROAD_GENERATOR = {
       semester: "1",
       courseCode: "ว23101",
       courseName: "วิทยาศาสตร์พื้นฐาน",
-      totalHours: "18 ชั่วโมง",
+      totalHours: durInfo.totalHoursText,
       pastScoreAvg: "56.80%"
     };
 
@@ -1012,7 +1051,10 @@ window.ROAD_GENERATOR = {
     const sample = p.sample || d;
     const population = p.population || `ผู้เรียน ${d}`;
     const subject = p.subject || "กลุ่มสาระการเรียนรู้";
-    const duration = p.duration || "จำนวน 5 แผนการจัดการเรียนรู้ เวลา 15 ชั่วโมง";
+    const durInfo = this.getProjectDurationInfo(p);
+    const duration = p.duration && !p.duration.includes("6 แผนการจัดการเรียนรู้ เวลา 18 ชั่วโมง")
+      ? p.duration
+      : durInfo.durationText;
     const crit = p.efficiencyCriterion || "80/80";
     const critParts = String(crit).split("/").map(Number);
     const critE1 = critParts[0] || 80;
@@ -1094,15 +1136,11 @@ window.ROAD_GENERATOR = {
       semester: "1",
       courseCode: "ว23101",
       courseName: p.subject || "วิทยาศาสตร์และเทคโนโลยี",
-      totalHours: "18",
+      totalHours: String(durInfo.totalHours),
       pastScoreAvg: "56.80"
     };
 
-    const lessonPlans = (p.lessonPlans && p.lessonPlans.length > 0)
-      ? p.lessonPlans
-      : (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_LESSON_PLANS)
-      ? window.ROAD_DATA.DEFAULT_LESSON_PLANS
-      : [];
+    const lessonPlans = durInfo.plans;
 
     const expertRoster = (p.expertRoster && p.expertRoster.length > 0)
       ? p.expertRoster
@@ -1406,7 +1444,7 @@ window.ROAD_GENERATOR = {
                 <div>
                   <p class="font-bold text-slate-900 dark:text-white">1.5.4 ขอบเขตด้านระยะเวลา</p>
                   <p class="mt-1 pl-4 text-slate-700 dark:text-slate-300">
-                    ดำเนินการทดลองใน<b>ภาคเรียนที่ ${ctx.semester} ปีการศึกษา ${ctx.academicYear}</b> รวมระยะเวลาการจัดกิจกรรมการเรียนรู้ทั้งสิ้น ${ctx.totalHours} ชั่วโมง (สัปดาห์ละ 3 ชั่วโมง รวม 6 สัปดาห์)
+                    ดำเนินการทดลองใน<b>ภาคเรียนที่ ${ctx.semester} ปีการศึกษา ${ctx.academicYear}</b> รวมระยะเวลาการจัดกิจกรรมการเรียนรู้ทั้งสิ้น ${durInfo.totalHours} ชั่วโมง (สัปดาห์ละ ${durInfo.hoursPerWeek} ชั่วโมง รวม ${durInfo.weeks} สัปดาห์)
                   </p>
                 </div>
               </div>
@@ -2221,6 +2259,7 @@ window.ROAD_GENERATOR = {
   // ==========================================================================
   generateAppendix(p) {
     const fullTitle = this.composeFullTitle(p);
+    const durInfo = this.getProjectDurationInfo(p);
     const bShort = p.B_short || p.B || "นวัตกรรมการจัดการเรียนรู้";
     const c1 = (p.C_list || [])[0] || "ผลสัมฤทธิ์ทางการเรียน";
     const d = p.D || "นักเรียนชั้นมัธยมศึกษา";
@@ -2262,7 +2301,7 @@ window.ROAD_GENERATOR = {
                     ในการนี้ ผู้วิจัยได้สร้างและพัฒนานวัตกรรมพร้อมเครื่องมือการวิจัยเสร็จเรียบร้อยแล้ว และมีความประสงค์จะตรวจสอบคุณภาพความเที่ยงตรงเชิงเนื้อหา (Content Validity) ความถูกต้องเหมาะสมของภาษา และความเป็นไปได้ในการนำไปปฏิบัติจริง ผู้วิจัยได้พิจารณาเห็นว่าท่านเป็นผู้ทรงคุณวุฒิ มีความรู้ ความสามารถ และประสบการณ์เชี่ยวชาญสูงยิ่ง จึงใคร่ขอความอนุเคราะห์จากท่านเป็นผู้เชี่ยวชาญตรวจพิจารณาเครื่องมือวิจัย ดังรายการต่อไปนี้:
                   </p>
                   <div class="pl-10 space-y-1">
-                    <div>1. แผนการจัดการเรียนรู้และนวัตกรรม <b>${bShort}</b> จำนวน 6 แผนการจัดการเรียนรู้</div>
+                    <div>1. แผนการจัดการเรียนรู้และนวัตกรรม <b>${bShort}</b> จำนวน ${durInfo.plansCount} แผนการจัดการเรียนรู้ (รวม ${durInfo.totalHours} ชั่วโมง)</div>
                     <div>2. แบบทดสอบวัด${c1} (ฉบับทดลองใช้ Try-out) จำนวน 40 ข้อ</div>
                     <div>3. แบบประเมินทักษะปฏิบัติตามเกณฑ์รูบริกแบบวิเคราะห์ (Analytic Rubrics)</div>
                     <div>4. แบบสอบถามความพึงพอใจของผู้เรียนที่มีต่อการจัดการเรียนรู้</div>
@@ -2347,7 +2386,7 @@ window.ROAD_GENERATOR = {
                 caption: `แบบประเมินความสอดคล้องระหว่างวัตถุประสงค์การวิจัยกับเครื่องมือนวัตกรรมและแบบวัดผล`,
                 headers: ["ข้อที่", "รายการประเมินเครื่องมือและข้อคำถาม", "+1", "0", "-1", "ข้อเสนอแนะในการปรับปรุง"],
                 rows: [
-                  ["1", `แผนการจัดการเรียนรู้ที่ 1-6 มีขั้นตอนกิจกรรมสอดคล้องกับ ${bShort}`, "[  ]", "[  ]", "[  ]", "ระบุเวลาและสื่อให้กระชับ"],
+                  ["1", `แผนการจัดการเรียนรู้ที่ 1-${durInfo.plansCount} มีขั้นตอนกิจกรรมสอดคล้องกับ ${bShort}`, "[  ]", "[  ]", "[  ]", "ระบุเวลาและสื่อให้กระชับ"],
                   ["2", `สื่อการเรียนรู้ ใบงาน และแบบฝึกปฏิบัติส่งเสริมทักษะ${c1}`, "[  ]", "[  ]", "[  ]", "เพิ่มภาพประกอบสถานการณ์ปัญหา"],
                   ["3", `ข้อสอบวัดพฤติกรรมด้านความจำ (Remembering) ตรงตามตัวชี้วัด`, "[  ]", "[  ]", "[  ]", "ข้อคำถามชัดเจนดีแล้ว"],
                   ["4", `ข้อสอบวัดพฤติกรรมด้านความเข้าใจ (Understanding) สอดคล้องกับบทเรียน`, "[  ]", "[  ]", "[  ]", "ปรับตัวเลือกไม่ให้กำกวม"],
@@ -2499,7 +2538,7 @@ window.ROAD_GENERATOR = {
                 caption: "สรุปผลการประเมินความสอดคล้องเชิงเนื้อหา (IOC) จากผู้เชี่ยวชาญ 5 ท่าน",
                 headers: ["ประเภทเครื่องมือวิจัย", "จำนวนข้อ/รายการ", "ช่วงค่า IOC รายข้อ", "ค่าเฉลี่ย IOC รวม", "ผลการพิจารณา"],
                 rows: [
-                  ["แผนการจัดการเรียนรู้และนวัตกรรม", "6 แผน", "0.80 – 1.00", "0.94", "ผ่านเกณฑ์คุณภาพสูงมาก"],
+                  ["แผนการจัดการเรียนรู้และนวัตกรรม", `${durInfo.plansCount} แผน`, "0.80 – 1.00", "0.94", "ผ่านเกณฑ์คุณภาพสูงมาก"],
                   [`แบบทดสอบวัด${c1}`, "40 ข้อ", "0.80 – 1.00", "0.90", "ผ่านเกณฑ์คุณภาพสูงมาก"],
                   ["แบบประเมินทักษะปฏิบัติตามรูบริก", "4 เกณฑ์", "0.80 – 1.00", "0.92", "ผ่านเกณฑ์คุณภาพสูงมาก"],
                   ["แบบสอบถามความพึงพอใจ", "16 ข้อ", "0.80 – 1.00", "0.96", "ผ่านเกณฑ์คุณภาพสูงมาก"],
@@ -2834,6 +2873,7 @@ window.ROAD_GENERATOR = {
 
   // 2. ส่งออกชุดส่งผู้เชี่ยวชาญ 5 ท่าน + แบบประเมิน IOC (.doc)
   exportExpertKitToWordDoc(p) {
+    const durInfo = this.getProjectDurationInfo(p);
     const gen = this.generateChapters(p);
     const bShort = p.B_short || p.B || "นวัตกรรม R&D";
     const ctx = p.contextMeta || (window.ROAD_DATA && window.ROAD_DATA.DEFAULT_CONTEXT_META) || {
@@ -2903,7 +2943,7 @@ window.ROAD_GENERATOR = {
         <b>1. ความเป็นมาและวัตถุประสงค์:</b> การวิจัยครั้งนี้มุ่งพัฒนานวัตกรรม ${bShort} เพื่อแก้ปัญหาผลสัมฤทธิ์ทางการเรียนและพัฒนาทักษะการคิดของนักเรียนตามกระบวนการวิจัยและพัฒนา (R&D) 4 ระยะ ได้แก่ ระยะ R1 (ศึกษาข้อมูลพื้นฐานและความต้องการจำเป็น PNI_modified), ระยะ D1 (สร้างและพัฒนานวัตกรรมตามเกณฑ์ 80/80), ระยะ R2 (ทดลองใช้จริงกับกลุ่มตัวอย่าง One-Group Pretest-Posttest Design), และระยะ D2 (ประเมินความพึงพอใจและปรับปรุงฉบับสมบูรณ์)
       </p>
       <p style="text-indent: 1.27cm; text-align: justify;">
-        <b>2. โครงสร้างนวัตกรรมที่เสนอประเมิน:</b> ประกอบด้วยขั้นตอนการจัดกิจกรรมการเรียนรู้เชิงรุกที่สังเคราะห์ขึ้นอย่างเป็นระบบ และแผนการจัดการเรียนรู้จำนวน ${p.lessonPlans ? p.lessonPlans.length : 6} แผน
+        <b>2. โครงสร้างนวัตกรรมที่เสนอประเมิน:</b> ประกอบด้วยขั้นตอนการจัดกิจกรรมการเรียนรู้เชิงรุกที่สังเคราะห์ขึ้นอย่างเป็นระบบ และแผนการจัดการเรียนรู้จำนวน ${durInfo.plansCount} แผน (รวม ${durInfo.totalHours} ชั่วโมง)
       </p>
       <p style="text-indent: 1.27cm; text-align: justify;">
         <b>3. เครื่องมือที่ขอความอนุเคราะห์ให้ท่านผู้เชี่ยวชาญตรวจสอบ:</b>
