@@ -1826,6 +1826,18 @@
       }
     },
 
+    copyThesisCitation(thesisId) {
+      const proj = getActiveProject();
+      const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
+      const th = list.find(t => t.id === thesisId) || list[0];
+      if (th && th.citationInChapter) {
+        if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(th.citationInChapter);
+        }
+        showToast(`คัดลอกข้อความพร้อมอ้างอิงในเล่ม 5 บท เรียบร้อยแล้ว!`);
+      }
+    },
+
     copyAllThesesApa() {
       const proj = getActiveProject();
       const list = window.ROAD_GENERATOR.generateRelatedTheses(proj);
@@ -4821,14 +4833,29 @@
     const filter = state.thesesFilter || "all";
     const filteredTheses = theses.filter(th => {
       if (filter === "all") return true;
+      if (filter === "b_focus") return th.dimension === "b_focus";
+      if (filter === "c_focus") return th.dimension === "c_focus";
+      if (filter === "bc_empirical") return th.dimension === "bc_empirical";
+      if (filter === "domestic") return th.category !== "international";
+      if (filter === "international") return th.category === "international";
       if (filter === "thesis") return th.category === "thesis" || th.category === "dissertation";
       if (filter === "journal") return th.category === "journal" || th.category === "report";
-      if (filter === "international") return th.category === "international";
       return true;
     });
 
     const bShort = proj.B_short || proj.B || "นวัตกรรมการเรียนรู้";
-    const c1 = (proj.C_list && proj.C_list[0]) || "ตัวแปรตาม";
+    const cList = (proj.C_list && proj.C_list.filter(Boolean).length > 0)
+      ? proj.C_list.filter(Boolean)
+      : [(proj.C || "ความสามารถในการคิดวิเคราะห์"), "ผลสัมฤทธิ์ทางการเรียน"];
+    const c1 = cList[0] || "ตัวแปรตาม C1";
+    const c2 = cList[1] || "ตัวแปรตาม C2";
+    const cJoined = cList.slice(0, 2).join(" และ ");
+
+    const bCount = theses.filter(t => t.dimension === "b_focus").length;
+    const cCount = theses.filter(t => t.dimension === "c_focus").length;
+    const bcCount = theses.filter(t => t.dimension === "bc_empirical").length;
+    const domesticCount = theses.filter(t => t.category !== "international").length;
+    const intlCount = theses.filter(t => t.category === "international").length;
 
     return `
       <div id="theses-discovery-hub" class="mt-6 neu-card p-5 sm:p-6 flex flex-col gap-5">
@@ -4844,7 +4871,7 @@
               </h3>
             </div>
             <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              เมื่อตั้งค่า A-B-C-D ระบบ AI จะสืบค้น วิเคราะห์ และสังเคราะห์วิทยานิพนธ์และงานวิจัยที่ตรงกับหัวข้อของคุณไว้รอทันที เพื่อให้คุณดาวน์โหลดเป็นไฟล์ Word (.doc) ไปศึกษาวิเคราะห์และนำไปใช้อ้างอิงในบทที่ 1, 2 และบทที่ 5 ได้อย่างสะดวก
+              สืบค้นและสังเคราะห์วิทยานิพนธ์บัณฑิตวิทยาลัย วารสารระดับชาติ TCI กลุ่ม 1 และงานวิจัยสากล ERIC/Scopus ครอบคลุมครบถ้วนทั้ง<b>ตัวแปรต้น B</b> (${escapeHtml(bShort)}), <b>ตัวแปรตาม C</b> (${escapeHtml(cJoined)}) และการทดลองเชิงประจักษ์ (B ➔ C) ตามหลักการเขียนงานวิจัย 5 บท
             </p>
           </div>
 
@@ -4854,7 +4881,7 @@
               <span>📥 ดาวน์โหลดเอกสารรวมวิทยานิพนธ์ (.doc)</span>
             </button>
             <button type="button" onclick="ROAD_APP.copyAllThesesApa()" class="px-3.5 py-2 neu-squircle text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-              <span>📋 คัดลอก APA 7th ทั้งหมด</span>
+              <span>📋 คัดลอก APA 7th ทั้งหมด (${theses.length})</span>
             </button>
             <button type="button" 
               onclick="${state.thesesSearching ? '' : 'ROAD_APP.runGeminiThesisResearch()'}" 
@@ -4924,24 +4951,26 @@
           </div>
         ` : ''}
 
-        <!-- Filter Pills Bar -->
+        <!-- Filter Pills Bar (ครอบคลุมทั้งตัวแปรต้น B และตัวแปรตาม C) -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
           <div class="flex flex-wrap items-center gap-1.5 text-xs">
-            <span class="text-slate-500 dark:text-slate-400 font-semibold mr-1">กรองประเภท:</span>
+            <span class="text-slate-500 dark:text-slate-400 font-semibold mr-1">กรองมิติวิจัย:</span>
             ${[
               ["all", `ทั้งหมด (${theses.length})`],
-              ["thesis", `วิทยานิพนธ์ ป.โท-เอก (${theses.filter(t => t.category === "thesis" || t.category === "dissertation").length})`],
-              ["journal", `วารสาร TCI / สพฐ. (${theses.filter(t => t.category === "journal" || t.category === "report").length})`],
-              ["international", `งานวิจัยสากล ERIC (${theses.filter(t => t.category === "international").length})`]
+              ["b_focus", `🟢 นวัตกรรม B (${bCount})`],
+              ["c_focus", `🔵 ตัวแปรตาม C (${cCount})`],
+              ["bc_empirical", `🟠 ทดลอง B➔C (${bcCount})`],
+              ["domestic", `🏛️ ในประเทศ (${domesticCount})`],
+              ["international", `🌐 สากล ERIC (${intlCount})`]
             ].map(([fKey, fLabel]) => `
               <button type="button" onclick="ROAD_APP.setThesesFilter('${fKey}')" class="px-3 py-1 rounded-lg font-bold transition cursor-pointer ${filter === fKey ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}">
                 ${fLabel}
               </button>
             `).join("")}
           </div>
-          <div class="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+          <div class="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>จับคู่ตรงกับตัวแปร "${escapeHtml(bShort)}" และ "${escapeHtml(c1)}"</span>
+            <span>ครอบคลุม B: <b>${escapeHtml(bShort)}</b> · C: <b>${escapeHtml(c1)}</b></span>
           </div>
         </div>
 
@@ -4952,11 +4981,16 @@
               <div class="space-y-2.5">
                 <!-- Top Badges -->
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5">
-                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${th.badgeColor === 'purple' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200' : th.badgeColor === 'emerald' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200' : th.badgeColor === 'amber' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200' : th.badgeColor === 'sky' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200'}">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${th.badgeColor === 'purple' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200' : th.badgeColor === 'emerald' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200' : th.badgeColor === 'amber' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200' : th.badgeColor === 'sky' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200' : th.badgeColor === 'teal' ? 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200' : th.badgeColor === 'rose' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200'}">
                       ${escapeHtml(th.type)}
                     </span>
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400">ปี พ.ศ. ${escapeHtml(th.year)}</span>
+                    ${th.variableBadge ? `
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        ${escapeHtml(th.variableBadge)}
+                      </span>
+                    ` : ''}
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">ปี ${escapeHtml(th.year)}</span>
                   </div>
                   <div class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -5013,11 +5047,14 @@
               <!-- Card Action Footer -->
               <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 mt-2">
                 <button type="button" onclick="ROAD_APP.exportSingleThesis('${th.id}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
-                  <span>📥 ดาวน์โหลดสรุป (.doc)</span>
+                  <span>📥 สรุป (.doc)</span>
                 </button>
-                <div class="flex items-center gap-1.5">
+                <div class="flex flex-wrap items-center gap-1.5">
                   <button type="button" onclick="ROAD_APP.copyThesisApa('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer" title="คัดลอกรูปแบบอ้างอิง APA 7th">
                     <span>📋 APA</span>
+                  </button>
+                  <button type="button" onclick="ROAD_APP.copyThesisCitation('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-xs font-semibold cursor-pointer" title="คัดลอกข้อความพร้อมอ้างอิงในเล่ม (Citation Snippet)">
+                    <span>💬 ข้อความอ้างอิง</span>
                   </button>
                   <button type="button" onclick="ROAD_APP.searchThesisOnline('${th.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 text-xs font-semibold cursor-pointer" title="ค้นหาฉบับเต็มใน Google Scholar / ThaiLIS">
                     <span>🔎 สืบค้นเต็ม</span>
