@@ -2645,15 +2645,34 @@ window.ROAD_GENERATOR = {
     return prompts[taskType] || prompts.ch1_background;
   },
 
-  // เรียกใช้งาน Gemini API สดจากเบราว์เซอร์ (ใช้โมเดลรุ่นปัจจุบัน)
-  async callGeminiAPI(apiKey, promptText, modelName = "gemini-2.5-flash") {
+  // เรียกใช้งาน Gemini API สดจากเบราว์เซอร์ โดยจัดลำดับโมเดลที่เหมาะสมกับงานวิจัยที่สุด (3.8 -> 3.5 -> 3.1 -> 2.5)
+  async callGeminiAPI(apiKey, promptText, modelName = "auto_research") {
     const cleanKey = String(apiKey || "").trim();
     if (!cleanKey) {
       throw new Error("กรุณากรอก Gemini API Key ก่อนสั่งเขียนด้วย AI หรือใช้ปุ่ม 'คัดลอก Smart Prompt' เพื่อนำไปวางใน ChatGPT/Gemini ฟรี");
     }
 
-    // รายชื่อโมเดลรุ่นปัจจุบันที่ให้บริการสำหรับ generateContent (ตัด gemini-1.5-flash ที่เลิกให้บริการแล้วออก)
-    const modelsToTry = Array.from(new Set([modelName, "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"].filter(Boolean)));
+    // ลำดับโมเดลที่เหมาะสมกับงานวิจัยที่สุดตามลำดับความฉลาด ความเร็ว และความลึกของเหตุผล:
+    // 1. Gemini 3.8 (ฉลาดสูงสุดสำหรับงานวิจัยระดับสูง Long-horizon Research)
+    // 2. Gemini 3.5 (สปีดสูง สมดุล และล้ำหน้า)
+    // 3. Gemini 3.1 Pro (วิเคราะห์วรรณกรรมและเหตุผลเชิงลึก)
+    // 4. Gemini 2.5 Pro & Flash (เสถียรภาพสูง รองรับทุกคีย์สำรอง)
+    const researchModelHierarchy = [
+      "gemini-3.8-flash",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-pro-preview",
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-2.0-flash"
+    ];
+
+    let modelsToTry = [];
+    if (modelName && modelName !== "auto_research") {
+      modelsToTry = Array.from(new Set([modelName, ...researchModelHierarchy]));
+    } else {
+      modelsToTry = [...researchModelHierarchy];
+    }
     let lastError = null;
 
     for (const m of modelsToTry) {
@@ -2666,7 +2685,7 @@ window.ROAD_GENERATOR = {
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
               temperature: 0.65,
-              maxOutputTokens: 4096
+              maxOutputTokens: 8192
             }
           })
         });
@@ -2683,6 +2702,7 @@ window.ROAD_GENERATOR = {
           if (res.status === 429) {
             throw new Error("โควตาการเรียกใช้งาน Gemini API เต็มชั่วคราว (Rate Limit / Quota Exceeded) กรุณารอสักครู่แล้วลองใหม่อีกครั้ง หรือใช้ปุ่มคัดลอก Smart Prompt");
           }
+          // ถ้าเป็น 404 (โมเดลยังไม่เปิดในคีย์นี้) ให้บันทึกและลองลำดับถัดไป (เช่น 3.8 -> 3.5 -> 3.1 -> 2.5)
           lastError = new Error(`โมเดล ${m}: ${errMsg}`);
           continue;
         }

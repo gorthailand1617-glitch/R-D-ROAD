@@ -10,6 +10,7 @@
     PROJECTS: "road_nextgen_projects_v1",
     ACTIVE_PROJECT_ID: "road_nextgen_active_proj_v1",
     GEMINI_KEY: "road_nextgen_gemini_key_v1",
+    GEMINI_MODEL: "road_nextgen_gemini_model_v1",
     THEME: "road_nextgen_theme_v1",
     AUDIT_LOGS: "road_nextgen_audit_logs_v1"
   };
@@ -195,6 +196,8 @@
       { id: 30, pre: 19, post: 35 }
     ],
     geminiKey: "",
+    geminiModel: "auto_research",
+    aiModelUsed: "",
     aiTask: "ch1_background",
     aiOutput: "",
     aiLoading: false,
@@ -413,6 +416,7 @@
 
     state.activeProjectId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT_ID) || state.projects[0]?.id;
     state.geminiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || "";
+    state.geminiModel = localStorage.getItem(STORAGE_KEYS.GEMINI_MODEL) || "auto_research";
     state.theme = localStorage.getItem(STORAGE_KEYS.THEME) || "light";
     applyThemeClass();
 
@@ -1235,7 +1239,7 @@
       renderApp();
       try {
         const prompt = window.ROAD_ADVISOR.buildAdvisorGeminiPrompt(state.advisorCriteria);
-        const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt);
+        const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt, state.geminiModel);
         const jsonMatch = res.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
@@ -1661,6 +1665,13 @@
       showToast(state.geminiKey ? "บันทึก Gemini API Key เรียบร้อยแล้ว" : "ล้าง Gemini API Key แล้ว");
     },
 
+    saveGeminiModel(model) {
+      state.geminiModel = model || "auto_research";
+      localStorage.setItem(STORAGE_KEYS.GEMINI_MODEL, state.geminiModel);
+      renderApp();
+      showToast(`ตั้งค่าโมเดลวิจัยเป็น: ${state.geminiModel === "auto_research" ? "Auto Research (3.8 ➔ 3.5 ➔ 3.1 ➔ 2.5)" : state.geminiModel}`, "ok");
+    },
+
     setAiTask(task) {
       state.aiTask = task;
       renderApp();
@@ -1690,9 +1701,10 @@
 
       try {
         const prompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, task);
-        const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt);
+        const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt, state.geminiModel);
         state.aiOutput = res.text;
-        showToast(`สร้างเนื้อหาด้วย ${res.model} สำเร็จแล้ว!`);
+        state.aiModelUsed = res.model;
+        showToast(`สร้างเนื้อหาสำเร็จด้วยโมเดลวิจัย ${res.model}!`, "ok");
       } catch (err) {
         showToast(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ Gemini API", "bad");
       } finally {
@@ -1908,7 +1920,7 @@
           renderApp();
           try {
             const prompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, "theses_discovery");
-            await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt);
+            await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt, state.geminiModel);
           } catch (e) {
             console.warn("Gemini call skipped/fallback:", e.message);
           }
@@ -7615,15 +7627,39 @@
               <p class="text-xs text-slate-500 mt-0.5">รองรับทั้งการสั่ง AI เขียนสดในเว็บด้วย Gemini API และการคัดลอก Smart Prompt ไปวางใน ChatGPT/Gemini ฟรี</p>
             </div>
 
-            <!-- Gemini Key Input -->
-            <div class="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800 flex flex-col gap-2.5">
-              <label class="text-xs font-bold text-sky-900 dark:text-sky-300">🔑 ตั้งค่า Gemini API Key (สำหรับสั่งเขียนสดในเว็บ)</label>
-              <div class="flex gap-2">
-                <input id="gemini-key-input" type="password" value="${escapeHtml(state.geminiKey)}" placeholder="AIzaSy..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono" />
-                <button onclick="ROAD_APP.saveGeminiKey(document.getElementById('gemini-key-input').value)" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer">บันทึก</button>
+            <!-- Gemini Key & Model Selector -->
+            <div class="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800 flex flex-col gap-3">
+              <div>
+                <label class="text-xs font-bold text-sky-900 dark:text-sky-300">🔑 Gemini API Key (สำหรับสั่งเขียนสดในเว็บ)</label>
+                <div class="flex gap-2 mt-1.5">
+                  <input id="gemini-key-input" type="password" value="${escapeHtml(state.geminiKey)}" placeholder="AIzaSy..." class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono" />
+                  <button onclick="ROAD_APP.saveGeminiKey(document.getElementById('gemini-key-input').value)" class="px-3.5 py-2 rounded-xl neu-btn-primary text-xs font-bold cursor-pointer">บันทึก</button>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">
+                  รับคีย์ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sky-700 dark:text-sky-400 font-bold underline">Google AI Studio</a>
+                </div>
               </div>
-              <div class="text-[11px] text-slate-500">
-                รับคีย์ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-sky-700 dark:text-sky-400 font-bold underline">Google AI Studio</a> (คีย์ถูกเก็บในเบราว์เซอร์ของคุณเท่านั้น)
+
+              <!-- Model Selector for R&D Research -->
+              <div class="pt-2 border-t border-sky-200/80 dark:border-sky-800/80 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-sky-950 dark:text-sky-200 flex items-center gap-1.5">
+                    <span>🧬 โมเดลวิจัย (R&D Hierarchy)</span>
+                  </label>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-200/80 dark:bg-sky-900 text-sky-800 dark:text-sky-300 font-semibold">Priority: 3.8 ➔ 3.5 ➔ 3.1</span>
+                </div>
+                <select id="gemini-model-select" onchange="ROAD_APP.saveGeminiModel(this.value)" class="w-full px-3 py-2 rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 font-medium cursor-pointer shadow-sm">
+                  <option value="auto_research" ${state.geminiModel === 'auto_research' ? 'selected' : ''}>⭐ อัตโนมัติ: ลำดับวิจัยขั้นสูง (3.8 ➔ 3.5 ➔ 3.1 ➔ 2.5)</option>
+                  <option value="gemini-3.8-flash" ${state.geminiModel === 'gemini-3.8-flash' ? 'selected' : ''}>🧠 Gemini 3.8 Flash (ฉลาดสูงสุดสำหรับงานวิจัย R&D)</option>
+                  <option value="gemini-3.5-flash" ${state.geminiModel === 'gemini-3.5-flash' ? 'selected' : ''}>⚡ Gemini 3.5 Flash (สปีดสูง สมดุลเหตุผลและภาษา)</option>
+                  <option value="gemini-3.5-flash-lite" ${state.geminiModel === 'gemini-3.5-flash-lite' ? 'selected' : ''}>⚡ Gemini 3.5 Flash-Lite (เร็วพิเศษ ประหยัดโควตา)</option>
+                  <option value="gemini-3.1-pro-preview" ${state.geminiModel === 'gemini-3.1-pro-preview' ? 'selected' : ''}>📚 Gemini 3.1 Pro (วิเคราะห์วรรณกรรมเชิงลึก)</option>
+                  <option value="gemini-2.5-pro" ${state.geminiModel === 'gemini-2.5-pro' ? 'selected' : ''}>🔬 Gemini 2.5 Pro (งานวิจัยและการสังเคราะห์ขั้นสูง เสถียร)</option>
+                  <option value="gemini-2.5-flash" ${state.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>⚡ Gemini 2.5 Flash (มาตรฐานความเร็วสูง เสถียร)</option>
+                </select>
+                <p class="text-[10px] text-slate-500 leading-normal">
+                  ระบบจะเรียกใช้โมเดลรุ่นใหม่ล่าสุด 3.8 และสลับลงมาเป็น 3.5 และ 3.1 ตามลำดับโดยอัตโนมัติหากโควตาหรือสิทธิ์บัญชีมีการเปลี่ยนแปลง
+                </p>
               </div>
             </div>
 
@@ -7659,7 +7695,15 @@
             <!-- AI Output Box -->
             <div class="neu-card p-5 sm:p-6 flex flex-col gap-3">
               <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 class="font-bold text-sm text-slate-900 dark:text-white">✨ ผลลัพธ์เนื้อหาวิชาการจาก AI (แก้ไขได้สด)</h3>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <h3 class="font-bold text-sm text-slate-900 dark:text-white">✨ ผลลัพธ์เนื้อหาวิชาการจาก AI (แก้ไขได้สด)</h3>
+                  ${state.aiModelUsed ? `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[11px] font-mono font-bold border border-emerald-300 dark:border-emerald-800">
+                      <span>✓ โมเดลที่ใช้:</span>
+                      <span>${escapeHtml(state.aiModelUsed)}</span>
+                    </span>
+                  ` : ''}
+                </div>
                 <button onclick="ROAD_APP.applyAiOutputToChapter()" class="px-4 py-2 rounded-xl neu-btn-emerald text-xs font-bold cursor-pointer">
                   ✔ นำเนื้อหานี้ไปใส่ในรายงานวิจัย 5 บท
                 </button>
