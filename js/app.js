@@ -2370,17 +2370,149 @@
       showToast("รีเซ็ตคณะผู้เชี่ยวชาญ 5 ท่านเป็นค่าเริ่มต้นเรียบร้อยแล้ว");
     },
 
-    exportJson() {
+    saveResearchFile() {
       const proj = getActiveProject();
-      const blob = new Blob([JSON.stringify(proj, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `road-project-${proj.id}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      recordAudit("EXPORT_DOC", `สำรองไฟล์โครงการ JSON: ${proj.label || proj.B_short}`);
-      showToast("ดาวน์โหลดไฟล์สำรองโปรเจกต์ (.json) เรียบร้อยแล้ว");
+      if (!proj) return;
+      startTaskProgress("บันทึกไฟล์เค้าโครงงานวิจัย", "กำลังสร้างไฟล์ข้อมูลเค้าโครงวิจัยสำหรับนำไปเปิดทำต่อที่เครื่องอื่น...", "รวบรวมตัวแปร ABCD เล่ม 5 บท และสถิติ...", "emerald");
+      updateTaskProgress(40, "จัดเก็บข้อมูลบริบทสถานศึกษาและเครื่องมือ...");
+      
+      setTimeout(() => {
+        updateTaskProgress(80, "แปลงข้อมูลเป็นไฟล์ .road.json...");
+        const payload = {
+          format: "ROAD_RESEARCH_OUTLINE_V2",
+          exportedAt: new Date().toISOString(),
+          version: "2.0.0",
+          sourceDevice: navigator.userAgent || "Desktop",
+          project: proj
+        };
+        const fileName = `ROAD-เค้าโครงวิจัย-${(proj.B_short || proj.B || proj.id || 'research').replace(/[/\\?%*:|"<>]/g, '_')}-${new Date().toISOString().slice(0, 10)}.road.json`;
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 1000);
+        recordAudit("EXPORT_DOC", `บันทึกไฟล์เค้าโครงงานวิจัยไปทำต่อที่อื่น: ${proj.label || proj.B_short}`);
+        setTimeout(async () => {
+          await finishTaskProgress("บันทึกไฟล์เค้าโครงงานวิจัยสำเร็จ 100%!", 500);
+          showToast(`💾 บันทึกไฟล์ "${fileName}" เรียบร้อย! นำไฟล์นี้ไปเปิดทำต่อที่เครื่องอื่นได้ทันที`, "ok");
+        }, 200);
+      }, 200);
+    },
+
+    triggerImportResearchFile() {
+      let input = document.getElementById("road-file-importer-input");
+      if (!input) {
+        input = document.createElement("input");
+        input.id = "road-file-importer-input";
+        input.type = "file";
+        input.accept = ".json,.road.json";
+        input.style.display = "none";
+        document.body.appendChild(input);
+      }
+      input.onchange = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          ROAD_APP.importResearchFromFile(file);
+        }
+        input.value = "";
+      };
+      input.click();
+    },
+
+    importResearchFromFile(file) {
+      if (!file) return;
+      startTaskProgress("เปิดไฟล์เค้าโครงงานวิจัย", `กำลังอ่านไฟล์: ${file.name}`, "ตรวจสอบความถูกต้องของโครงสร้างข้อมูลวิจัย...", "blue");
+      updateTaskProgress(30, "กำลังอ่านไฟล์ข้อมูล...");
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          updateTaskProgress(70, "นำเข้าโครงร่างวิจัยและซิงค์ข้อมูลระบบ...");
+          const raw = e.target.result;
+          const parsed = JSON.parse(raw);
+          let targetProj = null;
+
+          if (parsed && parsed.format === "ROAD_RESEARCH_OUTLINE_V2" && parsed.project) {
+            targetProj = parsed.project;
+          } else if (parsed && parsed.id && (parsed.B || parsed.title || parsed.A)) {
+            targetProj = parsed;
+          } else if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id) {
+            targetProj = parsed[0];
+          } else {
+            throw new Error("โครงสร้างไฟล์ไม่ถูกต้องหรือไม่ใช่ไฟล์เค้าโครงงานวิจัยของ ROAD");
+          }
+
+          // Ensure unique ID or match existing project
+          const existingIdx = state.projects.findIndex(p => p.id === targetProj.id);
+          if (existingIdx >= 0) {
+            targetProj.updatedAt = new Date().toISOString();
+            state.projects[existingIdx] = targetProj;
+          } else {
+            targetProj.updatedAt = new Date().toISOString();
+            state.projects.unshift(targetProj);
+          }
+
+          state.activeProjectId = targetProj.id;
+          saveProjects();
+          state.studioTab = "chapters";
+          renderApp();
+          if (typeof window.scrollTo === "function") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+          recordAudit("PROJECT_IMPORT", `นำเข้าไฟล์เค้าโครงงานวิจัยเพื่อทำต่อ: ${targetProj.label || targetProj.B_short}`);
+          await finishTaskProgress("เปิดไฟล์และโหลดโครงร่างสำเร็จ 100%!", 600);
+          showToast(`✨ เปิดเค้าโครงงานวิจัย "${targetProj.B_short || targetProj.B || 'งานวิจัย'}" สำเร็จ! พร้อมทำงานต่อได้ทันที`, "ok");
+        } catch (err) {
+          cancelTaskProgress();
+          showToast("ไม่สามารถเปิดไฟล์ได้: " + (err.message || "รูปแบบไฟล์ไม่ถูกต้อง"), "bad");
+        }
+      };
+      reader.onerror = () => {
+        cancelTaskProgress();
+        showToast("เกิดข้อผิดพลาดในการอ่านไฟล์", "bad");
+      };
+      reader.readAsText(file);
+    },
+
+    exportJson() {
+      this.saveResearchFile();
+    },
+
+    exportAllProjectsJson() {
+      startTaskProgress("สำรองคลังวิจัยทั้งหมด", "กำลังบีบอัดข้อมูลโครงการวิจัยทุกโครงการ...", "รวบรวมทุกโปรเจกต์ในระบบ...", "indigo");
+      updateTaskProgress(50, "สร้างไฟล์ Backup รวม...");
+      setTimeout(() => {
+        const payload = {
+          format: "ROAD_WORKSPACE_FULL_BACKUP_V2",
+          exportedAt: new Date().toISOString(),
+          version: "2.0.0",
+          projectsCount: state.projects.length,
+          projects: state.projects
+        };
+        const fileName = `ROAD-คลังวิจัยทั้งหมด-${new Date().toISOString().slice(0, 10)}.json`;
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 1000);
+        recordAudit("EXPORT_DOC", `สำรองคลังวิจัยทั้งหมด (${state.projects.length} โครงการ)`);
+        setTimeout(async () => {
+          await finishTaskProgress("สำรองคลังวิจัยสำเร็จ 100%!", 500);
+          showToast(`💾 สำรองคลังวิจัยครบทั้ง ${state.projects.length} โครงการเรียบร้อยแล้ว`, "ok");
+        }, 200);
+      }, 200);
     },
 
     // --- Auth & Member Actions ---
@@ -4152,6 +4284,18 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <!-- 💾 บันทึกเค้าโครงไปทำต่อที่อื่น -->
+            <button onclick="ROAD_APP.saveResearchFile()" data-tooltip="บันทึกไฟล์เค้าโครงงานวิจัย (.road.json) เพื่อนำไปเปิดทำต่อที่เครื่องอื่นได้ทันที" title="บันทึกไฟล์เค้าโครงงานวิจัยไปทำต่อที่เครื่องอื่น" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition transform hover:-translate-y-0.5 min-h-[40px]">
+              <span class="text-sm">💾</span>
+              <span>บันทึกเค้าโครง (ทำต่อที่อื่น)</span>
+            </button>
+
+            <!-- 📂 เปิดไฟล์เค้าโครงจากเครื่องอื่น -->
+            <button onclick="ROAD_APP.triggerImportResearchFile()" data-tooltip="เปิดไฟล์เค้าโครงงานวิจัย (.road.json หรือ .json) ที่บันทึกมาจากบ้านหรือเครื่องอื่น เพื่อทำงานต่อ" title="เปิดไฟล์เค้าโครงงานวิจัยจากเครื่องอื่น" class="px-3 py-2 neu-squircle text-blue-700 dark:text-blue-300 text-xs font-bold cursor-pointer flex items-center gap-1.5 min-h-[40px]">
+              <span class="text-sm">📂</span>
+              <span>เปิดไฟล์เค้าโครง</span>
+            </button>
+
             <!-- ✨ 1-Click Presets -->
             <div class="dropdown relative inline-block">
               <select onchange="if(this.value){ROAD_APP.loadPresetIntoActive(this.value); this.value='';}" data-tooltip="โหลดตัวอย่างงานวิจัยมาตรฐานครู/ผู้บริหารครบชุด" title="โหลดข้อมูลตัวอย่างงานวิจัยมาตรฐานครบทุกขั้นตอนทันที" class="px-3 py-2 neu-input-pill text-xs font-bold text-emerald-800 dark:text-emerald-300 cursor-pointer min-h-[40px] bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800">
@@ -4170,7 +4314,7 @@
                 <option value="back_matter" class="text-slate-900 bg-white">📚 บรรณานุกรม APA + ประวัติ (.doc)</option>
                 <option value="appendix" class="text-slate-900 bg-white">📎 ภาคผนวก ก–ง (.doc)</option>
                 <option value="print" class="text-slate-900 bg-white">🖨️ พิมพ์ A4 / บันทึก PDF</option>
-                <option value="json" class="text-slate-900 bg-white">💾 สำรองไฟล์ JSON</option>
+                <option value="json" class="text-slate-900 bg-white">💾 บันทึกเค้าโครง (.road.json)</option>
               </select>
             </div>
           </div>
@@ -4447,6 +4591,16 @@
               />
               ${state.projectSearch ? `<button onclick="ROAD_APP.setProjectSearch('')" class="text-slate-400 hover:text-slate-600">✕</button>` : ""}
             </div>
+
+            <button onclick="ROAD_APP.saveResearchFile()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold cursor-pointer flex items-center gap-1.5 shadow-sm transition" title="บันทึกเค้าโครงโครงการปัจจุบันไปเปิดทำต่อที่เครื่องอื่น">
+              <span>💾</span>
+              <span>บันทึกเค้าโครง (ทำต่อที่อื่น)</span>
+            </button>
+
+            <button onclick="ROAD_APP.triggerImportResearchFile()" class="px-3.5 py-2 neu-squircle text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer" title="เปิดไฟล์เค้าโครงงานวิจัยที่บันทึกมาจากเครื่องอื่น">
+              <span>📂</span>
+              <span>เปิดไฟล์เค้าโครง</span>
+            </button>
 
             <button onclick="ROAD_APP.openWizardModal(1)" class="px-3.5 py-2 neu-btn-emerald text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
               <span>🧭</span>
@@ -8085,25 +8239,35 @@
             </button>
           </div>
 
-          <!-- Card 3: Presentation Slides & Backup -->
+          <!-- Card 3: Presentation Slides & Portable Research Backup -->
           <div class="neu-card p-5 flex flex-col justify-between gap-4">
             <div class="space-y-2">
               <div class="flex items-center justify-between">
                 <span class="text-2xl">🖥️</span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">นำเสนอ / สำรอง</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">นำเสนอ / ย้ายเครื่อง</span>
               </div>
-              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">สไลด์นำเสนอ & สำรองข้อมูล</h3>
+              <h3 class="font-extrabold text-base text-slate-900 dark:text-white">บันทึกเค้าโครง & ย้ายเครื่องทำงานต่อ</h3>
               <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                เปิดโหมดฉายสไลด์นำเสนอ 7 สไลด์สรุปผลงานวิจัยสำหรับกรรมการ หรือส่งออกไฟล์ข้อมูลโครงการ (JSON) สำหรับสำรองหรือย้ายเครื่อง
+                บันทึกไฟล์เค้าโครงงานวิจัย (.road.json) เพื่อนำไปเปิดทำต่อที่เครื่องอื่น หรือเปิดไฟล์ที่ทำค้างไว้จากบ้าน/ที่ทำงานได้ทันที
               </p>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button onclick="ROAD_APP.setView('slides')" class="py-2.5 neu-squircle text-indigo-700 dark:text-indigo-300 text-xs font-bold cursor-pointer text-center">
-                🖥️ เปิดสไลด์ 7 แผ่น
-              </button>
-              <button onclick="ROAD_APP.exportJson()" class="py-2.5 neu-squircle text-slate-700 dark:text-slate-300 text-xs font-bold cursor-pointer text-center">
-                💾 สำรอง JSON
-              </button>
+            <div class="flex flex-col gap-2">
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="ROAD_APP.saveResearchFile()" class="py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white text-xs font-extrabold cursor-pointer text-center shadow-sm flex items-center justify-center gap-1">
+                  <span>💾 บันทึกเค้าโครง</span>
+                </button>
+                <button onclick="ROAD_APP.triggerImportResearchFile()" class="py-2.5 neu-squircle text-blue-700 dark:text-blue-300 text-xs font-bold cursor-pointer text-center flex items-center justify-center gap-1">
+                  <span>📂 เปิดไฟล์ทำต่อ</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                <button onclick="ROAD_APP.setView('slides')" class="py-2 neu-squircle text-indigo-700 dark:text-indigo-300 text-xs font-semibold cursor-pointer text-center">
+                  🖥️ สไลด์ 7 แผ่น
+                </button>
+                <button onclick="ROAD_APP.exportAllProjectsJson()" class="py-2 neu-squircle text-slate-600 dark:text-slate-400 text-xs font-semibold cursor-pointer text-center" title="สำรองทุกโครงการในเครื่อง">
+                  📦 สำรองทั้งคลัง
+                </button>
+              </div>
             </div>
           </div>
         </div>
