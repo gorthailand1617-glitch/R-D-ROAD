@@ -202,6 +202,15 @@
     aiOutput: "",
     aiLoading: false,
     advisorLoading: false,
+    // Task Progress Indicator state
+    taskProgress: {
+      active: false,
+      percent: 0,
+      title: "",
+      subtitle: "",
+      stageText: "",
+      color: "blue" // "blue" | "emerald" | "indigo" | "amber"
+    },
     advisorCriteria: {
       subjectId: "sci",
       gradeId: "m1_3",
@@ -466,6 +475,129 @@
       if (el && el.style) el.style.opacity = "0";
       setTimeout(() => el && typeof el.remove === "function" && el.remove(), 300);
     }, 3200);
+  }
+
+  // --- Dynamic % Task Progress Indicator System ---
+  let _taskProgressTimer = null;
+
+  function startTaskProgress(title, subtitle = "", initialStage = "กำลังเริ่มต้น...", color = "blue") {
+    if (_taskProgressTimer) {
+      clearInterval(_taskProgressTimer);
+      _taskProgressTimer = null;
+    }
+    state.taskProgress = {
+      active: true,
+      percent: 5,
+      title: title || "กำลังประมวลผล...",
+      subtitle: subtitle || "",
+      stageText: initialStage,
+      color: color || "blue"
+    };
+    renderApp();
+  }
+
+  function updateTaskProgress(percent, stageText = null) {
+    if (!state.taskProgress.active) return;
+    state.taskProgress.percent = Math.min(100, Math.max(0, Math.round(percent)));
+    if (stageText) state.taskProgress.stageText = stageText;
+    renderApp();
+  }
+
+  function simulateTaskProgress(targetMax = 92, speedMs = 180, step = 3) {
+    if (_taskProgressTimer) clearInterval(_taskProgressTimer);
+    _taskProgressTimer = setInterval(() => {
+      if (!state.taskProgress.active) {
+        clearInterval(_taskProgressTimer);
+        return;
+      }
+      if (state.taskProgress.percent < targetMax) {
+        state.taskProgress.percent = Math.min(targetMax, state.taskProgress.percent + step);
+        const elPct = document.getElementById("task-progress-pct");
+        const elBar = document.getElementById("task-progress-bar");
+        if (elPct) elPct.textContent = `${state.taskProgress.percent}%`;
+        if (elBar) elBar.style.width = `${state.taskProgress.percent}%`;
+      } else {
+        clearInterval(_taskProgressTimer);
+      }
+    }, speedMs);
+  }
+
+  async function finishTaskProgress(completeMsg = "ดำเนินการสำเร็จ 100%!", delayMs = 600) {
+    if (_taskProgressTimer) {
+      clearInterval(_taskProgressTimer);
+      _taskProgressTimer = null;
+    }
+    state.taskProgress.percent = 100;
+    state.taskProgress.stageText = completeMsg;
+    renderApp();
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    await sleep(delayMs);
+    state.taskProgress.active = false;
+    renderApp();
+  }
+
+  function cancelTaskProgress() {
+    if (_taskProgressTimer) {
+      clearInterval(_taskProgressTimer);
+      _taskProgressTimer = null;
+    }
+    state.taskProgress.active = false;
+    renderApp();
+  }
+
+  function renderTaskProgressIndicator() {
+    if (!state.taskProgress || !state.taskProgress.active) return "";
+    const p = state.taskProgress;
+    const isDone = p.percent >= 100;
+    const gradMap = {
+      blue: "from-blue-600 via-sky-500 to-indigo-600",
+      emerald: "from-emerald-600 via-teal-500 to-green-600",
+      indigo: "from-indigo-600 via-purple-500 to-sky-600",
+      amber: "from-amber-600 via-orange-500 to-yellow-500"
+    };
+    const gradClass = gradMap[p.color] || gradMap.blue;
+    const badgeColor = isDone ? "bg-emerald-500 text-white" : "bg-blue-600 text-white";
+
+    return `
+      <!-- Fixed Global % Task Progress Indicator Toast -->
+      <div id="task-progress-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] w-[92vw] max-w-xl transition-all duration-300 animate-in fade-in slide-in-from-top-4">
+        <div class="neu-card p-4 sm:p-5 border-2 ${isDone ? 'border-emerald-500 shadow-emerald-500/20' : 'border-blue-500 shadow-blue-500/25'} bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl flex flex-col gap-3">
+          <!-- Top Row: Icon + Title + % Badge -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl ${badgeColor} flex items-center justify-center text-sm font-black shadow-md ${!isDone ? 'animate-pulse' : ''}">
+                ${isDone ? '✓' : '⚡'}
+              </span>
+              <div>
+                <h4 class="text-sm font-extrabold text-slate-900 dark:text-white leading-tight">
+                  ${escapeHtml(p.title)}
+                </h4>
+                ${p.subtitle ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${escapeHtml(p.subtitle)}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="task-progress-pct" class="px-3 py-1 rounded-full font-mono text-xs sm:text-sm font-black ${isDone ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'}">
+                ${p.percent}%
+              </span>
+            </div>
+          </div>
+
+          <!-- Progress Bar with Percentage Animation -->
+          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 shadow-inner">
+            <div id="task-progress-bar" class="h-full rounded-full bg-gradient-to-r ${gradClass} transition-all duration-200 ease-out shadow-sm" style="width: ${p.percent}%"></div>
+          </div>
+
+          <!-- Bottom Row: Dynamic Stage Text -->
+          <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+            <div class="flex items-center gap-1.5 truncate">
+              ${!isDone ? `<span class="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0"></span>` : `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>`}
+              <span class="font-medium truncate">${escapeHtml(p.stageText || 'กำลังประมวลผล...')}</span>
+            </div>
+            <span class="font-mono text-[10px] text-slate-400 shrink-0 ml-2">ROAD Next-Gen Engine</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // --- Formal Academic Narrative Generator for Population & Sampling ---
@@ -1231,15 +1363,25 @@
 
     async runGeminiAdvisorAutoPilot() {
       if (!state.geminiKey) {
+        startTaskProgress("AI Expert Advisor", "กำลังเลือกชุดวิจัย 5 บทที่เหมาะสมที่สุด...", "กำลังวิเคราะห์เกณฑ์ วPA และหลักสูตร...", "indigo");
+        updateTaskProgress(35, "ประมวลผลโมเดลและนวัตกรรมทางการศึกษา...");
+        await new Promise(r => setTimeout(r, 200));
+        updateTaskProgress(70, "สังเคราะห์ตัวแปร ABCD และเครื่องมือวิจัย...");
+        await new Promise(r => setTimeout(r, 200));
         this.applyAdvisorChoice(0, true);
+        await finishTaskProgress("วิเคราะห์และสังเคราะห์ชุดวิจัยสำเร็จ 100%!", 400);
         showToast("ใช้ฐานความรู้ AI Expert ในระบบเลือกชุดวิจัยที่ดีที่สุดให้เรียบร้อยแล้ว! (หากต้องการใช้ Gemini API สด สามารถใส่คีย์ในแท็บ AI ได้)", "ok");
         return;
       }
       state.advisorLoading = true;
-      renderApp();
+      startTaskProgress("Gemini R&D Advisor", "กำลังส่งเกณฑ์ วPA และบริบทให้ Gemini AI ประมวลผล...", "เตรียม Prompt และโครงสร้างงานวิจัย...", "indigo");
+      simulateTaskProgress(92, 160, 4);
+
       try {
         const prompt = window.ROAD_ADVISOR.buildAdvisorGeminiPrompt(state.advisorCriteria);
+        updateTaskProgress(25, "เชื่อมต่อ Gemini Research Model...");
         const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt, state.geminiModel);
+        updateTaskProgress(95, "ตรวจสอบและปรับแต่งโครงสร้างเล่ม 5 บท...");
         const jsonMatch = res.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
@@ -1261,11 +1403,14 @@
           this.simulateAlignedStats();
           state.studioTab = "chapters";
           saveProjects();
+          await finishTaskProgress(`ประมวลผลสำเร็จด้วยโมเดล ${res.model}!`, 500);
           showToast("Gemini AI วิเคราะห์และสร้างรายงานวิจัย 5 บทที่เหมาะสมที่สุดให้เรียบร้อยแล้ว!");
         } else {
           this.applyAdvisorChoice(0, true);
+          await finishTaskProgress("จัดเตรียมชุดวิจัยที่ดีที่สุดสำเร็จ!", 400);
         }
       } catch (err) {
+        cancelTaskProgress();
         showToast("ระบบใช้ฐานความรู้ Expert AI เลือกชุดวิจัยที่ดีที่สุดให้แทน (" + (err.message || "") + ")", "warn");
         this.applyAdvisorChoice(0, true);
       } finally {
@@ -1697,15 +1842,20 @@
       }
       state.aiLoading = true;
       state.studioTab = "ai";
-      renderApp();
+      startTaskProgress("Gemini Live Co-Pilot", `กำลังสังเคราะห์เนื้อหาวิชาการ: ${task}`, "เตรียม Smart Prompt และตัวแปร ABCD...", "blue");
+      simulateTaskProgress(94, 150, 3);
 
       try {
         const prompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, task);
+        updateTaskProgress(20, `ส่งคำสั่งไปยังโมเดลวิจัย (${state.geminiModel === 'auto_research' ? 'ลำดับ 3.8 ➔ 3.5 ➔ 3.1 ➔ 2.5' : state.geminiModel})...`);
         const res = await window.ROAD_GENERATOR.callGeminiAPI(state.geminiKey, prompt, state.geminiModel);
+        updateTaskProgress(96, "จัดรูปแบบย่อหน้าวิชาการและอ้างอิง...");
         state.aiOutput = res.text;
         state.aiModelUsed = res.model;
+        await finishTaskProgress(`เขียนสำเร็จด้วยโมเดล ${res.model}! (100%)`, 500);
         showToast(`สร้างเนื้อหาสำเร็จด้วยโมเดลวิจัย ${res.model}!`, "ok");
       } catch (err) {
+        cancelTaskProgress();
         showToast(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ Gemini API", "bad");
       } finally {
         state.aiLoading = false;
@@ -1752,30 +1902,54 @@
 
     exportFullManuscript() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportFullManuscriptToWordDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (All-in-One Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (.doc)...");
+      startTaskProgress("ส่งออกเล่มรายงานวิจัย 5 บท", "กำลังคอมไพล์เอกสารและจัดฟอร์แมต Sarabun 16pt...", "รวบรวมส่วนนำ บทที่ 1-5 และภาคผนวก...", "emerald");
+      updateTaskProgress(30, "สร้างตารางสถิติและผลการวิเคราะห์ข้อมูล...");
+      setTimeout(() => {
+        updateTaskProgress(65, "จัดรูปแบบบรรณานุกรม APA 7th และภาคผนวก ก-ง...");
+        setTimeout(async () => {
+          updateTaskProgress(90, "สร้างไฟล์ Microsoft Word (.doc) ที่สมบูรณ์...");
+          window.ROAD_GENERATOR.exportFullManuscriptToWordDoc(proj);
+          recordAudit("EXPORT_DOC", `ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (All-in-One Word): ${proj.label || proj.B_short}`);
+          await finishTaskProgress("ส่งออกเล่มรายงานวิจัยฉบับสมบูรณ์ 100% สำเร็จ!", 600);
+          showToast("ดาวน์โหลดเล่มรายงานวิจัยฉบับสมบูรณ์ครบทุกส่วน (.doc) เรียบร้อยแล้ว!");
+        }, 150);
+      }, 150);
     },
 
     exportFrontMatter() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportFrontMatterToWordDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกส่วนนำและบทคัดย่อภาษาไทย/อังกฤษ (Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดส่วนนำและบทคัดย่อไทย/อังกฤษ (.doc)...");
+      startTaskProgress("ส่งออกส่วนนำและบทคัดย่อ", "กำลังสร้างบทคัดย่อไทย-อังกฤษและสารบัญ...", "จัดฟอร์แมต TH Sarabun PSK...", "blue");
+      updateTaskProgress(50, "คอมไพล์สารบัญตารางและสารบัญภาพ...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportFrontMatterToWordDoc(proj);
+        recordAudit("EXPORT_DOC", `ส่งออกส่วนนำและบทคัดย่อภาษาไทย/อังกฤษ (Word): ${proj.label || proj.B_short}`);
+        await finishTaskProgress("ส่งออกส่วนนำและบทคัดย่อสำเร็จ 100%!", 400);
+        showToast("ดาวน์โหลดส่วนนำและบทคัดย่อไทย/อังกฤษ (.doc) เรียบร้อยแล้ว!");
+      }, 200);
     },
 
     exportExpertKit() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportExpertKitToWordDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกชุดผู้เชี่ยวชาญ 5 ท่านและแบบประเมิน IOC (Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดชุดส่งผู้เชี่ยวชาญ 5 ท่าน + แบบประเมิน IOC (.doc)...");
+      startTaskProgress("ส่งออกชุดผู้เชี่ยวชาญ IOC", "กำลังสร้างแบบประเมินและเอกสารเรียนเชิญ...", "จัดฟอร์แมตแบบประเมิน 5 ท่าน...", "blue");
+      updateTaskProgress(55, "รวบรวมคำอธิบายเกณฑ์และนิยามเชิงปฏิบัติการ...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportExpertKitToWordDoc(proj);
+        recordAudit("EXPORT_DOC", `ส่งออกชุดผู้เชี่ยวชาญ 5 ท่านและแบบประเมิน IOC (Word): ${proj.label || proj.B_short}`);
+        await finishTaskProgress("ส่งออกชุดผู้เชี่ยวชาญสำเร็จ 100%!", 400);
+        showToast("ดาวน์โหลดชุดส่งผู้เชี่ยวชาญ 5 ท่าน + แบบประเมิน IOC (.doc) เรียบร้อยแล้ว!");
+      }, 200);
     },
 
     exportBackMatter() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportBackMatterToWordDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกบรรณานุกรม APA 7th และภาคผนวก ก-ง (Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดบรรณานุกรม APA 7th และภาคผนวก ก–ง (.doc)...");
+      startTaskProgress("ส่งออกบรรณานุกรมและภาคผนวก", "กำลังจัดรูปแบบเอกสารอ้างอิง APA 7th...", "รวบรวมภาคผนวก ก-ง...", "blue");
+      updateTaskProgress(50, "จัดเรียงบรรณานุกรมตามลำดับอักษร...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportBackMatterToWordDoc(proj);
+        recordAudit("EXPORT_DOC", `ส่งออกบรรณานุกรม APA 7th และภาคผนวก ก-ง (Word): ${proj.label || proj.B_short}`);
+        await finishTaskProgress("ส่งออกบรรณานุกรมและภาคผนวกสำเร็จ 100%!", 400);
+        showToast("ดาวน์โหลดบรรณานุกรม APA 7th และภาคผนวก ก–ง (.doc) เรียบร้อยแล้ว!");
+      }, 200);
     },
 
     exportSingleChapter(chapNum) {
@@ -1789,17 +1963,27 @@
       if (Number(chapNum) === 7) {
         return this.exportBackMatter();
       }
-      window.ROAD_GENERATOR.exportSingleChapterToWordDoc(proj, Number(chapNum));
-      recordAudit("EXPORT_DOC", `ส่งออกบทที่ ${chapNum} (Word): ${proj.label || proj.B_short}`);
-      showToast(`กำลังดาวน์โหลดบทที่ ${chapNum} เป็นไฟล์ Word (.doc)...`);
+      startTaskProgress(`ส่งออกบทที่ ${chapNum}`, `กำลังคอมไพล์เนื้อหาบทที่ ${chapNum}...`, "จัดฟอร์แมต Sarabun 16pt...", "blue");
+      updateTaskProgress(50, "จัดเตรียมตารางและแผนภาพ...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportSingleChapterToWordDoc(proj, Number(chapNum));
+        recordAudit("EXPORT_DOC", `ส่งออกบทที่ ${chapNum} (Word): ${proj.label || proj.B_short}`);
+        await finishTaskProgress(`ส่งออกบทที่ ${chapNum} สำเร็จ 100%!`, 400);
+        showToast(`ดาวน์โหลดบทที่ ${chapNum} เป็นไฟล์ Word (.doc) เรียบร้อยแล้ว!`);
+      }, 200);
     },
 
     exportAppendix() {
       const proj = getActiveProject();
       if (window.ROAD_GENERATOR && window.ROAD_GENERATOR.exportAppendixToWordDoc) {
-        window.ROAD_GENERATOR.exportAppendixToWordDoc(proj);
-        recordAudit("EXPORT_DOC", `ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง (Word): ${proj.label || proj.B_short}`);
-        showToast("กำลังดาวน์โหลดชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc)...");
+        startTaskProgress("ส่งออกภาคผนวกและเครื่องมือ", "กำลังรวบรวมแบบทดสอบ แผน และแบบสอบถาม...", "จัดรูปแบบเครื่องมือวิจัย...", "blue");
+        updateTaskProgress(50, "สร้างตาราง IOC และสถิติ...");
+        setTimeout(async () => {
+          window.ROAD_GENERATOR.exportAppendixToWordDoc(proj);
+          recordAudit("EXPORT_DOC", `ส่งออกชุดเครื่องมือวิจัยและภาคผนวก ก–ง (Word): ${proj.label || proj.B_short}`);
+          await finishTaskProgress("ส่งออกภาคผนวกสำเร็จ 100%!", 400);
+          showToast("ดาวน์โหลดชุดเครื่องมือวิจัยและภาคผนวก ก–ง (.doc) เรียบร้อยแล้ว!");
+        }, 200);
       } else {
         showToast("ไม่พบโมดูลส่งออกภาคผนวก");
       }
@@ -1813,16 +1997,26 @@
 
     exportSingleThesis(thesisId) {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportSingleThesisToWordDoc(proj, thesisId);
-      recordAudit("EXPORT_DOC", `ส่งออกสรุปวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (${thesisId}): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดเอกสารวิทยานิพนธ์ (.doc Sarabun 16pt)...");
+      startTaskProgress("ส่งออกวิทยานิพนธ์", `รหัสวิทยานิพนธ์: ${thesisId}`, "จัดฟอร์แมต Sarabun 16pt...", "blue");
+      updateTaskProgress(60, "สกัดการอ้างอิงและประเด็นนำไปใช้...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportSingleThesisToWordDoc(proj, thesisId);
+        recordAudit("EXPORT_DOC", `ส่งออกสรุปวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (${thesisId}): ${proj.label || proj.B_short}`);
+        await finishTaskProgress("ส่งออกวิทยานิพนธ์สำเร็จ 100%!", 400);
+        showToast("ดาวน์โหลดเอกสารวิทยานิพนธ์ (.doc Sarabun 16pt) เรียบร้อยแล้ว!");
+      }, 200);
     },
 
     exportAllTheses() {
       const proj = getActiveProject();
-      window.ROAD_GENERATOR.exportAllThesesConsolidatedDoc(proj);
-      recordAudit("EXPORT_DOC", `ส่งออกเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (Word): ${proj.label || proj.B_short}`);
-      showToast("กำลังดาวน์โหลดเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (.doc)...");
+      startTaskProgress("ส่งออกรวมเล่มวิทยานิพนธ์", "กำลังรวบรวมงานวิจัยตรงประเด็นครบทุกเรื่อง...", "รวมเนื้อหาและประเด็นสกัด...", "indigo");
+      updateTaskProgress(45, "จัดรูปแบบ APA 7th ครบทุกงานวิจัย...");
+      setTimeout(async () => {
+        window.ROAD_GENERATOR.exportAllThesesConsolidatedDoc(proj);
+        recordAudit("EXPORT_DOC", `ส่งออกเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (Word): ${proj.label || proj.B_short}`);
+        await finishTaskProgress("ส่งออกรวมเล่มวิทยานิพนธ์สำเร็จ 100%!", 400);
+        showToast("ดาวน์โหลดเอกสารรวมเล่มวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้อง (.doc) เรียบร้อยแล้ว!");
+      }, 200);
     },
 
     copyThesisApa(thesisId) {
@@ -1891,6 +2085,7 @@
       state.thesesSearching = true;
       state.thesesSearchProgress = 0;
       state.thesesSearchStage = "เริ่มต้นวิเคราะห์แก่นประเด็นและสกัดคำสำคัญ ABCD...";
+      startTaskProgress("Theses Discovery Engine", "สืบค้นและสังเคราะห์วิทยานิพนธ์ตรงประเด็น 100%", state.thesesSearchStage, "emerald");
       renderApp();
 
       const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -1900,23 +2095,27 @@
         await sleep(350);
         state.thesesSearchProgress = 18;
         state.thesesSearchStage = `สกัดคำสำคัญ "${proj.B_short || proj.B || 'นวัตกรรม'}" และตัวแปรตาม C...`;
+        updateTaskProgress(18, state.thesesSearchStage);
         renderApp();
 
         // Step 2: 42% - Graduate Theses Databases
         await sleep(400);
         state.thesesSearchProgress = 42;
         state.thesesSearchStage = "สืบค้นคลังวิทยานิพนธ์บัณฑิตวิทยาลัย (TDC / ThaiLIS / มหาวิทยาลัยชั้นนำ)...";
+        updateTaskProgress(42, state.thesesSearchStage);
         renderApp();
 
         // Step 3: 68% - TCI Journals & OBEC
         await sleep(450);
         state.thesesSearchProgress = 68;
         state.thesesSearchStage = "ตรวจสอบและคัดกรองวารสารวิชาการระดับชาติ TCI กลุ่ม 1 และรายงาน สพฐ....";
+        updateTaskProgress(68, state.thesesSearchStage);
         renderApp();
 
         // Optional Gemini API call if key is set
         if (state.geminiKey) {
           state.thesesSearchStage = "เชื่อมต่อ Gemini AI วิเคราะห์และสังเคราะห์ข้อค้นพบเชิงลึก...";
+          updateTaskProgress(78, state.thesesSearchStage);
           renderApp();
           try {
             const prompt = window.ROAD_GENERATOR.buildSmartPrompt(proj, "theses_discovery");
@@ -1930,6 +2129,7 @@
         await sleep(400);
         state.thesesSearchProgress = 88;
         state.thesesSearchStage = "สังเคราะห์งานวิจัยสากล ERIC และจัดรูปแบบการอ้างอิงมาตรฐาน APA 7th...";
+        updateTaskProgress(88, state.thesesSearchStage);
         renderApp();
 
         // Step 5: 100% - Completion
@@ -1938,12 +2138,13 @@
         state.thesesSearchStage = "การค้นคว้าและประมวลผลวิทยานิพนธ์ตรงประเด็น 100% สมบูรณ์แบบ!";
         proj.customTheses = null; // Refresh with latest ABCD parameters
         saveProjects();
-        renderApp();
+        await finishTaskProgress("ค้นคว้าและประมวลผลวิทยานิพนธ์สำเร็จ 100%!", 600);
         showToast("✨ การค้นคว้าวิทยานิพนธ์และงานวิจัยที่เกี่ยวข้องเสร็จสมบูรณ์ 100%!");
       } catch (err) {
+        cancelTaskProgress();
         showToast(err.message || "เกิดข้อผิดพลาดในการค้นคว้า", "bad");
       } finally {
-        await sleep(1500);
+        await sleep(500);
         state.thesesSearching = false;
         renderApp();
       }
@@ -2841,13 +3042,20 @@
         saveProjects();
       }
 
-      state.showWizardModal = false;
-      state.studioTab = "chapters";
-      renderApp();
-      if (typeof window.scrollTo === "function") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-      showToast("สร้างและตรวจทานโครงร่างการวิจัย 5 บทเสร็จสมบูรณ์เรียบร้อยแล้ว!", "ok");
+      startTaskProgress("คอมไพล์โครงร่างวิจัย 10 ขั้นตอน", "กำลังผูกข้อมูลตัวแปรและสร้างเล่มรายงาน 5 บท...", "ตรวจสอบความสอดคล้องระเบียบวิธีวิจัย...", "emerald");
+      updateTaskProgress(40, "ซิงค์ประชากรกลุ่มตัวอย่าง นวัตกรรม และสถิติ...");
+      setTimeout(() => {
+        updateTaskProgress(80, "จัดหมวดหมู่บทที่ 1-5 และบันทึกลงโปรเจกต์...");
+        setTimeout(async () => {
+          state.showWizardModal = false;
+          state.studioTab = "chapters";
+          if (typeof window.scrollTo === "function") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+          await finishTaskProgress("สร้างและตรวจทานโครงร่างการวิจัย 5 บทสำเร็จ 100%!", 500);
+          showToast("สร้างและตรวจทานโครงร่างการวิจัย 5 บทเสร็จสมบูรณ์เรียบร้อยแล้ว!", "ok");
+        }, 150);
+      }, 150);
     },
 
     // --- Research Workspace & Project Portfolio Actions ---
@@ -4443,8 +4651,8 @@
                 <span class="font-extrabold text-slate-700 dark:text-slate-300">6. ชื่อโรงเรียน / สถานศึกษาของคุณ</span>
                 <div class="flex gap-2.5">
                   <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์" />
-                  <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0">
-                    ${state.advisorLoading ? '⏳ กำลังวิเคราะห์...' : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
+                  <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0" ${state.advisorLoading ? 'disabled' : ''}>
+                    ${state.advisorLoading ? `⏳ กำลังวิเคราะห์ (${state.taskProgress?.percent || 0}%)...` : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
                   </button>
                 </div>
               </label>
@@ -7685,7 +7893,7 @@
                     📋 คัดลอก Prompt (ใช้ฟรีใน ChatGPT/Gemini)
                   </button>
                   <button onclick="ROAD_APP.runGeminiLive('${state.aiTask}')" class="px-4 py-2 rounded-xl neu-btn-primary text-xs font-bold shadow-sm cursor-pointer" ${state.aiLoading ? 'disabled' : ''}>
-                    ${state.aiLoading ? '⏳ กำลังสั่ง Gemini เขียนเนื้อหา...' : '⚡ สั่ง Gemini เขียนสดในเว็บทันที'}
+                    ${state.aiLoading ? `⏳ กำลังเขียนสด (${state.taskProgress?.percent || 0}%)...` : '⚡ สั่ง Gemini เขียนสดในเว็บทันที'}
                   </button>
                 </div>
               </div>
@@ -9065,7 +9273,7 @@
     else if (state.view === "slides") mainHtml = renderSlidesView();
     else mainHtml = renderStudioView();
 
-    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}${state.showContextMetaModal ? renderContextMetaModal() : ""}`;
+    root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${renderTaskProgressIndicator()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}${state.showContextMetaModal ? renderContextMetaModal() : ""}`;
   }
 
   window.addEventListener("DOMContentLoaded", () => {
