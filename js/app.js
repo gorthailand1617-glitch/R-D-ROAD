@@ -1388,9 +1388,11 @@
       if (!tmpl) return;
       const proj = getActiveProject();
       proj.B_steps = [...tmpl.steps];
-      if (!proj.B || proj.B.trim() === "") {
-        proj.B = `รูปแบบการจัดการเรียนรู้ร่วมกับ${tmpl.name}`;
-        proj.B_short = tmpl.short || tmpl.name;
+      const isDefaultOrPresetB = !proj.B || proj.B.trim() === "" ||
+        (window.ROAD_DATA.SYNTAX_TEMPLATES || []).some(t => t.id !== tmpl.id && (proj.B.includes(t.short) || (t.name && proj.B.includes(t.name)) || (proj.B_short && proj.B_short.includes(t.short))));
+      if (isDefaultOrPresetB) {
+        proj.B = tmpl.defaultB || `รูปแบบการจัดการเรียนรู้ตาม${tmpl.name}`;
+        proj.B_short = tmpl.defaultBShort || tmpl.short || tmpl.name;
       }
       saveProjects();
       renderApp();
@@ -4627,11 +4629,15 @@
               <!-- Syntax Quick Template Picker -->
               <div class="flex flex-wrap gap-1.5 items-center text-xs mt-1 pt-2 border-t border-sky-200/60 dark:border-sky-800/40">
                 <span class="text-sky-800 dark:text-sky-300 font-bold text-xs">⚡ ใส่ขั้นตอนนวัตกรรมสำเร็จรูป (Syntax):</span>
-                ${(window.ROAD_DATA.SYNTAX_TEMPLATES || []).map(tmpl => `
-                  <button type="button" onclick="ROAD_APP.applySyntaxTemplate('${tmpl.id}')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 hover:border-sky-500 text-sky-900 dark:text-sky-200 text-xs font-medium cursor-pointer shadow-2xs" title="ใส่ ${tmpl.steps.length} ขั้นตอน">
-                    + ${escapeHtml(tmpl.short || tmpl.name)} (${tmpl.steps.length} ขั้น)
-                  </button>
-                `).join("")}
+                ${(window.ROAD_DATA.SYNTAX_TEMPLATES || []).map(tmpl => {
+                  const rawLabel = tmpl.short || tmpl.name;
+                  const btnLabel = rawLabel.includes(`${tmpl.steps.length} ขั้น`) ? rawLabel : `${rawLabel} (${tmpl.steps.length} ขั้น)`;
+                  return `
+                    <button type="button" onclick="ROAD_APP.applySyntaxTemplate('${tmpl.id}')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-sky-300 dark:border-sky-700 hover:border-sky-500 text-sky-900 dark:text-sky-200 text-xs font-medium cursor-pointer shadow-2xs" title="ใส่ ${tmpl.steps.length} ขั้นตอน">
+                      + ${escapeHtml(btnLabel)}
+                    </button>
+                  `;
+                }).join("")}
               </div>
 
               <!-- Syntax / Learning Steps of B -->
@@ -7831,12 +7837,16 @@
 
                 <!-- Syntax Quick Templates -->
                 <div class="flex flex-wrap gap-1.5 items-center text-xs pt-1 border-t border-blue-200/70 dark:border-blue-800/50">
-                  <span class="text-slate-500 font-semibold text-[11px]">⚡ ใส่ขั้นตอนอัตโนมัติ:</span>
-                  ${(window.ROAD_DATA.SYNTAX_TEMPLATES || []).map(tmpl => `
-                    <button type="button" onclick="ROAD_APP.applySyntaxTemplate('${tmpl.id}')" class="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-[11px] cursor-pointer">
-                      + ${escapeHtml(tmpl.short || tmpl.name)}
-                    </button>
-                  `).join("")}
+                  <span class="text-slate-700 dark:text-slate-300 font-bold text-[11px]">⚡ ใส่ขั้นตอนนวัตกรรมสำเร็จรูป (Syntax):</span>
+                  ${(window.ROAD_DATA.SYNTAX_TEMPLATES || []).map(tmpl => {
+                    const rawLabel = tmpl.short || tmpl.name;
+                    const btnLabel = rawLabel.includes(`${tmpl.steps.length} ขั้น`) ? rawLabel : `${rawLabel} (${tmpl.steps.length} ขั้น)`;
+                    return `
+                      <button type="button" onclick="ROAD_APP.applySyntaxTemplate('${tmpl.id}')" class="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-[11px] cursor-pointer" title="ใส่ ${tmpl.steps.length} ขั้นตอน">
+                        + ${escapeHtml(btnLabel)}
+                      </button>
+                    `;
+                  }).join("")}
                 </div>
               </div>
 
