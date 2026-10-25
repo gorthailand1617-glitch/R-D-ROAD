@@ -2645,14 +2645,15 @@ window.ROAD_GENERATOR = {
     return prompts[taskType] || prompts.ch1_background;
   },
 
-  // เรียกใช้งาน Gemini API สดจากเบราว์เซอร์
+  // เรียกใช้งาน Gemini API สดจากเบราว์เซอร์ (ใช้โมเดลรุ่นปัจจุบัน)
   async callGeminiAPI(apiKey, promptText, modelName = "gemini-2.5-flash") {
     const cleanKey = String(apiKey || "").trim();
     if (!cleanKey) {
       throw new Error("กรุณากรอก Gemini API Key ก่อนสั่งเขียนด้วย AI หรือใช้ปุ่ม 'คัดลอก Smart Prompt' เพื่อนำไปวางใน ChatGPT/Gemini ฟรี");
     }
 
-    const modelsToTry = [modelName, "gemini-2.0-flash", "gemini-1.5-flash"];
+    // รายชื่อโมเดลรุ่นปัจจุบันที่ให้บริการสำหรับ generateContent (ตัด gemini-1.5-flash ที่เลิกให้บริการแล้วออก)
+    const modelsToTry = Array.from(new Set([modelName, "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"].filter(Boolean)));
     let lastError = null;
 
     for (const m of modelsToTry) {
@@ -2671,16 +2672,30 @@ window.ROAD_GENERATOR = {
         });
         const data = await res.json();
         if (!res.ok) {
-          lastError = new Error(data?.error?.message || `HTTP ${res.status}`);
+          const errMsg = data?.error?.message || `HTTP ${res.status}`;
+          // หากเกิดจากปัญหาคีย์ไม่ถูกต้อง หรือไม่มีสิทธิ์ หรือโควตาหมด ให้แจ้งสาเหตุที่แท้จริงทันที
+          if (res.status === 400 && errMsg.includes("API_KEY_INVALID")) {
+            throw new Error("Gemini API Key ไม่ถูกต้อง กรุณาตรวจสอบหรือสร้างคีย์ใหม่จาก Google AI Studio");
+          }
+          if (res.status === 403) {
+            throw new Error("ไม่มีสิทธิ์เข้าถึง (Permission Denied) กรุณาตรวจสอบการอนุญาตของ API Key หรือข้อจำกัดเครือข่าย");
+          }
+          if (res.status === 429) {
+            throw new Error("โควตาการเรียกใช้งาน Gemini API เต็มชั่วคราว (Rate Limit / Quota Exceeded) กรุณารอสักครู่แล้วลองใหม่อีกครั้ง หรือใช้ปุ่มคัดลอก Smart Prompt");
+          }
+          lastError = new Error(`โมเดล ${m}: ${errMsg}`);
           continue;
         }
         const text = data?.candidates?.[0]?.content?.parts?.map(pt => pt.text || "").join("\n") || "";
         if (text) return { text, model: m };
       } catch (err) {
+        if (err.message && (err.message.includes("API Key") || err.message.includes("สิทธิ์") || err.message.includes("โควตา"))) {
+          throw err;
+        }
         lastError = err;
       }
     }
-    throw lastError || new Error("ไม่สามารถเชื่อมต่อ Gemini API ได้ กรุณาตรวจสอบ API Key");
+    throw lastError || new Error("ไม่สามารถเชื่อมต่อ Gemini API ได้ กรุณาตรวจสอบ API Key หรือลองใช้ปุ่ม 'คัดลอก Smart Prompt'");
   },
 
   // ==========================================================================
