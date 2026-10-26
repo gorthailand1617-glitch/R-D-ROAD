@@ -1333,13 +1333,16 @@
     },
 
     // --- AI Research Advisor & Auto-Decision Actions ---
-    updateAdvisorField(field, value) {
+    updateAdvisorField(field, value, reRender = false) {
       state.advisorCriteria[field] = value;
       if (field === "subjectId") {
         const sObj = window.ROAD_ADVISOR.SUBJECT_GROUPS.find(s => s.id === value);
         if (sObj) state.advisorCriteria.customTopic = sObj.defaultTopic;
+        reRender = true;
       }
-      renderApp();
+      if (reRender) {
+        renderApp();
+      }
     },
 
     applyAdvisorChoice(rankIndex, jumpToChapters = true) {
@@ -1739,7 +1742,7 @@
     },
 
     // --- Stat Lab Actions ---
-    updateStatField(key, val) {
+    updateStatField(key, val, reRender = false) {
       const proj = getActiveProject();
       if (!proj.statsData) proj.statsData = {};
       proj.statsData[key] = isNaN(Number(val)) ? val : Number(val);
@@ -1755,7 +1758,9 @@
         }
       }
       saveProjects();
-      renderApp();
+      if (reRender) {
+        renderApp();
+      }
     },
 
     simulateAlignedStats() {
@@ -2570,7 +2575,9 @@
 
     updateSignupField(field, value) {
       state.signupForm[field] = value;
-      renderApp();
+      if (field === "province_code") {
+        renderApp();
+      }
     },
 
     toggleSignupGoal(goal) {
@@ -3272,13 +3279,19 @@
   };
 
   function renderLiveTitleBar() {
-    const el = document.getElementById("live-composed-title");
-    if (!el) return;
     const proj = getActiveProject();
-    if (state.titleViewMode === "plain") {
-      el.textContent = window.ROAD_GENERATOR.composeFullTitle(proj);
-    } else {
-      el.innerHTML = window.ROAD_GENERATOR.composeColorCodedTitle(proj);
+    if (!proj) return;
+    const el = document.getElementById("live-composed-title");
+    if (el) {
+      if (state.titleViewMode === "plain") {
+        el.textContent = window.ROAD_GENERATOR.composeFullTitle(proj);
+      } else {
+        el.innerHTML = window.ROAD_GENERATOR.composeColorCodedTitle(proj);
+      }
+    }
+    const modalEl = document.getElementById("modal-live-composed-title");
+    if (modalEl) {
+      modalEl.innerHTML = window.ROAD_GENERATOR.composeColorCodedTitle(proj);
     }
   }
 
@@ -3656,11 +3669,11 @@
             <legend class="mb-2 text-base font-bold sm:col-span-2">ข้อมูลติดต่อ</legend>
             <label class="flex flex-col gap-1 text-sm">
               <span class="font-semibold">อีเมล</span>
-              <input type="email" value="${escapeHtml(f.email)}" oninput="ROAD_APP.updateSignupField('email', this.value)" placeholder="teacher.name@gmail.com" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input id="signup_input_email" type="email" value="${escapeHtml(f.email)}" oninput="ROAD_APP.updateSignupField('email', this.value)" placeholder="teacher.name@gmail.com" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
             <label class="flex flex-col gap-1 text-sm">
               <span class="font-semibold">เบอร์โทร (ใช้เข้าสู่ระบบแทนอีเมลได้)</span>
-              <input type="tel" value="${escapeHtml(f.phone)}" oninput="ROAD_APP.updateSignupField('phone', this.value)" placeholder="0812345678" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input id="signup_input_phone" type="tel" value="${escapeHtml(f.phone)}" oninput="ROAD_APP.updateSignupField('phone', this.value)" placeholder="0812345678" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
           </fieldset>
 
@@ -3674,11 +3687,11 @@
             </label>
             <label class="flex flex-col gap-1 text-sm">
               <span class="font-semibold">ชื่อ</span>
-              <input value="${escapeHtml(f.first_name)}" oninput="ROAD_APP.updateSignupField('first_name', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input id="signup_input_first_name" value="${escapeHtml(f.first_name)}" oninput="ROAD_APP.updateSignupField('first_name', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
             <label class="flex flex-col gap-1 text-sm">
               <span class="font-semibold">นามสกุล</span>
-              <input value="${escapeHtml(f.last_name)}" oninput="ROAD_APP.updateSignupField('last_name', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input id="signup_input_last_name" value="${escapeHtml(f.last_name)}" oninput="ROAD_APP.updateSignupField('last_name', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
 
             <label class="flex flex-col gap-1 text-sm">
@@ -3696,7 +3709,7 @@
 
             <label class="flex flex-col gap-1 text-sm sm:col-span-3">
               <span class="font-semibold">ชื่อสถานที่ทำงาน / สถานศึกษา</span>
-              <input value="${escapeHtml(f.workplace)}" oninput="ROAD_APP.updateSignupField('workplace', this.value)" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์ / องค์การบริหารส่วนจังหวัดขอนแก่น" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
+              <input id="signup_input_workplace" value="${escapeHtml(f.workplace)}" oninput="ROAD_APP.updateSignupField('workplace', this.value)" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์ / องค์การบริหารส่วนจังหวัดขอนแก่น" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700" required />
             </label>
 
             <label class="flex flex-col gap-1 text-sm sm:col-span-2">
@@ -3928,7 +3941,7 @@
                 ${state.cohorts.map(c => `<option value="${c.code}" ${state.adminFilterCohort === c.code ? 'selected' : ''}>รุ่น ${c.code}</option>`).join("")}
                 <option value="GENERAL" ${state.adminFilterCohort === 'GENERAL' ? 'selected' : ''}>สมาชิกทั่วไป (ชำระเงิน)</option>
               </select>
-              <input value="${escapeHtml(state.adminSearch)}" oninput="ROAD_APP.setAdminSearch(this.value)" placeholder="ค้นหาชื่อ, รหัส, โรงเรียน, จังหวัด..." class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs w-60" />
+              <input id="admin-search-input" value="${escapeHtml(state.adminSearch)}" oninput="ROAD_APP.setAdminSearch(this.value)" placeholder="ค้นหาชื่อ, รหัส, โรงเรียน, จังหวัด..." class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs w-60" />
             </div>
           </div>
 
@@ -4583,6 +4596,7 @@
             <div class="neu-input-pill px-3 py-1.5 flex items-center gap-2 text-xs">
               <span>🔍</span>
               <input
+                id="project-search-input"
                 type="text"
                 value="${escapeHtml(state.projectSearch)}"
                 oninput="ROAD_APP.setProjectSearch(this.value)"
@@ -4770,41 +4784,41 @@
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
               <label class="flex flex-col gap-1.5 text-xs">
                 <span class="font-extrabold text-blue-700 dark:text-sky-300">1. กลุ่มสาระการเรียนรู้ / สาขาวิชา</span>
-                <select onchange="ROAD_APP.updateAdvisorField('subjectId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                <select onchange="ROAD_APP.updateAdvisorField('subjectId', this.value, true)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
                   ${window.ROAD_ADVISOR.SUBJECT_GROUPS.map(s => `<option value="${s.id}" ${cr.subjectId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join("")}
                 </select>
               </label>
 
               <label class="flex flex-col gap-1.5 text-xs">
                 <span class="font-extrabold text-blue-700 dark:text-sky-300">2. ระดับชั้น / กลุ่มเป้าหมาย</span>
-                <select onchange="ROAD_APP.updateAdvisorField('gradeId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                <select onchange="ROAD_APP.updateAdvisorField('gradeId', this.value, true)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
                   ${window.ROAD_ADVISOR.GRADE_LEVELS.map(g => `<option value="${g.id}" ${cr.gradeId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
                 </select>
               </label>
 
               <label class="flex flex-col gap-1.5 text-xs">
                 <span class="font-extrabold text-blue-700 dark:text-sky-300">3. ปัญหาสำคัญที่พบในห้องเรียน</span>
-                <select onchange="ROAD_APP.updateAdvisorField('painId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                <select onchange="ROAD_APP.updateAdvisorField('painId', this.value, true)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
                   ${window.ROAD_ADVISOR.PAIN_POINTS.map(p => `<option value="${p.id}" ${cr.painId === p.id ? 'selected' : ''}>${escapeHtml(p.label)}</option>`).join("")}
                 </select>
               </label>
 
               <label class="flex flex-col gap-1.5 text-xs">
                 <span class="font-extrabold text-blue-700 dark:text-sky-300">4. เป้าหมายการทำวิจัย & เวลาที่มี</span>
-                <select onchange="ROAD_APP.updateAdvisorField('goalId', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
+                <select onchange="ROAD_APP.updateAdvisorField('goalId', this.value, true)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-bold text-xs sm:text-sm cursor-pointer">
                   ${window.ROAD_ADVISOR.GOALS_TARGET.map(g => `<option value="${g.id}" ${cr.goalId === g.id ? 'selected' : ''}>${escapeHtml(g.label)}</option>`).join("")}
                 </select>
               </label>
 
               <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
                 <span class="font-extrabold text-slate-700 dark:text-slate-300">5. เรื่อง / หน่วยการเรียนรู้ที่จะใช้สอนจริง</span>
-                <input value="${escapeHtml(cr.customTopic)}" oninput="ROAD_APP.updateAdvisorField('customTopic', this.value)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น ระบบนิเวศ / การอ่านจับใจความ / ร้อยละและอัตราส่วน" />
+                <input id="adv_input_customTopic" value="${escapeHtml(cr.customTopic)}" oninput="ROAD_APP.updateAdvisorField('customTopic', this.value)" onchange="ROAD_APP.updateAdvisorField('customTopic', this.value, true)" class="px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น ระบบนิเวศ / การอ่านจับใจความ / ร้อยละและอัตราส่วน" />
               </label>
 
               <label class="flex flex-col gap-1.5 text-xs sm:col-span-2">
                 <span class="font-extrabold text-slate-700 dark:text-slate-300">6. ชื่อโรงเรียน / สถานศึกษาของคุณ</span>
                 <div class="flex gap-2.5">
-                  <input value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์" />
+                  <input id="adv_input_schoolName" value="${escapeHtml(cr.schoolName)}" oninput="ROAD_APP.updateAdvisorField('schoolName', this.value)" onchange="ROAD_APP.updateAdvisorField('schoolName', this.value, true)" class="flex-1 px-4 py-3 neu-input-pill text-slate-800 dark:text-white font-semibold text-sm" placeholder="เช่น โรงเรียนเปรมติณสูลานนท์" />
                   <button onclick="ROAD_APP.runGeminiAdvisorAutoPilot()" class="px-4 py-3 neu-btn-primary text-xs font-extrabold cursor-pointer shrink-0" ${state.advisorLoading ? 'disabled' : ''}>
                     ${state.advisorLoading ? `⏳ กำลังวิเคราะห์ (${state.taskProgress?.percent || 0}%)...` : '🤖 สั่ง AI ประมวลผลและสร้าง 5 บท'}
                   </button>
@@ -5147,7 +5161,7 @@
                 <span class="font-bold text-sm text-sky-800 dark:text-sky-300">A (Action) · คำกริยาแสดงลักษณะการวิจัย</span>
                 <span class="text-xs text-slate-400">พิมพ์เองได้อิสระ</span>
               </div>
-              <input value="${escapeHtml(proj.A)}" oninput="ROAD_APP.updateField('A', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น การวิจัยและพัฒนา หรือ การศึกษาผลการใช้" />
+              <input id="abcd_input_A" value="${escapeHtml(proj.A)}" oninput="ROAD_APP.updateField('A', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น การวิจัยและพัฒนา หรือ การศึกษาผลการใช้" />
               <div class="flex flex-wrap gap-1.5 items-center text-xs">
                 <span class="text-slate-400">คำกริยายอดนิยม:</span>
                 ${vocab.A.map(item => `<button type="button" onclick="ROAD_APP.applySuggestion('A', '${item}')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 cursor-pointer text-xs">${item}</button>`).join("")}
@@ -5165,10 +5179,10 @@
               <div class="flex items-center justify-between">
                 <span class="font-bold text-sm text-sky-900 dark:text-sky-300">B (Innovation / ตัวแปรต้น) · ชื่อนวัตกรรมหรือรูปแบบการจัดการเรียนรู้</span>
               </div>
-              <input value="${escapeHtml(proj.B)}" oninput="ROAD_APP.updateField('B', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น รูปแบบการจัดการเรียนรู้เชิงรุกร่วมกับเทคนิค GPAS 5 Steps" />
+              <input id="abcd_input_B" value="${escapeHtml(proj.B)}" oninput="ROAD_APP.updateField('B', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น รูปแบบการจัดการเรียนรู้เชิงรุกร่วมกับเทคนิค GPAS 5 Steps" />
               <label class="flex flex-col gap-1 text-xs">
                 <span class="font-semibold text-slate-600 dark:text-slate-400">ชื่อเรียกย่อของนวัตกรรม (ใช้ในเนื้อหาบทที่ 1–5 เพื่อความกระชับ):</span>
-                <input value="${escapeHtml(proj.B_short || proj.B)}" oninput="ROAD_APP.updateField('B_short', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                <input id="abcd_input_B_short" value="${escapeHtml(proj.B_short || proj.B)}" oninput="ROAD_APP.updateField('B_short', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
               </label>
               <div class="flex flex-wrap gap-1.5 items-center text-xs">
                 <span class="text-slate-400">ตัวอย่างนวัตกรรมยอดนิยม:</span>
@@ -5199,7 +5213,7 @@
                   ${(proj.B_steps || []).map((stText, idx) => `
                     <div class="flex items-center gap-2">
                       <span class="font-mono text-xs font-bold text-sky-700 w-6">${idx + 1}.</span>
-                      <input value="${escapeHtml(stText)}" oninput="ROAD_APP.updateStep(${idx}, this.value)" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                      <input id="abcd_step_${idx}" value="${escapeHtml(stText)}" oninput="ROAD_APP.updateStep(${idx}, this.value)" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
                       <button type="button" onclick="ROAD_APP.removeStep(${idx})" class="px-2 py-1 rounded text-rose-600 hover:bg-rose-50 text-xs cursor-pointer" title="ลบขั้นตอนนี้">✕</button>
                     </div>
                   `).join("")}
@@ -5223,7 +5237,7 @@
                 ${(proj.C_list || []).map((cVal, idx) => `
                   <div class="flex items-center gap-2">
                     <span class="px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 font-mono text-xs font-bold">C${idx + 1}</span>
-                    <input value="${escapeHtml(cVal)}" oninput="ROAD_APP.updateDependentVar(${idx}, this.value)" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" />
+                    <input id="abcd_cvar_${idx}" value="${escapeHtml(cVal)}" oninput="ROAD_APP.updateDependentVar(${idx}, this.value)" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" />
                     <button type="button" onclick="ROAD_APP.removeDependentVar(${idx})" class="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs cursor-pointer">ลบ</button>
                   </div>
                 `).join("")}
@@ -5243,7 +5257,7 @@
             <!-- D: Target Group & Context -->
             <div class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 flex flex-col gap-3">
               <span class="font-bold text-sm text-amber-900 dark:text-amber-300">D (Target Group & Scope) · กลุ่มเป้าหมาย รายวิชา ประชากร และกลุ่มตัวอย่าง</span>
-              <input value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3" />
+              <input id="abcd_input_D" value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value)" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3" />
 
               <div class="flex flex-wrap gap-1.5 items-center text-xs">
                 <span class="text-slate-400">คลิกเลือกกลุ่มเป้าหมายด่วน:</span>
@@ -5253,23 +5267,23 @@
               <div class="grid sm:grid-cols-2 gap-3 mt-1">
                 <label class="flex flex-col gap-1 text-xs">
                   <span class="font-semibold">รายวิชา / หน่วยการเรียนรู้ / สาระเนื้อหา</span>
-                  <input value="${escapeHtml(proj.subject)}" oninput="ROAD_APP.updateField('subject', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                  <input id="abcd_input_subject" value="${escapeHtml(proj.subject)}" oninput="ROAD_APP.updateField('subject', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
                 </label>
                 <label class="flex flex-col gap-1 text-xs">
                   <span class="font-semibold">ภาคเรียน / ปีการศึกษา</span>
-                  <input value="${escapeHtml(proj.semester)}" oninput="ROAD_APP.updateField('semester', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                  <input id="abcd_input_semester" value="${escapeHtml(proj.semester)}" oninput="ROAD_APP.updateField('semester', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
                 </label>
                 <label class="flex flex-col gap-1 text-xs sm:col-span-2">
                   <span class="font-semibold">จำนวนแผนการจัดการเรียนรู้ / ระยะเวลาที่ใช้ทดลอง</span>
-                  <input value="${escapeHtml(proj.duration)}" oninput="ROAD_APP.updateField('duration', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                  <input id="abcd_input_duration" value="${escapeHtml(proj.duration)}" oninput="ROAD_APP.updateField('duration', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
                 </label>
                 <label class="flex flex-col gap-1 text-xs sm:col-span-2">
                   <span class="font-semibold">ประชากร (Population)</span>
-                  <textarea rows="2" oninput="ROAD_APP.updateField('population', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">${escapeHtml(proj.population)}</textarea>
+                  <textarea id="abcd_input_population" rows="2" oninput="ROAD_APP.updateField('population', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">${escapeHtml(proj.population)}</textarea>
                 </label>
                 <label class="flex flex-col gap-1 text-xs sm:col-span-2">
                   <span class="font-semibold">กลุ่มตัวอย่างและการได้มา (Sample & Sampling Method)</span>
-                  <textarea rows="2" oninput="ROAD_APP.updateField('sample', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">${escapeHtml(proj.sample)}</textarea>
+                  <textarea id="abcd_input_sample" rows="2" oninput="ROAD_APP.updateField('sample', this.value)" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">${escapeHtml(proj.sample)}</textarea>
                 </label>
               </div>
             </div>
@@ -7682,11 +7696,11 @@
                 <div class="grid grid-cols-2 gap-3 text-xs">
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพระหว่างเรียน (E1 %)</span>
-                    <input type="number" step="0.01" value="${curE1}" oninput="ROAD_APP.updateStatField('e1', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
+                    <input id="stat_input_e1" type="number" step="0.01" value="${curE1}" oninput="ROAD_APP.updateStatField('e1', this.value)" onchange="ROAD_APP.updateStatField('e1', this.value, true)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
                   </label>
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">ประสิทธิภาพหลังเรียน (E2 %)</span>
-                    <input type="number" step="0.01" value="${curE2}" oninput="ROAD_APP.updateStatField('e2', this.value)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
+                    <input id="stat_input_e2" type="number" step="0.01" value="${curE2}" oninput="ROAD_APP.updateStatField('e2', this.value)" onchange="ROAD_APP.updateStatField('e2', this.value, true)" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-sm" />
                   </label>
                 </div>
 
@@ -7718,15 +7732,15 @@
                 <div class="grid grid-cols-3 gap-3 text-xs">
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">คะแนนเต็ม (Full)</span>
-                    <input type="number" value="${st.fullScore || 40}" oninput="ROAD_APP.updateStatField('fullScore', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                    <input id="stat_input_fullScore" type="number" value="${st.fullScore || 40}" oninput="ROAD_APP.updateStatField('fullScore', this.value)" onchange="ROAD_APP.updateStatField('fullScore', this.value, true)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
                   </label>
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยก่อนเรียน (Pre)</span>
-                    <input type="number" step="0.01" value="${st.preMean || 17.50}" oninput="ROAD_APP.updateStatField('preMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                    <input id="stat_input_preMean" type="number" step="0.01" value="${st.preMean || 17.50}" oninput="ROAD_APP.updateStatField('preMean', this.value)" onchange="ROAD_APP.updateStatField('preMean', this.value, true)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
                   </label>
                   <label class="flex flex-col gap-1">
                     <span class="font-semibold text-slate-700 dark:text-slate-300">เฉลี่ยหลังเรียน (Post)</span>
-                    <input type="number" step="0.01" value="${st.postMean || 33.12}" oninput="ROAD_APP.updateStatField('postMean', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
+                    <input id="stat_input_postMean" type="number" step="0.01" value="${st.postMean || 33.12}" oninput="ROAD_APP.updateStatField('postMean', this.value)" onchange="ROAD_APP.updateStatField('postMean', this.value, true)" class="px-2.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-mono font-bold text-xs" />
                   </label>
                 </div>
 
@@ -8478,7 +8492,7 @@
               <!-- Live Title Banner inside Modal -->
               <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col gap-1.5">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">พรีวิวชื่อเรื่องวิจัย (ประกอบตามสูตร ABCD อัตโนมัติ):</span>
-                <div class="text-sm sm:text-base font-extrabold leading-relaxed text-slate-900 dark:text-white">
+                <div id="modal-live-composed-title" class="text-sm sm:text-base font-extrabold leading-relaxed text-slate-900 dark:text-white">
                   ${window.ROAD_GENERATOR.composeColorCodedTitle(proj)}
                 </div>
               </div>
@@ -8489,7 +8503,7 @@
                   <span class="font-bold text-xs sm:text-sm text-sky-900 dark:text-sky-300">🔵 A (Action) · คำกริยาวิจัย / แบบแผนวิธีดำเนินการ</span>
                   <span class="text-[11px] text-slate-500">พิมพ์เองหรือกดเลือกด่วน</span>
                 </div>
-                <input value="${escapeHtml(proj.A)}" oninput="ROAD_APP.updateField('A', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น การวิจัยและพัฒนา หรือ การศึกษาผลการใช้" />
+                <input id="modal_abcd_input_A" value="${escapeHtml(proj.A)}" oninput="ROAD_APP.updateField('A', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น การวิจัยและพัฒนา หรือ การศึกษาผลการใช้" />
                 <div class="flex flex-wrap gap-1.5 items-center text-xs">
                   <span class="text-slate-400">เลือกด่วน:</span>
                   ${vocab.A.map(item => `<button type="button" onclick="ROAD_APP.applySuggestion('A', '${item}')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-500 cursor-pointer text-[11px]">${item}</button>`).join("")}
@@ -8501,11 +8515,11 @@
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-xs sm:text-sm text-blue-900 dark:text-blue-300">🟣 B (Innovation / ตัวแปรต้น) · ชื่อนวัตกรรม สื่อ หรือวิธีจัดการเรียนรู้</span>
                 </div>
-                <input value="${escapeHtml(proj.B)}" oninput="ROAD_APP.updateField('B', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น รูปแบบการจัดการเรียนรู้เชิงรุกร่วมกับเทคนิค GPAS 5 Steps" />
+                <input id="modal_abcd_input_B" value="${escapeHtml(proj.B)}" oninput="ROAD_APP.updateField('B', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น รูปแบบการจัดการเรียนรู้เชิงรุกร่วมกับเทคนิค GPAS 5 Steps" />
                 <div class="grid sm:grid-cols-2 gap-2">
                   <label class="flex flex-col gap-1 text-xs">
                     <span class="font-semibold text-slate-600 dark:text-slate-400">ชื่อเรียกย่อของนวัตกรรม (ใช้ในเล่มวิจัย 5 บท):</span>
-                    <input value="${escapeHtml(proj.B_short || proj.B)}" oninput="ROAD_APP.updateField('B_short', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
+                    <input id="modal_abcd_input_B_short" value="${escapeHtml(proj.B_short || proj.B)}" oninput="ROAD_APP.updateField('B_short', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs" />
                   </label>
                   <div class="flex flex-col gap-1 text-xs">
                     <span class="font-semibold text-slate-600 dark:text-slate-400">ขั้นตอนนวัตกรรม (Syntax):</span>
@@ -8544,7 +8558,7 @@
                   ${(proj.C_list || []).map((cVal, idx) => `
                     <div class="flex items-center gap-2">
                       <span class="px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 font-mono text-xs font-bold">C${idx + 1}</span>
-                      <input value="${escapeHtml(cVal)}" oninput="ROAD_APP.updateDependentVar(${idx}, this.value)" class="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น ความสามารถในการคิดวิเคราะห์ / ผลสัมฤทธิ์ทางการเรียน" />
+                      <input id="modal_abcd_cvar_${idx}" value="${escapeHtml(cVal)}" oninput="ROAD_APP.updateDependentVar(${idx}, this.value)" class="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold" placeholder="เช่น ความสามารถในการคิดวิเคราะห์ / ผลสัมฤทธิ์ทางการเรียน" />
                       <button type="button" onclick="ROAD_APP.removeDependentVar(${idx})" class="px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 text-xs cursor-pointer">ลบ</button>
                     </div>
                   `).join("")}
@@ -8563,7 +8577,7 @@
               <!-- Field D -->
               <div class="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 flex flex-col gap-2">
                 <span class="font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-300">🟠 D (Target Group & Scope) · กลุ่มเป้าหมายและบริบท</span>
-                <input value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3 โรงเรียนเปรมติณสูลานนท์" />
+                <input id="modal_abcd_input_D" value="${escapeHtml(proj.D)}" oninput="ROAD_APP.updateField('D', this.value); ROAD_APP.renderLiveTitleBar();" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-800 dark:text-white" placeholder="เช่น สำหรับนักเรียนชั้นมัธยมศึกษาปีที่ 3 โรงเรียนเปรมติณสูลานนท์" />
                 <div class="flex flex-wrap gap-1.5 items-center text-xs">
                   <span class="text-slate-400 text-[11px]">เลือกกลุ่มเป้าหมายด่วน:</span>
                   ${vocab.D.slice(0, 5).map(item => `<button type="button" onclick="ROAD_APP.applySuggestion('D', '${item}')" class="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 cursor-pointer text-[11px]">${item}</button>`).join("")}
@@ -9429,6 +9443,31 @@
   function renderApp() {
     const root = document.getElementById("app-root");
     if (!root) return;
+
+    // 1. Capture active element focus & cursor position before DOM replacement
+    const activeEl = document.activeElement;
+    let focusState = null;
+    if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+      focusState = {
+        id: activeEl.id || null,
+        name: activeEl.name || null,
+        tagName: activeEl.tagName.toLowerCase(),
+        type: activeEl.type || null,
+        oninput: activeEl.getAttribute("oninput") || null,
+        placeholder: activeEl.placeholder || null,
+        start: null,
+        end: null
+      };
+      try {
+        focusState.start = activeEl.selectionStart;
+        focusState.end = activeEl.selectionEnd;
+      } catch (e) {
+        // Selection range not supported on some input types like number/date
+      }
+      const allInputs = Array.from(root.querySelectorAll("input, textarea"));
+      focusState.index = allInputs.indexOf(activeEl);
+    }
+
     let mainHtml = "";
     if (state.view === "login") mainHtml = renderLoginView();
     else if (state.view === "signup") mainHtml = renderSignupView();
@@ -9438,6 +9477,50 @@
     else mainHtml = renderStudioView();
 
     root.innerHTML = `${renderTopNavbar()}<main>${mainHtml}</main>${renderFooter()}${renderTaskProgressIndicator()}${state.showAbcdModal ? renderCustomAbcdModal() : ""}${state.showWizardModal ? renderResearchWizardModal() : ""}${state.showContextMetaModal ? renderContextMetaModal() : ""}`;
+
+    // 2. Restore active element focus & cursor position after DOM replacement
+    if (focusState) {
+      let targetEl = null;
+      if (focusState.id) {
+        targetEl = document.getElementById(focusState.id);
+      }
+      if (!targetEl && focusState.name) {
+        try {
+          targetEl = root.querySelector(`${focusState.tagName}[name="${CSS.escape(focusState.name)}"]`);
+        } catch (e) {}
+      }
+      if (!targetEl && focusState.oninput) {
+        const matching = Array.from(root.querySelectorAll(focusState.tagName)).filter(el => el.getAttribute("oninput") === focusState.oninput);
+        if (matching.length === 1) {
+          targetEl = matching[0];
+        } else if (matching.length > 1 && focusState.index >= 0) {
+          targetEl = matching[0];
+        }
+      }
+      if (!targetEl && focusState.placeholder) {
+        const matching = Array.from(root.querySelectorAll(focusState.tagName)).filter(el => el.placeholder === focusState.placeholder);
+        if (matching.length === 1) {
+          targetEl = matching[0];
+        }
+      }
+      if (!targetEl && focusState.index >= 0) {
+        const allNewInputs = Array.from(root.querySelectorAll("input, textarea"));
+        if (allNewInputs[focusState.index] && allNewInputs[focusState.index].tagName.toLowerCase() === focusState.tagName) {
+          targetEl = allNewInputs[focusState.index];
+        }
+      }
+
+      if (targetEl && typeof targetEl.focus === "function") {
+        targetEl.focus();
+        try {
+          if (focusState.start !== null && focusState.end !== null && typeof targetEl.setSelectionRange === "function") {
+            targetEl.setSelectionRange(focusState.start, focusState.end);
+          }
+        } catch (e) {
+          // Ignore unsupported input types
+        }
+      }
+    }
   }
 
   window.addEventListener("DOMContentLoaded", () => {
